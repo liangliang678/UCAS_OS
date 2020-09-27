@@ -17,7 +17,7 @@ bootblock的ELF文件
 将bootblock和kernel制作成引导块的工具
 |--createimage.c
 引导块工具代码
-|--Design Document.pdf
+|--design_document.pdf
 设计文档
 |--disk
 供qemu使用的内核镜像
