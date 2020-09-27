@@ -16,7 +16,13 @@ int bss_check()
 int getch()
 {
 	//Waits for a keyboard input and then returns.
-    return sbi_console_getchar();
+	int ch;
+	while(1) {
+		ch = sbi_console_getchar();
+		if(ch != -1) {
+			return ch;
+		}
+	}
 }
 
 int main(void)
@@ -24,7 +30,7 @@ int main(void)
     int check = bss_check();
     char output_str[] = "bss check: _ version: _\n\r";
     char output_val[2] = {0};
-    int i, output_val_pos = 0, ch;
+    int i, output_val_pos = 0;
 
     output_val[0] = check ? 't' : 'f';
     output_val[1] = version + '0';
@@ -43,11 +49,9 @@ int main(void)
 	
     //fill function getch, and call getch here to receive keyboard input.
 	//print it out at the same time
-	while(1) {
-		ch = getch();
-		if(ch != -1) {
-			sbi_console_putchar(ch);
-		}
+	while(1)
+	{
+		sbi_console_putchar(getch());
 	}
 	
     return 0;
