@@ -1,16 +1,12 @@
 #include <asm/sbidef.h>
 #include <asm/sbiasm.h>
 
-// #define BOOT_LOADER_SIG_OFFSET 0x1fe
-// #define OS_SIZE_LOC (BOOT_LOADER_SIG_OFFSET - 2)
-// #define OS_SIZE_LOC 0x1fc
-
 .equ os_size_loc, 0x502001fc
 
-//kernel address (move kernel to here ~)
+//kernel address
 .equ kernel, 0x50201000
 
-//kernel main address (jmp here to start kernel main!)
+//kernel main address
 .equ kernel_main, 0x50201000
 
 .text
@@ -40,4 +36,3 @@ main:
 .data
 
 msg: .string "It's a bootloader...\n\r"
-

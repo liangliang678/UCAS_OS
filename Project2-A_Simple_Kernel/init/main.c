@@ -39,22 +39,7 @@
 #include <csr.h>
 
 extern void ret_from_exception();
-extern void printk_task1(void);
 extern void __global_pointer$();
-
-ptr_t kernel_stack_pointer = FREEKERNELMEM;
-ptr_t new_kernel_stack()
-{
-    kernel_stack_pointer += PAGE_SIZE;
-    return kernel_stack_pointer;
-}
-
-ptr_t user_stack_pointer = FREEMEM;
-ptr_t new_user_stack()
-{
-    user_stack_pointer += PAGE_SIZE;
-    return user_stack_pointer;
-}
 
 static void init_pcb_stack(
     ptr_t kernel_stack, ptr_t user_stack, 
@@ -62,9 +47,9 @@ static void init_pcb_stack(
 {
     regs_context_t *pt_regs =
         (regs_context_t *)(kernel_stack - sizeof(regs_context_t));
-    
+    pcb->kernel_sp -= sizeof(regs_context_t);
     /* TODO: initialization registers
-     * note: sp, gp, ra, sepc, sstatus
+     * note: ra, sp, gp, sepc, sstatus
      * gp should be __global_pointer$
      * To run the task in user mode,
      * you should set corresponding bits of sstatus(SPP, SPIE, etc.).
@@ -74,10 +59,10 @@ static void init_pcb_stack(
      * simulate a pcb context.
      */
     pt_regs->regs[1] = entry_point;
-    pt_regs->regs[2] = pcb->user_sp;
+    pt_regs->regs[2] = user_stack;
     pt_regs->regs[3] = (reg_t)__global_pointer$;
-    pt_regs->regs[4] = (reg_t)current_running;
-    pcb->kernel_sp -= sizeof(regs_context_t);
+    pt_regs->sepc = CSR_SEPC;
+    pt_regs->sstatus = CSR_SSTATUS;
 }
 
 static void init_pcb()
@@ -109,11 +94,11 @@ static void init_syscall(void)
     // initialize system call table.
 }
 
-// jump from bootloader.
+// jump from bootloader
 // The beginning of everything
 int main()
 {
-    // init Process Control Block (-_-!)
+    // init Process Control Block
     init_pcb();
     printk("> [INIT] PCB initialization succeeded.\n\r");
 
@@ -123,17 +108,17 @@ int main()
     // init futex mechanism
     init_system_futex();
 
-    // init interrupt (^_^)
+    // init interrupt
     init_exception();
     printk("> [INIT] Interrupt processing initialization succeeded.\n\r");
 
-    // init system call table (0_0)
+    // init system call table
     init_syscall();
     printk("> [INIT] System call initialized successfully.\n\r");
 
     // fdt_print(riscv_dtb);
 
-    // init screen (QAQ)
+    // init screen
     init_screen();
     printk("> [INIT] SCREEN initialization succeeded.\n\r");
 
@@ -141,9 +126,7 @@ int main()
     // Setup timer interrupt and enable all interrupt
 
     while (1) {
-        // (QAQQQQQQQQQQQ)
-        // If you do non-preemptive scheduling, you need to use it
-        // to surrender control do_scheduler();
+        // If you do non-preemptive scheduling, you need to use it to surrender control do_scheduler();
         // enable_interrupt();
         // __asm__ __volatile__("wfi\n\r":::);
         do_scheduler();

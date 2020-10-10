@@ -77,6 +77,10 @@ ENDPROC(disable_interrupt)
 // the address of previous pcb in a0
 // the address of next pcb in a1
 ENTRY(switch_to)
+  //save and restore sp to/from PCB instead of kernel stack!
+  //instead of use 'struct switchto_context', use 'struct regs_context_t'
+  //because we use regs_context_t to initialize kernel stack in main.c
+
   // save all callee save registers on kernel stack
   /* TODO: store all callee save registers,
    * see the definition of `struct switchto_context` in sched.h*/
@@ -96,6 +100,7 @@ ENTRY(switch_to)
   sd s9, OFFSET_REG_S9(sp)
   sd s10, OFFSET_REG_S10(sp)
   sd s11, OFFSET_REG_S11(sp)
+
   // restore next
   /* TODO: restore all callee save registers,
    * see the definition of `struct switchto_context` in sched.h*/
@@ -115,9 +120,9 @@ ENTRY(switch_to)
   ld s10, OFFSET_REG_S10(sp)
   ld s11, OFFSET_REG_S11(sp)
 
-  ld sp, PCB_USER_SP(a1)
-  
+  ld sp, PCB_USER_SP(a1) 
   mv tp, a1
+
   jr ra
 ENDPROC(switch_to)
 

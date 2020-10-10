@@ -34,8 +34,8 @@
 #define INIT_USER_STACK 0x55000000
 #define INIT_KERNEL_STACK 0x50500000
 
-#define FREEMEM (INIT_USER_STACK+PAGE_SIZE)
-#define FREEKERNELMEM (INIT_KERNEL_STACK+PAGE_SIZE)
+#define FREE_MEM (INIT_USER_STACK+PAGE_SIZE)
+#define FREE_KERNEL_MEM (INIT_KERNEL_STACK+PAGE_SIZE)
 
 /* Rounding; only works for n = power of two */
 #define ROUND(a, n)     (((((uint64_t)(a))+(n)-1)) & ~((n)-1))
@@ -45,5 +45,7 @@ extern ptr_t memCurr;
 
 extern ptr_t allocPage(int numPage);
 extern void* kmalloc(size_t size);
+extern ptr_t new_kernel_stack();
+extern ptr_t new_user_stack();
 
 #endif /* MM_H */
