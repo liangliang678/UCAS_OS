@@ -17,7 +17,7 @@ mutex_lock_t mutex_lock;
 
 void lock_task1(void)
 {
-    int print_location = 1;
+    int print_location = 3;
     while (1) {
         int i;
         if (!is_init) {
@@ -74,7 +74,7 @@ void lock_task1(void)
 
 void lock_task2(void)
 {
-    int print_location = 2;
+    int print_location = 4;
     while (1) {
         int i;
         if (!is_init) {

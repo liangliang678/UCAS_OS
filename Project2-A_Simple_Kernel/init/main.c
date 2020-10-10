@@ -70,7 +70,9 @@ static void init_pcb()
     /* initialize all of your pcb and add them into ready_queue
      * TODO:
      */
+    
     int num_tasks;
+    
     for(num_tasks = 0; num_tasks < num_sched1_tasks; num_tasks++){
         pcb[num_tasks].kernel_sp = new_kernel_stack();
         pcb[num_tasks].user_sp = new_user_stack();
@@ -83,6 +85,21 @@ static void init_pcb()
         init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
                         sched1_tasks[num_tasks]->entry_point, &pcb[num_tasks]); 
     }
+    
+
+    for(num_tasks = num_sched1_tasks; num_tasks < num_sched1_tasks + num_lock_tasks; num_tasks++){
+        pcb[num_tasks].kernel_sp = new_kernel_stack();
+        pcb[num_tasks].user_sp = new_user_stack();
+        pcb[num_tasks].preempt_count = 0;
+        list_add(&pcb[num_tasks].list, &ready_queue);
+        pcb[num_tasks].pid = num_tasks + 1;
+        pcb[num_tasks].type = lock_tasks[num_tasks- num_sched1_tasks]->type;
+        pcb[num_tasks].status = TASK_READY;
+        
+        init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
+                        lock_tasks[num_tasks - num_sched1_tasks]->entry_point, &pcb[num_tasks]); 
+    }
+
     /* remember to initialize `current_running`
      * TODO:
      */
@@ -107,7 +124,7 @@ int main()
 	
     // init futex mechanism
     init_system_futex();
-
+/*
     // init interrupt
     init_exception();
     printk("> [INIT] Interrupt processing initialization succeeded.\n\r");
@@ -117,7 +134,7 @@ int main()
     printk("> [INIT] System call initialized successfully.\n\r");
 
     // fdt_print(riscv_dtb);
-
+*/
     // init screen
     init_screen();
     printk("> [INIT] SCREEN initialization succeeded.\n\r");
