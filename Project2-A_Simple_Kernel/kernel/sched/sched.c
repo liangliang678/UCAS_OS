@@ -69,6 +69,7 @@ void do_block(list_node_t *pcb_node, list_head *queue)
     // TODO: block the pcb task into the block queue
     list_del(pcb_node);
     list_add(pcb_node, queue);
+    list_entry(pcb_node, pcb_t, list)->state = TASK_BLOCKED;
     if(&(current_running ->list) == pcb_node){
         do_scheduler();
     }
@@ -79,4 +80,5 @@ void do_unblock(list_node_t *pcb_node)
     // TODO: unblock the `pcb` from the block queue
     list_del(pcb_node);
     list_add(pcb_node, &ready_queue);
+    list_entry(pcb_node, pcb_t, list)->state = TASK_READY;
 }
