@@ -9,14 +9,6 @@
 #define IMAGE_FILE "./image"
 #define ARGS "[--extended] [--vm] <bootblock> <executable-file> ..."
 
-#define SECTOR_SIZE 512
-#define BOOT_LOADER_SIG_OFFSET 0x1fe
-#define OS_SIZE_LOC (BOOT_LOADER_SIG_OFFSET - 2)
-#define BOOT_LOADER_SIG_1 0x55
-#define BOOT_LOADER_SIG_2 0xaa
-#define BOOT_MEM_LOC 0x7c00
-#define OS_MEM_LOC 0x50201000
-
 /* structure to store command line options */
 static struct {
     int vm;
@@ -29,8 +21,8 @@ static void error(char *fmt, ...);
 static void read_ehdr(Elf64_Ehdr * ehdr, FILE * fp);
 static void read_phdr(Elf64_Phdr * phdr, FILE * fp, int ph,
                       Elf64_Ehdr ehdr);
-static void write_segment(Elf64_Ehdr ehdr, Elf64_Phdr phdr, FILE * fp,
-                          FILE * img, int *nbytes, int *first);
+static void write_segment(Elf64_Phdr phdr, FILE * fp,
+                          FILE * img, int *nbytes);
 static void write_os_size(int nbytes, FILE * img);
 
 int main(int argc, char **argv)
@@ -67,22 +59,20 @@ int main(int argc, char **argv)
 
 static void create_image(int nfiles, char *files[])
 {
-    int ph, nbytes = 0, first = 1;
+    int ph, nbytes = 0;
     FILE *fp, *img;
     Elf64_Ehdr ehdr;
     Elf64_Phdr phdr;
 
     /* open the image file */
-    img = fopen(IMAGE_FILE, "w");
-    assert(img != NULL);
-
+	img = fopen(IMAGE_FILE, "wb");
+	
     /* for each input file */
     while (nfiles-- > 0) {
 
         /* open input file */
-        fp = fopen(*files, "r");
-        assert(fp != NULL);
-
+		fp = fopen(*files, "rb");
+		
         /* read ELF header */
         read_ehdr(&ehdr, fp);
         printf("0x%04lx: %s\n", ehdr.e_entry, *files);
@@ -94,116 +84,79 @@ static void create_image(int nfiles, char *files[])
             read_phdr(&phdr, fp, ph, ehdr);
 
             /* write segment to the image */
-            write_segment(ehdr, phdr, fp, img, &nbytes, &first);
+            write_segment(phdr, fp, img, &nbytes);
+            
+            /* print info of segment */
+            if(options.extended) {
+	        	printf("\tsegment %d\n", ph);
+				printf("\t\toffset 0x%04lx\t\tvaddr 0x%08lx\n", phdr.p_offset,phdr.p_vaddr);
+				printf("\t\tfilesz 0x%04lx\t\tmemsz 0x%04lx\n", phdr.p_filesz,phdr.p_memsz);
+				printf("\t\twriting 0x%04lx bytes\n", phdr.p_memsz);
+				printf("\t\tpadding up to 0x%04x\n", nbytes);
+			}
         }
+
         fclose(fp);
         files++;
     }
+
     write_os_size(nbytes, img);
     fclose(img);
+    
+    return;
 }
 
 static void read_ehdr(Elf64_Ehdr * ehdr, FILE * fp)
 {
-    int ret;
-
-    ret = fread(ehdr, sizeof(*ehdr), 1, fp);
-    assert(ret == 1);
-    assert(ehdr->e_ident[EI_MAG1] == 'E');
-    assert(ehdr->e_ident[EI_MAG2] == 'L');
-    assert(ehdr->e_ident[EI_MAG3] == 'F');
+	fread(ehdr, sizeof(Elf64_Ehdr), 1, fp);
+	return;
 }
 
 static void read_phdr(Elf64_Phdr * phdr, FILE * fp, int ph,
                       Elf64_Ehdr ehdr)
 {
-    int ret;
-
-    fseek(fp, ehdr.e_phoff + ph * ehdr.e_phentsize, SEEK_SET);
-    ret = fread(phdr, sizeof(*phdr), 1, fp);
-    assert(ret == 1);
-    if (options.extended == 1) {
-        printf("\tsegment %d\n", ph);
-        printf("\t\toffset 0x%04lx", phdr->p_offset);
-        printf("\t\tvaddr 0x%04lx\n", phdr->p_vaddr);
-        printf("\t\tfilesz 0x%04lx", phdr->p_filesz);
-        printf("\t\tmemsz 0x%04lx\n", phdr->p_memsz);
-    }
+	fseek(fp, ehdr.e_phoff + ph * (sizeof(Elf64_Phdr)), SEEK_SET);
+	fread(phdr, sizeof(Elf64_Phdr), 1, fp);
+	return;
 }
 
-static void write_segment(Elf64_Ehdr ehdr, Elf64_Phdr phdr, FILE * fp,
-                          FILE * img, int *nbytes, int *first)
+static void write_segment(Elf64_Phdr phdr, FILE * fp,
+                          FILE * img, int *nbytes)
 {
-    int phyaddr;
-
-    if (phdr.p_memsz != 0) {
-        /* find physical address in image */
-        if (*first == 1) {
-            phyaddr = 0;
-            *first = 0;
-        } else {
-            phyaddr = phdr.p_vaddr - OS_MEM_LOC + SECTOR_SIZE;
-        }
-        /*if (phyaddr < *nbytes) {
-            error("memory conflict\n");
-        }*/
-
-        /* write padding before the segment */
-        if (*nbytes < phyaddr) {
-            if (options.extended == 1) {
-                printf("\t\tpadding up to 0x%04x\n", phyaddr);
-            }
-            while (*nbytes < phyaddr) {
-                fputc(0, img);
-                (*nbytes)++;
-            }
-        }
-
-        /* write the segment itself */
-        if (options.extended == 1) {
-            printf("\t\twriting 0x%04lx bytes\n", phdr.p_memsz);
-        }
-        fseek(fp, phdr.p_offset, SEEK_SET);
-        while (phdr.p_filesz-- > 0) {
-            fputc(fgetc(fp), img);
-            (*nbytes)++;
-            phdr.p_memsz--;
-        }
-        while (phdr.p_memsz-- > 0) {
-            fputc(0, img);
-            (*nbytes)++;
-        }
-
-        /* write padding after the segment */
-        if (*nbytes % SECTOR_SIZE != 0) {
-            while (*nbytes % SECTOR_SIZE != 0) {
-                fputc(0, img);
-                (*nbytes)++;
-            }
-            if (options.extended == 1) {
-                printf("\t\tpadding up to 0x%04x\n", *nbytes);
-            }
-        }
-    }
+	/* 512 bytes align */
+	int bytes;
+	if(phdr.p_memsz % 512 == 0) {
+		bytes = phdr.p_memsz;
+	}
+	else {
+		bytes = phdr.p_memsz + (512 - phdr.p_memsz % 512);
+	}
+	
+	/* initialize the data array */
+	char segment_file[bytes];
+	int i;
+	for(i = 0; i < bytes; i++) {
+		segment_file[i] = 0;
+	}
+	
+	/* write data to img */
+	fseek(fp, phdr.p_offset, SEEK_SET);
+	fread(segment_file, phdr.p_filesz, 1, fp);
+	fseek(img, (*nbytes), SEEK_SET);
+	fwrite(segment_file, bytes, 1, img);
+	(*nbytes) += bytes;
+	
+	return;
 }
 
 static void write_os_size(int nbytes, FILE * img)
 {
-    short os_size;
-    char signature;
-
-    os_size = nbytes / SECTOR_SIZE - 1;
-    fseek(img, OS_SIZE_LOC, SEEK_SET);
-    fwrite(&os_size, sizeof(os_size), 1, img);
-    if (options.extended == 1) {
-        printf("os_size: %d sectors\n", os_size);
-    }
-    fseek(img, BOOT_LOADER_SIG_OFFSET, SEEK_SET);
-    signature = BOOT_LOADER_SIG_1;
-    fwrite(&signature, sizeof(signature), 1, img);
-    fseek(img, BOOT_LOADER_SIG_OFFSET + 1, SEEK_SET);
-    signature = BOOT_LOADER_SIG_2;
-    fwrite(&signature, sizeof(signature), 1, img);
+	long OS_SIZE_LOC = 508;
+	nbytes = nbytes / 512 - 1;
+	fseek(img, OS_SIZE_LOC, SEEK_SET);
+	fwrite(&nbytes, 2, 1, img);
+	printf("os_size: %d sectors\n", nbytes);
+	return;
 }
 
 /* print an error message and exit */

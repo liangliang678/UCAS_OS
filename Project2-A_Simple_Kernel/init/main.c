@@ -42,9 +42,23 @@ extern void ret_from_exception();
 extern void printk_task1(void);
 extern void __global_pointer$();
 
+ptr_t kernel_stack_pointer = FREEKERNELMEM;
+ptr_t new_kernel_stack()
+{
+    kernel_stack_pointer += PAGE_SIZE;
+    return kernel_stack_pointer;
+}
+
+ptr_t user_stack_pointer = FREEMEM;
+ptr_t new_user_stack()
+{
+    user_stack_pointer += PAGE_SIZE;
+    return user_stack_pointer;
+}
+
 static void init_pcb_stack(
-    ptr_t kernel_stack, ptr_t user_stack, ptr_t entry_point,
-    pcb_t *pcb)
+    ptr_t kernel_stack, ptr_t user_stack, 
+    ptr_t entry_point, pcb_t *pcb)
 {
     regs_context_t *pt_regs =
         (regs_context_t *)(kernel_stack - sizeof(regs_context_t));
@@ -55,22 +69,39 @@ static void init_pcb_stack(
      * To run the task in user mode,
      * you should set corresponding bits of sstatus(SPP, SPIE, etc.).
      */
-
     // set sp to simulate return from switch_to
     /* TODO: you should prepare a stack, and push some values to
      * simulate a pcb context.
      */
+    pt_regs->regs[1] = entry_point;
+    pt_regs->regs[2] = pcb->user_sp;
+    pt_regs->regs[3] = (reg_t)__global_pointer$;
+    pt_regs->regs[4] = (reg_t)current_running;
+    pcb->kernel_sp -= sizeof(regs_context_t);
 }
 
 static void init_pcb()
 {
-     /* initialize all of your pcb and add them into ready_queue
+    /* initialize all of your pcb and add them into ready_queue
      * TODO:
      */
-
+    int num_tasks;
+    for(num_tasks = 0; num_tasks < num_sched1_tasks; num_tasks++){
+        pcb[num_tasks].kernel_sp = new_kernel_stack();
+        pcb[num_tasks].user_sp = new_user_stack();
+        pcb[num_tasks].preempt_count = 0;
+        list_add(&pcb[num_tasks].list, &ready_queue);
+        pcb[num_tasks].pid = num_tasks + 1;
+        pcb[num_tasks].type = sched1_tasks[num_tasks]->type;
+        pcb[num_tasks].status = TASK_READY;
+        
+        init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
+                        sched1_tasks[num_tasks]->entry_point, &pcb[num_tasks]); 
+    }
     /* remember to initialize `current_running`
      * TODO:
      */
+    current_running = &pid0_pcb;
 }
 
 static void init_syscall(void)
@@ -79,7 +110,7 @@ static void init_syscall(void)
 }
 
 // jump from bootloader.
-// The beginning of everything >_< ~~~~~~~~~~~~~~
+// The beginning of everything
 int main()
 {
     // init Process Control Block (-_-!)
@@ -115,7 +146,7 @@ int main()
         // to surrender control do_scheduler();
         // enable_interrupt();
         // __asm__ __volatile__("wfi\n\r":::);
-        //do_scheduler();
+        do_scheduler();
     };
     return 0;
 }

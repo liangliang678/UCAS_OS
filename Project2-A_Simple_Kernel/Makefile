@@ -1,9 +1,10 @@
 HOST_CC = gcc
-CROSS_PREFIX = riscv64-unknown-elf-
+#CROSS_PREFIX = riscv64-unknown-elf-
+CROSS_PREFIX = riscv64-unknown-linux-gnu-
 CC = ${CROSS_PREFIX}gcc
 OBJDUMP = ${CROSS_PREFIX}objdump
 CFLAGS = -O0  -fno-builtin -nostdlib -T riscv.lds -Wall -mcmodel=medany -Iinclude -Idrivers -Itest -Itest/test_project2 -Itiny_libc/include -nostdinc -g
-DISK = /dev/sdc
+DISK = /dev/sdb
 
 BOOTLOADER_ENTRYPOINT = 0x50200000
 KERNEL_ENTRYPOINT = 0x50201000

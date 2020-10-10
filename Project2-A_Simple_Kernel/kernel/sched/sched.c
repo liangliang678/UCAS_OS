@@ -9,12 +9,13 @@
 #include <assert.h>
 
 pcb_t pcb[NUM_MAX_TASK];
-const ptr_t pid0_stack = INIT_KERNEL_STACK + PAGE_SIZE;
+const ptr_t pid0_stack = INIT_USER_STACK + PAGE_SIZE;
+const ptr_t pid0_kernel_stack = INIT_KERNEL_STACK + PAGE_SIZE;
 pcb_t pid0_pcb = {
     .pid = 0,
-    .kernel_sp = (ptr_t)pid0_stack,
+    .kernel_sp = (ptr_t)pid0_kernel_stack - sizeof(regs_context_t),
     .user_sp = (ptr_t)pid0_stack,
-    .preempt_count = 0
+    .preempt_count = 0 
 };
 
 LIST_HEAD(ready_queue);
@@ -27,15 +28,26 @@ pid_t process_id = 1;
 
 void do_scheduler(void)
 {
-    // TODO schedule
-    // Modify the current_running pointer.
-
-    // restore the current_runnint's cursor_x and cursor_y
-    vt100_move_cursor(current_running->cursor_x,
-                      current_running->cursor_y);
-    screen_cursor_x = current_running->cursor_x;
-    screen_cursor_y = current_running->cursor_y;
-    // TODO: switch_to current_running
+    if(!list_empty(&ready_queue))
+    {
+        // TODO schedule
+        // Modify the current_running pointer.
+        pcb_t *prev_running = current_running;
+        current_running = list_entry(ready_queue.prev, pcb_t, list);
+        list_move(ready_queue.prev, &ready_queue);
+        // restore the current_runnint's cursor_x and cursor_y
+        vt100_move_cursor(current_running->cursor_x,
+                        current_running->cursor_y);
+        screen_cursor_x = current_running->cursor_x;
+        screen_cursor_y = current_running->cursor_y;
+        // TODO: switch_to current_running
+        switch_to(prev_running, current_running);
+    }
+    else
+    {
+        while(1)
+            ;
+    }
 }
 
 void do_sleep(uint32_t sleep_time)

@@ -2,6 +2,7 @@
 #include <csr.h>
 
 .macro SAVE_CONTEXT
+
   .local _restore_kernel_tpsp
   .local _save_context
   /*
@@ -77,15 +78,46 @@ ENDPROC(disable_interrupt)
 // the address of next pcb in a1
 ENTRY(switch_to)
   // save all callee save registers on kernel stack
-  addi sp, sp, -(SWITCH_TO_SIZE)
   /* TODO: store all callee save registers,
    * see the definition of `struct switchto_context` in sched.h*/
+  sd sp, PCB_USER_SP(a0)
+  ld sp, PCB_KERNEL_SP(a0)
 
+  sd ra, OFFSET_REG_RA(sp)
+  sd s0, OFFSET_REG_S0(sp)
+  sd s1, OFFSET_REG_S1(sp)
+  sd s2, OFFSET_REG_S2(sp)
+  sd s3, OFFSET_REG_S3(sp)
+  sd s4, OFFSET_REG_S4(sp)
+  sd s5, OFFSET_REG_S5(sp)
+  sd s6, OFFSET_REG_S6(sp)
+  sd s7, OFFSET_REG_S7(sp)
+  sd s8, OFFSET_REG_S8(sp)
+  sd s9, OFFSET_REG_S9(sp)
+  sd s10, OFFSET_REG_S10(sp)
+  sd s11, OFFSET_REG_S11(sp)
   // restore next
   /* TODO: restore all callee save registers,
    * see the definition of `struct switchto_context` in sched.h*/
+  ld sp, PCB_KERNEL_SP(a1)
 
-  addi sp, sp, SWITCH_TO_SIZE
+  ld ra, OFFSET_REG_RA(sp)
+  ld s0, OFFSET_REG_S0(sp)
+  ld s1, OFFSET_REG_S1(sp)
+  ld s2, OFFSET_REG_S2(sp)
+  ld s3, OFFSET_REG_S3(sp)
+  ld s4, OFFSET_REG_S4(sp)
+  ld s5, OFFSET_REG_S5(sp)
+  ld s6, OFFSET_REG_S6(sp)
+  ld s7, OFFSET_REG_S7(sp)
+  ld s8, OFFSET_REG_S8(sp)
+  ld s9, OFFSET_REG_S9(sp)
+  ld s10, OFFSET_REG_S10(sp)
+  ld s11, OFFSET_REG_S11(sp)
+
+  ld sp, PCB_USER_SP(a1)
+  
+  mv tp, a1
   jr ra
 ENDPROC(switch_to)
 
