@@ -2,7 +2,6 @@
 #include <csr.h>
 
 .macro SAVE_CONTEXT
-
   .local _restore_kernel_tpsp
   .local _save_context
   /*
@@ -14,7 +13,7 @@
   bnez tp, _save_context
 
 _restore_kernel_tpsp:
-  csrr tp, CSR_SSCRATCH
+  csrrw tp, CSR_SSCRATCH, tp
   sd sp, PCB_KERNEL_SP(tp)
 _save_context:
   sd sp, PCB_USER_SP(tp)
@@ -22,6 +21,22 @@ _save_context:
   addi sp, sp, -(OFFSET_SIZE)
 
   /* TODO: save all general purpose registers here! */
+  /* Only save all callee save registers */
+  sd ra, OFFSET_REG_RA(sp)
+  sd s0, OFFSET_REG_S0(sp)
+  sd s1, OFFSET_REG_S1(sp)
+  sd s2, OFFSET_REG_S2(sp)
+  sd s3, OFFSET_REG_S3(sp)
+  sd s4, OFFSET_REG_S4(sp)
+  sd s5, OFFSET_REG_S5(sp)
+  sd s6, OFFSET_REG_S6(sp)
+  sd s7, OFFSET_REG_S7(sp)
+  sd s8, OFFSET_REG_S8(sp)
+  sd s9, OFFSET_REG_S9(sp)
+  sd s10, OFFSET_REG_S10(sp)
+  sd s11, OFFSET_REG_S11(sp)
+
+  sd sp, PCB_KERNEL_SP(tp)
 
   /*
    * Disable user-mode memory access as it should only be set in the
@@ -32,11 +47,31 @@ _save_context:
    */
   li t0, SR_SUM | SR_FS
 
-  /* TODO: save sstatus, sepc, stval, scause and sscratch on user stack */
+  /* TODO: save sstatus, sepc, stval, scause and sscratch on kernel stack */
 .endm
 
 .macro RESTORE_CONTEXT
   /* TODO: Restore all registers and sepc,sstatus */
+  /* Only restore all callee save registers */
+  ld sp, PCB_KERNEL_SP(tp)
+
+  ld ra, OFFSET_REG_RA(sp)
+  ld s0, OFFSET_REG_S0(sp)
+  ld s1, OFFSET_REG_S1(sp)
+  ld s2, OFFSET_REG_S2(sp)
+  ld s3, OFFSET_REG_S3(sp)
+  ld s4, OFFSET_REG_S4(sp)
+  ld s5, OFFSET_REG_S5(sp)
+  ld s6, OFFSET_REG_S6(sp)
+  ld s7, OFFSET_REG_S7(sp)
+  ld s8, OFFSET_REG_S8(sp)
+  ld s9, OFFSET_REG_S9(sp)
+  ld s10, OFFSET_REG_S10(sp)
+  ld s11, OFFSET_REG_S11(sp)
+
+  addi sp, sp, (OFFSET_SIZE)
+  sd sp, PCB_KERNEL_SP(tp)
+  ld sp, PCB_USER_SP(tp)
 .endm
 
 ENTRY(enable_preempt)
@@ -77,51 +112,12 @@ ENDPROC(disable_interrupt)
 // the address of previous pcb in a0
 // the address of next pcb in a1
 ENTRY(switch_to)
-  //save and restore sp to/from PCB instead of kernel stack!
-  //instead of use 'struct switchto_context', use 'struct regs_context_t'
-  //because we use regs_context_t to initialize kernel stack in main.c
+  /* store all callee save registers */
+  SAVE_CONTEXT
 
-  // save all callee save registers on kernel stack
-  /* TODO: store all callee save registers,
-   * see the definition of `struct switchto_context` in sched.h*/
-  sd sp, PCB_USER_SP(a0)
-  ld sp, PCB_KERNEL_SP(a0)
-
-  sd ra, OFFSET_REG_RA(sp)
-  sd s0, OFFSET_REG_S0(sp)
-  sd s1, OFFSET_REG_S1(sp)
-  sd s2, OFFSET_REG_S2(sp)
-  sd s3, OFFSET_REG_S3(sp)
-  sd s4, OFFSET_REG_S4(sp)
-  sd s5, OFFSET_REG_S5(sp)
-  sd s6, OFFSET_REG_S6(sp)
-  sd s7, OFFSET_REG_S7(sp)
-  sd s8, OFFSET_REG_S8(sp)
-  sd s9, OFFSET_REG_S9(sp)
-  sd s10, OFFSET_REG_S10(sp)
-  sd s11, OFFSET_REG_S11(sp)
-
-  // restore next
-  /* TODO: restore all callee save registers,
-   * see the definition of `struct switchto_context` in sched.h*/
-  ld sp, PCB_KERNEL_SP(a1)
-
-  ld ra, OFFSET_REG_RA(sp)
-  ld s0, OFFSET_REG_S0(sp)
-  ld s1, OFFSET_REG_S1(sp)
-  ld s2, OFFSET_REG_S2(sp)
-  ld s3, OFFSET_REG_S3(sp)
-  ld s4, OFFSET_REG_S4(sp)
-  ld s5, OFFSET_REG_S5(sp)
-  ld s6, OFFSET_REG_S6(sp)
-  ld s7, OFFSET_REG_S7(sp)
-  ld s8, OFFSET_REG_S8(sp)
-  ld s9, OFFSET_REG_S9(sp)
-  ld s10, OFFSET_REG_S10(sp)
-  ld s11, OFFSET_REG_S11(sp)
-
-  ld sp, PCB_USER_SP(a1) 
+  /* restore all callee save registers */
   mv tp, a1
+  RESTORE_CONTEXT
 
   jr ra
 ENDPROC(switch_to)
@@ -131,7 +127,7 @@ ENTRY(ret_from_exception)
 ENDPROC(ret_from_exception)
 
 ENTRY(exception_handler_entry)
-  SAVE_CONTEXT
+  //SAVE_CONTEXT
 
   csrw CSR_SSCRATCH, x0
 

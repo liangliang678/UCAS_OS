@@ -45,37 +45,26 @@ static void init_pcb_stack(
     ptr_t kernel_stack, ptr_t user_stack, 
     ptr_t entry_point, pcb_t *pcb)
 {
-    regs_context_t *pt_regs =
-        (regs_context_t *)(kernel_stack - sizeof(regs_context_t));
+    regs_context_t *pt_regs = (regs_context_t *)(kernel_stack - sizeof(regs_context_t));
     pcb->kernel_sp -= sizeof(regs_context_t);
-    /* TODO: initialization registers
-     * note: ra, sp, gp, sepc, sstatus
-     * gp should be __global_pointer$
+    /* initialization registers (ra, sp, gp, sepc, sstatus)
      * To run the task in user mode,
      * you should set corresponding bits of sstatus(SPP, SPIE, etc.).
      */
-    // set sp to simulate return from switch_to
-    /* TODO: you should prepare a stack, and push some values to
-     * simulate a pcb context.
-     */
-    pt_regs->regs[1] = entry_point;
-    pt_regs->regs[2] = user_stack;
-    pt_regs->regs[3] = (reg_t)__global_pointer$;
-    pt_regs->sepc = CSR_SEPC;
-    pt_regs->sstatus = CSR_SSTATUS;
+    /* prepare a stack, and push some values to simulate a pcb context */
+    pt_regs->regs[1] = entry_point;             //ra
+    pt_regs->regs[2] = user_stack;              //sp
+    pt_regs->regs[3] = (reg_t)__global_pointer$;//gp
 }
 
 static void init_pcb()
 {
-    /* initialize all of your pcb and add them into ready_queue
-     * TODO:
-     */
-    
-    int num_tasks;
+    /* initialize all pcb and add them into ready_queue */
+    int num_tasks; 
     
     for(num_tasks = 0; num_tasks < num_sched1_tasks; num_tasks++){
-        pcb[num_tasks].kernel_sp = new_kernel_stack();
-        pcb[num_tasks].user_sp = new_user_stack();
+        pcb[num_tasks].kernel_sp = allocPage(1);
+        pcb[num_tasks].user_sp = pcb[num_tasks].kernel_sp;
         pcb[num_tasks].preempt_count = 0;
         list_add(&pcb[num_tasks].list, &ready_queue);
         pcb[num_tasks].pid = num_tasks + 1;
@@ -86,10 +75,9 @@ static void init_pcb()
                         sched1_tasks[num_tasks]->entry_point, &pcb[num_tasks]); 
     }
     
-
     for(num_tasks = num_sched1_tasks; num_tasks < num_sched1_tasks + num_lock_tasks; num_tasks++){
-        pcb[num_tasks].kernel_sp = new_kernel_stack();
-        pcb[num_tasks].user_sp = new_user_stack();
+        pcb[num_tasks].kernel_sp = allocPage(1);
+        pcb[num_tasks].user_sp = pcb[num_tasks].kernel_sp;
         pcb[num_tasks].preempt_count = 0;
         list_add(&pcb[num_tasks].list, &ready_queue);
         pcb[num_tasks].pid = num_tasks + 1;
@@ -100,9 +88,7 @@ static void init_pcb()
                         lock_tasks[num_tasks - num_sched1_tasks]->entry_point, &pcb[num_tasks]); 
     }
 
-    /* remember to initialize `current_running`
-     * TODO:
-     */
+    /* initialize `current_running` */
     current_running = &pid0_pcb;
 }
 
@@ -124,17 +110,15 @@ int main()
 	
     // init futex mechanism
     init_system_futex();
-/*
+
     // init interrupt
-    init_exception();
-    printk("> [INIT] Interrupt processing initialization succeeded.\n\r");
+    // init_exception();
+    // printk("> [INIT] Interrupt processing initialization succeeded.\n\r");
 
     // init system call table
-    init_syscall();
-    printk("> [INIT] System call initialized successfully.\n\r");
+    // init_syscall();
+    // printk("> [INIT] System call initialized successfully.\n\r");
 
-    // fdt_print(riscv_dtb);
-*/
     // init screen
     init_screen();
     printk("> [INIT] SCREEN initialization succeeded.\n\r");

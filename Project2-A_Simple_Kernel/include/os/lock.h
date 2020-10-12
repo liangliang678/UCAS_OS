@@ -30,6 +30,8 @@
 
 #include <os/list.h>
 
+#define MAX_TRY_TIMES 1000
+
 typedef enum {
     UNLOCKED,
     LOCKED,
