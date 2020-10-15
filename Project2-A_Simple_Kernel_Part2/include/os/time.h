@@ -50,7 +50,7 @@ uint64_t get_ticks(void);
 
 extern uint64_t get_time_base();
 
-extern list_head timers;
+extern list_head timer_queue;
 void timer_create(TimerCallback func, void* parameter, uint64_t tick);
 
 // this should be called by handle_int

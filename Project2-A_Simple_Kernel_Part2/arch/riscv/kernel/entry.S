@@ -60,7 +60,7 @@
   csrr t0, CSR_SEPC
   sd t0, OFFSET_REG_SEPC(sp)
   csrr t0, CSR_STVAL
-  sd t0, OFFSET_REG_SBADADDR(sp)
+  sd t0, OFFSET_REG_STVAL(sp)
 .endm
 
 .macro RESTORE_CONTEXT
@@ -93,7 +93,7 @@
   csrw CSR_SSTATUS, t0
   ld t0, OFFSET_REG_SEPC(sp)
   csrw CSR_SEPC, t0
-  ld t0, OFFSET_REG_SBADADDR(sp)
+  ld t0, OFFSET_REG_STVAL(sp)
   csrw CSR_STVAL, t0
 
   addi sp, sp, (OFFSET_SIZE)
@@ -140,7 +140,7 @@ ENDPROC(disable_interrupt)
 // the address of next pcb in a1
 ENTRY(switch_to)
   /* store all callee save registers */
-  SAVE_CONTEXT
+  //SAVE_CONTEXT
 
   /* restore all callee save registers */
   mv tp, a1

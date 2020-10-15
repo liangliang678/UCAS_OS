@@ -84,7 +84,7 @@
 /* privileged register */
 #define OFFSET_REG_SSTATUS      256
 #define OFFSET_REG_SEPC         264
-#define OFFSET_REG_SBADADDR     272
+#define OFFSET_REG_STVAL        272
 #define OFFSET_REG_SCAUSE       280
 
 /* Size of stack frame, word/double word alignment */

@@ -7,6 +7,8 @@
 #include <sbi.h>
 #include <screen.h>
 
+#include <csr.h>
+
 handler_t irq_table[IRQC_COUNT];
 handler_t exc_table[EXCC_COUNT];
 uintptr_t riscv_dtb;
@@ -18,15 +20,29 @@ void reset_irq_timer()
     // screen_reflush();
     // timer_check();
 
+    screen_reflush();
+    timer_check();
+
     // note: use sbi_set_timer
     // remember to reschedule
+    sbi_set_timer(get_ticks() + TIMER_INTERVAL);
+    do_scheduler();
 }
 
 void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t cause)
 {
     // TODO interrupt handler.
     // call corresponding handler by the value of `cause`
-    (*irq_table[cause])(regs, 0, 0);
+    if(cause >= 0x8000000000000000){
+    //if(cause & SCAUSE_IRQ_FLAG) will be ignored. WHY?
+        cause -= 0x8000000000000000;
+        //cause = cause & !SCAUSE_IRQ_FLAG;
+        (*irq_table[cause])(regs, stval, cause);
+    }
+    else{
+        (*exc_table[cause])(regs, stval, cause);
+    }
+    
 }
 
 void handle_int(regs_context_t *regs, uint64_t interrupt, uint64_t cause)
@@ -38,25 +54,25 @@ void init_exception()
 {
     /* TODO: initialize irq_table and exc_table */
     /* note: handle_int, handle_syscall, handle_other, etc.*/
-    irq_table[IRQC_U_SOFT] = 0;
-    irq_table[IRQC_S_SOFT] = 0;
-    irq_table[IRQC_M_SOFT] = 0;
-    irq_table[IRQC_U_TIMER] = 0;
-    irq_table[IRQC_S_TIMER] = 0;
-    irq_table[IRQC_M_TIMER] = 0;
-    irq_table[IRQC_U_EXT] = (handler_t)handle_syscall;
-    irq_table[IRQC_S_EXT] = 0;
-    irq_table[IRQC_M_EXT] = 0;
+    irq_table[IRQC_U_SOFT] = (handler_t)handle_other;
+    irq_table[IRQC_S_SOFT] = (handler_t)handle_other;
+    irq_table[IRQC_M_SOFT] = (handler_t)handle_other;
+    irq_table[IRQC_U_TIMER] = (handler_t)handle_other;
+    irq_table[IRQC_S_TIMER] = (handler_t)handle_int;
+    irq_table[IRQC_M_TIMER] = (handler_t)handle_other;
+    irq_table[IRQC_U_EXT] = (handler_t)handle_other;
+    irq_table[IRQC_S_EXT] = (handler_t)handle_other;
+    irq_table[IRQC_M_EXT] = (handler_t)handle_other;
 
-    exc_table[EXCC_INST_MISALIGNED] = 0;
-    exc_table[EXCC_INST_ACCESS] = 0;
-    exc_table[EXCC_BREAKPOINT] = 0;
-    exc_table[EXCC_LOAD_ACCESS] = 0;
-    exc_table[EXCC_STORE_ACCESS] = 0;
-    exc_table[EXCC_SYSCALL] = 0;
-    exc_table[EXCC_INST_PAGE_FAULT] = 0;
-    exc_table[EXCC_LOAD_PAGE_FAULT] = 0;
-    exc_table[EXCC_STORE_PAGE_FAULT] = 0;
+    exc_table[EXCC_INST_MISALIGNED] = (handler_t)handle_other;
+    exc_table[EXCC_INST_ACCESS] = (handler_t)handle_other;
+    exc_table[EXCC_BREAKPOINT] = (handler_t)handle_other;
+    exc_table[EXCC_LOAD_ACCESS] = (handler_t)handle_other;
+    exc_table[EXCC_STORE_ACCESS] = (handler_t)handle_other;
+    exc_table[EXCC_SYSCALL] = (handler_t)handle_syscall;
+    exc_table[EXCC_INST_PAGE_FAULT] = (handler_t)handle_other;
+    exc_table[EXCC_LOAD_PAGE_FAULT] = (handler_t)handle_other;
+    exc_table[EXCC_STORE_PAGE_FAULT] = (handler_t)handle_other;
     
     setup_exception();
 }
@@ -78,8 +94,8 @@ void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause)
         }
         printk("\n\r");
     }
-    printk("sstatus: 0x%lx sbadaddr: 0x%lx scause: %lu\n\r",
-           regs->sstatus, regs->sbadaddr, regs->scause);
+    printk("sstatus: 0x%lx stval: 0x%lx scause: %lu\n\r",
+           regs->sstatus, regs->stval, regs->scause);
     printk("sepc: 0x%lx\n\r", regs->sepc);
     assert(0);
 }

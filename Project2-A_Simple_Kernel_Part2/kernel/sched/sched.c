@@ -40,7 +40,7 @@ void do_scheduler(void)
         current_running->status = TASK_RUNNING;
         prev_running->status = TASK_READY;
 
-        // restore the current_runnint's cursor_x and cursor_y
+        // restore the current_running's cursor_x and cursor_y
         vt100_move_cursor(current_running->cursor_x,
                         current_running->cursor_y);
         screen_cursor_x = current_running->cursor_x;
@@ -61,6 +61,9 @@ void do_sleep(uint32_t sleep_time)
     // 1. block the current_running
     // 2. create a timer which calls `do_unblock` when timeout
     // 3. reschedule because the current_running is blocked.
+    list_node_t* parameter = &(current_running->list);
+    timer_create(do_unblock, (void*)parameter, get_ticks() + time_base * sleep_time);
+    do_block(&(current_running->list), &blocked_queue);
 }
 
 void do_block(list_node_t *pcb_node, list_head *queue)

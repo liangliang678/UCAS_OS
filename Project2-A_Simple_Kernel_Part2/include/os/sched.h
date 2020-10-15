@@ -32,6 +32,7 @@
 #include <type.h>
 #include <os/list.h>
 #include <os/mm.h>
+#include <os/time.h>
 
 #define NUM_MAX_TASK 16
 
@@ -44,16 +45,9 @@ typedef struct regs_context
     /* Saved special registers. */
     reg_t sstatus;
     reg_t sepc;
-    reg_t sbadaddr;
+    reg_t stval;
     reg_t scause;
 } regs_context_t;
-
-/* used to save register infomation in switch_to */
-typedef struct switchto_context
-{
-    /* Callee saved registers.*/
-    reg_t regs[14];
-} switchto_context_t;
 
 typedef enum {
     TASK_BLOCKED,
@@ -83,6 +77,9 @@ typedef struct pcb
 
     /* previous, next pointer */
     list_node_t list;
+
+    /* timer */
+    timer_t timer;
 
     /* process id */
     pid_t pid;

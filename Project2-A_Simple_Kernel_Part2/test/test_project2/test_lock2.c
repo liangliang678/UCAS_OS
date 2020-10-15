@@ -8,7 +8,7 @@ static int is_init = FALSE;
 static char blank[] = {"                                             "};
 
 /* if you want to use spin lock, you need define SPIN_LOCK */
-//  #define SPIN_LOCK
+// #define SPIN_LOCK
 static mthread_spinlock_t spin_lock;
 
 /* if you want to use mutex lock, you need define MUTEX_LOCK */

@@ -15,10 +15,10 @@ void deadlock_task(void)
     printf("> start dead lock\n");
     while (1) {
         if (keep_alive % INTERVAL == 0) {
-	    magic = (magic * 21403 + 2531011) & 0xffff;
+	        magic = (magic * 21403 + 2531011) & 0xffff;
             sys_move_cursor(1, print_location);
             printf("> I am %s .This is a deadlock %d          \n", name, magic);
-	}
+	    }
         ++keep_alive;
     }
     printf("> [TASK] This task is to test sleep(). (%d)\n", i);
