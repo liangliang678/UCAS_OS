@@ -12,10 +12,7 @@ ENTRY(_start)
   csrw CSR_SIE, zero
   csrw CSR_SIP, zero
 
-  /*
-   * Disable FPU to detect illegal usage of
-   * floating point in kernel space
-   */
+  /* Disable FPU to detect illegal usage of floating point in kernel space */
   li t0, SR_FS
   csrc sstatus, t0
 

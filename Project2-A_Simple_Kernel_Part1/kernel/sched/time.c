@@ -10,22 +10,12 @@ uint32_t time_base = 0;
 
 void timer_create(TimerCallback func, void* parameter, uint64_t tick)
 {
-    disable_preempt();
-
-    // TODO:
-
-    enable_preempt();
+   ;
 }
 
 void timer_check()
 {
-    disable_preempt();
-
-    /* TODO: check all timers
-     *  if timeouts, call callback_func and free the timer.
-     */
-
-    enable_preempt();
+    ;
 }
 
 uint64_t get_ticks()

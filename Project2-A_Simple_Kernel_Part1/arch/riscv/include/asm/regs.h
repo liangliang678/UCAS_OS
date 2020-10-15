@@ -25,14 +25,7 @@
 #ifndef INCLUDE_REGS_H_
 #define INCLUDE_REGS_H_
 
-/* This is for struct TrapFrame in scheduler.h
- * Stack layout for all exceptions:
- *
- * ptrace needs to have all regs on the stack. If the order here is changed,
- * it needs to be updated in include/asm-mips/ptrace.h
- *
- * The first PTRSIZE*5 bytes are argument save space for C subroutines.
- */
+/* This is for struct regs_context_t in sched.h */
 
 #define OFFSET_REG_ZERO         0
 
@@ -87,29 +80,11 @@
 #define OFFSET_REG_SBADADDR     272
 #define OFFSET_REG_SCAUSE       280
 
-/* Size of stack frame, word/double word alignment */
+/* Size of regs_context_t, word/double word alignment */
 #define OFFSET_SIZE             288
 
 #define PCB_KERNEL_SP          0
 #define PCB_USER_SP            8
 #define PCB_PREEMPT_COUNT      16
-
-/* offset in switch_to */
-#define SWITCH_TO_RA     0
-#define SWITCH_TO_SP     8
-#define SWITCH_TO_S0     16
-#define SWITCH_TO_S1     24
-#define SWITCH_TO_S2     32
-#define SWITCH_TO_S3     40
-#define SWITCH_TO_S4     48
-#define SWITCH_TO_S5     56
-#define SWITCH_TO_S6     64
-#define SWITCH_TO_S7     72
-#define SWITCH_TO_S8     80
-#define SWITCH_TO_S9     88
-#define SWITCH_TO_S10    96
-#define SWITCH_TO_S11    104
-
-#define SWITCH_TO_SIZE   112
 
 #endif

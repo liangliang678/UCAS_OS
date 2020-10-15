@@ -48,13 +48,6 @@ typedef struct regs_context
     reg_t scause;
 } regs_context_t;
 
-/* used to save register infomation in switch_to */
-typedef struct switchto_context
-{
-    /* Callee saved registers.*/
-    reg_t regs[14];
-} switchto_context_t;
-
 typedef enum {
     TASK_BLOCKED,
     TASK_RUNNING,
@@ -118,7 +111,6 @@ extern const ptr_t pid0_stack;
 
 extern void switch_to(pcb_t *prev, pcb_t *next);
 void do_scheduler(void);
-void do_sleep(uint32_t);
 
 void do_block(list_node_t *, list_head *queue);
 void do_unblock(list_node_t *);

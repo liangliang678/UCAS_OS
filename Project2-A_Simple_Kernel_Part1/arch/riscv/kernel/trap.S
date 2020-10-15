@@ -2,8 +2,5 @@
 #include <csr.h>
 
 ENTRY(setup_exception)
-  /* TODO: 
-   * save exception_handler_entry into STVEC
-   * enable global exceptions */
-
+  jr ra
 ENDPROC(setup_exception)
