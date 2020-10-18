@@ -48,7 +48,7 @@ void lock2_task1(void)
                 mthread_mutex_lock(&mutex_lock);
 #endif
 
-                for (i = 0; i < 20; i++)
+                for (i = 0; i < 10000; i++)
                 {
                         sys_move_cursor(1, print_location);
                         printf("> [TASK] Has acquired lock and running.(%d)\n", i);
@@ -62,11 +62,12 @@ void lock2_task1(void)
 
 #ifdef SPIN_LOCK
                 mthread_spin_unlock(&spin_lock);
+                sys_sleep(1);
 #endif
 
 #ifdef MUTEX_LOCK
                 mthread_mutex_unlock(&mutex_lock);
-#endif
+#endif         
         }
 }
 
@@ -103,7 +104,7 @@ void lock2_task2(void)
                 mthread_mutex_lock(&mutex_lock);
 #endif
 
-                for (i = 0; i < 20; i++)
+                for (i = 0; i < 10000; i++)
                 {
                         sys_move_cursor(1, print_location);
                         printf("> [TASK] Has acquired lock and running.(%d)\n", i);
@@ -117,10 +118,11 @@ void lock2_task2(void)
 
 #ifdef SPIN_LOCK
                 mthread_spin_unlock(&spin_lock);
+                sys_sleep(1);
 #endif
 
 #ifdef MUTEX_LOCK
                 mthread_mutex_unlock(&mutex_lock);
-#endif
+#endif          
         }
 }

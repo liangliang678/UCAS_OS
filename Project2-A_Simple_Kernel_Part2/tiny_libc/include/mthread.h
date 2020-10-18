@@ -42,6 +42,11 @@ typedef struct mthread_mutex
     atomic_long data;
 } mthread_mutex_t;
 
+typedef enum {
+    UNLOCKED,
+    LOCKED,
+} lock_status_t;
+
 int mthread_spin_init(mthread_spinlock_t *lock);
 int mthread_spin_destroy(mthread_spinlock_t *lock);
 int mthread_spin_trylock(mthread_spinlock_t *lock);

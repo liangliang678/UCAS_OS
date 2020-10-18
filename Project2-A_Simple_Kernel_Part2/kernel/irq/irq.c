@@ -6,32 +6,26 @@
 #include <assert.h>
 #include <sbi.h>
 #include <screen.h>
-
 #include <csr.h>
 
 handler_t irq_table[IRQC_COUNT];
 handler_t exc_table[EXCC_COUNT];
 uintptr_t riscv_dtb;
 
+//clock interrupt handler.
 void reset_irq_timer()
 {
-    // TODO clock interrupt handler.
-    // TODO: call following functions when task4
-    // screen_reflush();
-    // timer_check();
-
     screen_reflush();
     timer_check();
 
-    // note: use sbi_set_timer
-    // remember to reschedule
+    // use sbi_set_timer and reschedule
     sbi_set_timer(get_ticks() + TIMER_INTERVAL);
     do_scheduler();
 }
 
+// interrupt handler.
 void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t cause)
 {
-    // TODO interrupt handler.
     // call corresponding handler by the value of `cause`
     if(cause >= 0x8000000000000000){
     //if(cause & SCAUSE_IRQ_FLAG) will be ignored. WHY?
@@ -42,7 +36,6 @@ void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t cause)
     else{
         (*exc_table[cause])(regs, stval, cause);
     }
-    
 }
 
 void handle_int(regs_context_t *regs, uint64_t interrupt, uint64_t cause)
@@ -52,8 +45,7 @@ void handle_int(regs_context_t *regs, uint64_t interrupt, uint64_t cause)
 
 void init_exception()
 {
-    /* TODO: initialize irq_table and exc_table */
-    /* note: handle_int, handle_syscall, handle_other, etc.*/
+    /* initialize irq_table and exc_table */
     irq_table[IRQC_U_SOFT] = (handler_t)handle_other;
     irq_table[IRQC_S_SOFT] = (handler_t)handle_other;
     irq_table[IRQC_M_SOFT] = (handler_t)handle_other;

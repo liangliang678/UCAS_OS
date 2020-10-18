@@ -34,5 +34,4 @@ main:
     j kernel_main
 
 .data
-
 msg: .string "It's a bootloader...\n\r"
