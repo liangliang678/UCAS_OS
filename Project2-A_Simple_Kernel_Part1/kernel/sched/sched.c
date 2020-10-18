@@ -29,27 +29,24 @@ pid_t process_id = 1;
 
 void do_scheduler(void)
 {
-    if(!list_empty(&ready_queue)){
-        // Modify the current_running pointer and the ready queue
-        pcb_t* prev_running = current_running;
-        current_running = list_entry(ready_queue.prev, pcb_t, list);
-        list_move(ready_queue.prev, &ready_queue);
-        process_id = current_running->pid;
+    // Modify the current_running pointer and the ready queue
+    if(current_running->status == TASK_RUNNING){
+        list_add(&(current_running->list), &ready_queue);
+        current_running->status = TASK_READY;
+    } 
+    pcb_t* prev_running = current_running;
+    current_running = list_entry(ready_queue.prev, pcb_t, list);
+    list_del(&(current_running->list));
+    current_running->status = TASK_RUNNING;
+    process_id = current_running->pid;
 
-        current_running->status = TASK_RUNNING;
-        prev_running->status = TASK_READY;
+    // restore the current_runnint's cursor_x and cursor_y
+    vt100_move_cursor(current_running->cursor_x, current_running->cursor_y);
+    screen_cursor_x = current_running->cursor_x;
+    screen_cursor_y = current_running->cursor_y;
 
-        // restore the current_runnint's cursor_x and cursor_y
-        vt100_move_cursor(current_running->cursor_x, current_running->cursor_y);
-        screen_cursor_x = current_running->cursor_x;
-        screen_cursor_y = current_running->cursor_y;
-
-        // switch_to current_running
-        switch_to(prev_running, current_running);
-    }
-    else{
-        __asm__ __volatile__("wfi\n\r":::);
-    }
+    // switch_to current_running
+    switch_to(prev_running, current_running);
 }
 
 // block the pcb task into the block queue
