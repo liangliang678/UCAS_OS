@@ -5,7 +5,6 @@
 ENTRY(setup_exception)
   la t0, exception_handler_entry
   csrw CSR_STVEC, t0
-
   not t0, zero
   csrs CSR_SIE, t0
 

@@ -6,7 +6,7 @@
 
 void deadlock_task(void)
 {
-    int i, keep_alive = 0;
+    int keep_alive = 0;
     int print_location = 7;
     int magic = 1;
     char name[] = "Hero";
@@ -21,5 +21,4 @@ void deadlock_task(void)
 	    }
         ++keep_alive;
     }
-    printf("> [TASK] This task is to test sleep(). (%d)\n", i);
 }

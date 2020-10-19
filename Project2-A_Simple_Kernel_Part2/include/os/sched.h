@@ -79,7 +79,7 @@ typedef struct pcb
     /* previous, next pointer */
     list_node_t list;
 
-    /* timer */
+    /* sleep timer */
     timer_t timer;
 
     /* process id */
@@ -91,6 +91,10 @@ typedef struct pcb
     /* BLOCK | READY | RUNNING */
     task_status_t status;
 
+    /* priority and wait time */
+    uint8_t priority;
+    uint64_t ready_tick;
+
     /* cursor position */
     int cursor_x;
     int cursor_y;
@@ -101,12 +105,12 @@ typedef struct task_info
 {
     ptr_t entry_point;
     task_type_t type;
+    uint8_t priority;
 } task_info_t;
 
-/* ready queue to run */
+/* ready queue to run and sleep queue */
 extern list_head ready_queue;
-
-extern list_head blocked_queue;
+extern list_head sleep_queue;
 
 /* current running task PCB */
 extern pcb_t * volatile current_running;
@@ -122,5 +126,7 @@ void do_sleep(uint32_t);
 
 void do_block(list_node_t *, list_head *queue);
 void do_unblock(list_node_t *);
+
+list_node_t* max_priority_node(void);
 
 #endif

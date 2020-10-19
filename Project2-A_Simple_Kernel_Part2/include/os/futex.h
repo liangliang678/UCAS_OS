@@ -48,7 +48,8 @@ typedef list_head futex_bucket_t;
 extern futex_bucket_t futex_buckets[FUTEX_BUCKETS];
 
 extern void init_system_futex();
-/* Block if *val_addr == val else do nothing.
+/* 
+ * Block if *val_addr == val else do nothing.
  * wait until a futex_wakeup is called.
  */
 extern void futex_wait(volatile uint64_t *val_addr, uint64_t val);

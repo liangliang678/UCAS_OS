@@ -2,7 +2,7 @@
 
 long (*syscall[NUM_SYSCALLS])();
 
-void handle_syscall(regs_context_t *regs, uint64_t interrupt, uint64_t cause)
+void handle_syscall(regs_context_t *regs, uint64_t stval, uint64_t cause)
 {
     // syscall[fn](arg1, arg2, arg3)
     regs->sepc = regs->sepc + 4;

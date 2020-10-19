@@ -12,40 +12,9 @@ handler_t irq_table[IRQC_COUNT];
 handler_t exc_table[EXCC_COUNT];
 uintptr_t riscv_dtb;
 
-//clock interrupt handler.
-void reset_irq_timer()
-{
-    screen_reflush();
-    timer_check();
-
-    // use sbi_set_timer and reschedule
-    sbi_set_timer(get_ticks() + TIMER_INTERVAL);
-    do_scheduler();
-}
-
-// interrupt handler.
-void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t cause)
-{
-    // call corresponding handler by the value of `cause`
-    if(cause >= 0x8000000000000000){
-    //if(cause & SCAUSE_IRQ_FLAG) will be ignored. WHY?
-        cause -= 0x8000000000000000;
-        //cause = cause & !SCAUSE_IRQ_FLAG;
-        (*irq_table[cause])(regs, stval, cause);
-    }
-    else{
-        (*exc_table[cause])(regs, stval, cause);
-    }
-}
-
-void handle_int(regs_context_t *regs, uint64_t interrupt, uint64_t cause)
-{
-    reset_irq_timer();
-}
-
+/* initialize irq_table and exc_table */
 void init_exception()
 {
-    /* initialize irq_table and exc_table */
     irq_table[IRQC_U_SOFT] = (handler_t)handle_other;
     irq_table[IRQC_S_SOFT] = (handler_t)handle_other;
     irq_table[IRQC_M_SOFT] = (handler_t)handle_other;
@@ -69,6 +38,30 @@ void init_exception()
     setup_exception();
 }
 
+// interrupt handler.
+void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t cause)
+{
+    // call corresponding handler by the value of `cause`
+    if(cause >= 0x8000000000000000){
+        cause -= 0x8000000000000000;
+        (*irq_table[cause])(regs, stval, cause);
+    }
+    /*
+    if(cause & SCAUSE_IRQ_FLAG){
+        cause = cause & !SCAUSE_IRQ_FLAG;
+        (*irq_table[cause])(regs, stval, cause);
+    }
+    */
+    else{
+        (*exc_table[cause])(regs, stval, cause);
+    }
+}
+
+void handle_int(regs_context_t *regs, uint64_t stval, uint64_t cause)
+{
+    reset_irq_timer();
+}
+
 void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause)
 {
     char* reg_name[] = {
@@ -90,4 +83,15 @@ void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause)
            regs->sstatus, regs->stval, regs->scause);
     printk("sepc: 0x%lx\n\r", regs->sepc);
     assert(0);
+}
+
+//clock interrupt handler.
+void reset_irq_timer()
+{
+    screen_reflush();
+    timer_check();
+
+    // use sbi_set_timer and reschedule
+    sbi_set_timer(get_ticks() + TIMER_INTERVAL); 
+    do_scheduler();
 }

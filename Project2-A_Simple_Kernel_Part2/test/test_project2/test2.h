@@ -22,4 +22,16 @@ extern void lock2_task1(void);
 extern void lock2_task2(void);
 extern void deadlock_task(void);
 
+//task 5 test task
+extern void priority_task1(void);
+extern void priority_task2(void);
+extern void priority_task3(void);
+extern void priority_task4(void);
+extern void priority_task5(void);
+extern void priority_task6(void);
+extern void priority_task7(void);
+extern void priority_task8(void);
+extern void priority_task9(void);
+extern void priority_task10(void);
+
 #endif

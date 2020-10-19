@@ -14,9 +14,9 @@ void init_system_futex()
     enable_preempt();
 }
 
+// a simple hash function
 static int futex_hash(uint64_t x)
 {
-    // a simple hash function
     x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ul;
     x = (x ^ (x >> 27)) * 0x94d049bb133111ebul;
     x = x ^ (x >> 31);

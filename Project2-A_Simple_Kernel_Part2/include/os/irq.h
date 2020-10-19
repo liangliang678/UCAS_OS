@@ -59,7 +59,7 @@ enum ExcCode
     EXCC_COUNT
 };
 
-#define TIMER_INTERVAL 150000
+#define TIMER_INTERVAL 15000
 
 typedef void (*handler_t)(regs_context_t*, uint64_t, uint64_t);
 
@@ -74,9 +74,9 @@ extern void init_exception();
 extern void setup_exception();
 
 extern void reset_irq_timer();
-extern void handle_int(regs_context_t *regs, uint64_t interrupt, uint64_t cause);
-extern void handle_other(regs_context_t *regs, uint64_t interrupt, uint64_t cause);
-extern void handle_syscall(regs_context_t *regs, uint64_t interrupt, uint64_t cause);
+extern void handle_int(regs_context_t *regs, uint64_t stval, uint64_t cause);
+extern void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause);
+extern void handle_syscall(regs_context_t *regs, uint64_t stval, uint64_t cause);
 
 extern void enable_interrupt(void);
 extern void disable_interrupt(void);

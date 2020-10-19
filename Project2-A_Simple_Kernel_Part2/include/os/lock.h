@@ -30,8 +30,6 @@
 
 #include <os/list.h>
 
-#define MAX_TRY_TIMES 1000
-
 typedef enum {
     UNLOCKED,
     LOCKED,
@@ -48,9 +46,8 @@ typedef struct mutex_lock
     list_head block_queue;
 } mutex_lock_t;
 
-/* init lock */
 void spin_lock_init(spin_lock_t *lock);
-int spin_lock_try_acquire(spin_lock_t *lock);
+void spin_lock_try_acquire(spin_lock_t *lock);
 void spin_lock_acquire(spin_lock_t *lock);
 void spin_lock_release(spin_lock_t *lock);
 

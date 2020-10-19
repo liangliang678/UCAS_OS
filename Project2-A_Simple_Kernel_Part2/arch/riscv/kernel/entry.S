@@ -3,9 +3,9 @@
 
 .macro SAVE_CONTEXT
   addi sp, sp, -(OFFSET_SIZE)
-
-  /* save all general purpose registers
-   * register $zero, $sp, $tp are not stored! 
+  /* 
+   * save all general purpose registers
+   * register $zero, $sp, $tp are not stored here! 
    */
   sd ra, OFFSET_REG_RA(sp)
   sd gp, OFFSET_REG_GP(sp)
@@ -37,7 +37,7 @@
   sd t5, OFFSET_REG_T5(sp)
   sd t6, OFFSET_REG_T6(sp)
 
-  /* save sstatus, sepc, stval, scause on kernel stack */
+  /* save sstatus, sepc, stval, scause,  sscratch on kernel stack */
   csrr t0, CSR_SSTATUS
   sd t0, OFFSET_REG_SSTATUS(sp)
   csrr t0, CSR_SEPC
@@ -53,11 +53,11 @@
 .endm
 
 .macro RESTORE_CONTEXT
-  /* restore all registers and sstatus, sepc, stval, scause
-   * register $zero, $sp, $tp are not stored!
-   */
   ld sp, PCB_KERNEL_SP(tp)
-
+  /* 
+   * restore all registers and sstatus, sepc, stval, scause, sscratch
+   * register $zero, $sp, $tp are not restored here!
+   */
   ld ra, OFFSET_REG_RA(sp)
   ld gp, OFFSET_REG_GP(sp)
   ld t0, OFFSET_REG_T0(sp)
@@ -104,14 +104,16 @@
 .endm
 
 ENTRY(enable_preempt)
-/*  ld t1, current_running
+/*  
+  ld t1, current_running
   ld t0, PCB_PREEMPT_COUNT(t1)
   beq t0, zero, do_enable
   addi t0, t0, -1
   sd t0, PCB_PREEMPT_COUNT(t1)
   beq t0, zero, do_enable
   jr ra
-do_enable:*/ 
+do_enable:
+*/ 
   not t0, x0
   csrs CSR_SIE, t0
   jr ra
@@ -119,10 +121,12 @@ ENDPROC(enable_preempt)
 
 ENTRY(disable_preempt)
   csrw CSR_SIE, zero
-/*  ld t1, current_running
+/*  
+  ld t1, current_running
   ld t0, PCB_PREEMPT_COUNT(t1)
   addi t0, t0, 1
-  sd t0, PCB_PREEMPT_COUNT(t1)*/
+  sd t0, PCB_PREEMPT_COUNT(t1)
+*/
   jr ra
 ENDPROC(disable_preempt)
 
@@ -145,9 +149,9 @@ ENDPROC(switch_to)
 
 ENTRY(ret_from_exception)
   RESTORE_CONTEXT
+
   csrrw tp, CSR_SSCRATCH, tp
   bnez tp, to_user
-
 to_kernel:
   csrrw tp, CSR_SSCRATCH, tp
   ld sp, PCB_KERNEL_SP(tp)
@@ -155,7 +159,6 @@ to_kernel:
 to_user:
   ld sp, PCB_USER_SP(tp)
 restore_sp_done:
-
   sret
 ENDPROC(ret_from_exception)
 
@@ -166,33 +169,32 @@ ENTRY(exception_handler_entry)
 
 from_kernel:
   csrrw tp, CSR_SSCRATCH, tp
-  sd sp, PCB_KERNEL_SP(tp)
-  ld sp, PCB_KERNEL_SP(tp)
-  j change_sp_done
+  j store_sp_done
 from_user:
   sd sp, PCB_USER_SP(tp)
   ld sp, PCB_KERNEL_SP(tp)
-change_sp_done:
+store_sp_done:
 
   SAVE_CONTEXT
-
   /* 
    * Disable user-mode memory access as it should only be set in the actual user copy routines.
    * Disable the FPU to detect illegal usage of floating point in kernel space.
    */
   li t0, SR_SUM | SR_FS
   csrc sstatus, t0
+
   /* load the global pointer */
   .option push
   .option norelax
   la gp, __global_pointer$
   .option pop
-
-  /* load ret_from_exception into $ra
+  /* 
+   * load ret_from_exception into $ra
    * so that we can return to ret_from_exception
    * when interrupt_helper complete.
    */
   la ra, ret_from_exception
+  
   /* call interrupt_helper and pass parameters for it */
   mv a0, sp
   csrr a1, CSR_STVAL
