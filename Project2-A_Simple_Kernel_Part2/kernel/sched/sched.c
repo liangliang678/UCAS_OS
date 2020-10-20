@@ -29,11 +29,15 @@ pcb_t * volatile current_running;
 /* global process id */
 pid_t process_id = 1;
 
-/* Only modify PCB, $tp, current_running, process_id and ready_queue */
-/* DO NOT STORE OR RESTORE */
+/* 
+ * Only modify PCB, current_running, process_id and ready_queue
+ * DO NOT STORE OR RESTORE 
+ * trick: modify $tp in ret_from_exception to ensure
+ * disable_preempt() and enable_preempt() modify the same PCB
+ */
 void do_scheduler(void)
 {
-    uint64_t sched_used_ticks = get_ticks();
+    //uint64_t sched_used_ticks = get_ticks();
 
     // Modify the current_running pointer and the ready queue
     if(current_running->status == TASK_RUNNING){
@@ -41,8 +45,8 @@ void do_scheduler(void)
         current_running->status = TASK_READY;
         current_running->ready_tick = get_ticks();
     } 
-    current_running = list_entry(max_priority_node(), pcb_t, list);
-    // current_running = list_entry(ready_queue.next, pcb_t, list);
+    current_running = list_entry(ready_queue.next, pcb_t, list);
+    //current_running = list_entry(max_priority_node(), pcb_t, list); 
     list_del(&(current_running->list));
     current_running->status = TASK_RUNNING;
     process_id = current_running->pid;
@@ -53,14 +57,11 @@ void do_scheduler(void)
     screen_cursor_x = current_running->cursor_x;
     screen_cursor_y = current_running->cursor_y;
 
-    // modify $tp
-    switch_to(current_running);
-
-    sched_used_ticks = get_ticks() - sched_used_ticks;
-    vt100_move_cursor(1, 12);
-    printk("> time_base: %u\n\r", time_base);
-    vt100_move_cursor(1, 13);
-    printk("> cost of do_scheduler(): %u ticks.\n\r", sched_used_ticks);
+    //sched_used_ticks = get_ticks() - sched_used_ticks;
+    //vt100_move_cursor(1, 12);
+    //printk("> time_base: %u\n\r", time_base);
+    //vt100_move_cursor(1, 13);
+    //printk("> cost of do_scheduler(): %u ticks.\n\r", sched_used_ticks);
 }
 
 // sleep(seconds)

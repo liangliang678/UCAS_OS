@@ -103,30 +103,28 @@
   sd sp, PCB_KERNEL_SP(tp)
 .endm
 
+/* 
+ * trick: during an irq handling, current_running may be modified
+ * but $tp will not be modified until ret_from_exception()
+ */
 ENTRY(enable_preempt)
-/*  
-  ld t1, current_running
-  ld t0, PCB_PREEMPT_COUNT(t1)
+  ld t0, PCB_PREEMPT_COUNT(tp)
   beq t0, zero, do_enable
   addi t0, t0, -1
-  sd t0, PCB_PREEMPT_COUNT(t1)
+  sd t0, PCB_PREEMPT_COUNT(tp)
   beq t0, zero, do_enable
   jr ra
 do_enable:
-*/ 
   not t0, x0
   csrs CSR_SIE, t0
   jr ra
 ENDPROC(enable_preempt)
 
 ENTRY(disable_preempt)
-  csrw CSR_SIE, zero
-/*  
-  ld t1, current_running
-  ld t0, PCB_PREEMPT_COUNT(t1)
+  csrw CSR_SIE, zero  
+  ld t0, PCB_PREEMPT_COUNT(tp)
   addi t0, t0, 1
-  sd t0, PCB_PREEMPT_COUNT(t1)
-*/
+  sd t0, PCB_PREEMPT_COUNT(tp)
   jr ra
 ENDPROC(disable_preempt)
 
@@ -142,12 +140,8 @@ ENTRY(disable_interrupt)
   jr ra
 ENDPROC(disable_interrupt)
 
-ENTRY(switch_to)
-  mv tp, a0
-  jr ra
-ENDPROC(switch_to)
-
 ENTRY(ret_from_exception)
+  ld tp, current_running
   RESTORE_CONTEXT
 
   csrrw tp, CSR_SSCRATCH, tp
