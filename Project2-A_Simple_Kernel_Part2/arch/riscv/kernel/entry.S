@@ -103,6 +103,28 @@
   sd sp, PCB_KERNEL_SP(tp)
 .endm
 
+/* Only kernel process/thread can call this func */
+ENTRY(do_scheduler)
+  //simulate an interrupt
+  csrw CSR_SEPC, ra
+  li tp, SR_SPIE
+  csrs CSR_SSTATUS, tp
+  li tp, SR_SIE
+  csrc CSR_SSTATUS, tp
+  li tp, SR_SPP
+  csrs CSR_SSTATUS, tp
+
+  ld tp, current_running
+  SAVE_CONTEXT
+
+  jal scheduler
+
+  ld tp, current_running
+  RESTORE_CONTEXT
+
+  sret
+ENDPROC(do_scheduler)
+
 /* 
  * trick: during an irq handling, current_running may be modified
  * but $tp will not be modified until ret_from_exception()

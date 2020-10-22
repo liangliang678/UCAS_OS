@@ -55,9 +55,9 @@ static void init_pcb_stack(ptr_t kernel_stack, ptr_t user_stack, ptr_t entry_poi
         pt_regs->sscratch = (reg_t)pcb;         //sscratch = tp
     }
     else{
-        pt_regs->sstatus = SR_SPP | SR_SPIE;    //SPP = 1, SPIE = 1
-        pt_regs->sepc = entry_point;
-        pt_regs->sscratch = 0;                  //sscratch = 0
+        pt_regs->sstatus = (reg_t)(SR_SPP | SR_SPIE);  //SPP = 1, SPIE = 1
+        pt_regs->sepc = (reg_t)entry_point;
+        pt_regs->sscratch = (reg_t)0;                  //sscratch = 0
     }
 }
 
@@ -82,7 +82,7 @@ static void init_pcb()
                         sched1_tasks[num_tasks]->entry_point, &pcb[num_tasks]); 
     }
     //lock_tasks
-    for(num_tasks = num_sched1_tasks; num_tasks < num_sched1_tasks + num_lock_tasks; num_tasks++){
+    for(num_tasks = num_sched1_tasks; num_tasks < num_lock_tasks + num_sched1_tasks; num_tasks++){
         pcb[num_tasks].kernel_sp = allocPage(1);
         pcb[num_tasks].user_sp = pcb[num_tasks].kernel_sp;
         pcb[num_tasks].preempt_count = 0;
@@ -95,7 +95,7 @@ static void init_pcb()
         init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
                         lock_tasks[num_tasks - num_sched1_tasks]->entry_point, &pcb[num_tasks]); 
     }
-*/
+*//*
     // USER
     // timer_tasks
     for(num_tasks = 0; num_tasks < num_timer_tasks; num_tasks++){
@@ -139,7 +139,7 @@ static void init_pcb()
         init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
                         lock2_tasks[num_tasks - num_timer_tasks - num_sched2_tasks]->entry_point, &pcb[num_tasks]); 
     }
-/*
+*/
     // PRIORITY
     // priority_tasks
     for(num_tasks = 0; num_tasks < num_priority_tasks; num_tasks++){
@@ -155,7 +155,7 @@ static void init_pcb()
         init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
                         priority_tasks[num_tasks]->entry_point, &pcb[num_tasks]); 
     }
-*/
+
     /* initialize `current_running` */
     current_running = &pid0_pcb;
 }

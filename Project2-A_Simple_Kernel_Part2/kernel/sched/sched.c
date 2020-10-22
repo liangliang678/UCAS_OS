@@ -35,18 +35,18 @@ pid_t process_id = 1;
  * trick: modify $tp in ret_from_exception to ensure
  * disable_preempt() and enable_preempt() modify the same PCB
  */
-void do_scheduler(void)
+void scheduler(void)
 {
-    //uint64_t sched_used_ticks = get_ticks();
-
+    current_running->cursor_x = screen_cursor_x;
+    current_running->cursor_y = screen_cursor_y;
     // Modify the current_running pointer and the ready queue
     if(current_running->status == TASK_RUNNING){
         list_add_tail(&(current_running->list), &ready_queue);
         current_running->status = TASK_READY;
         current_running->ready_tick = get_ticks();
     } 
-    current_running = list_entry(ready_queue.next, pcb_t, list);
-    //current_running = list_entry(max_priority_node(), pcb_t, list); 
+    //current_running = list_entry(ready_queue.next, pcb_t, list);
+    current_running = list_entry(max_priority_node(), pcb_t, list); 
     list_del(&(current_running->list));
     current_running->status = TASK_RUNNING;
     process_id = current_running->pid;
@@ -56,12 +56,6 @@ void do_scheduler(void)
                       current_running->cursor_y);
     screen_cursor_x = current_running->cursor_x;
     screen_cursor_y = current_running->cursor_y;
-
-    //sched_used_ticks = get_ticks() - sched_used_ticks;
-    //vt100_move_cursor(1, 12);
-    //printk("> time_base: %u\n\r", time_base);
-    //vt100_move_cursor(1, 13);
-    //printk("> cost of do_scheduler(): %u ticks.\n\r", sched_used_ticks);
 }
 
 // sleep(seconds)
@@ -73,7 +67,7 @@ void do_sleep(uint32_t sleep_time)
     do_block(&(current_running->list), &sleep_queue);
     list_node_t* parameter = &(current_running->list);
     timer_create((TimerCallback)do_unblock, (void*)parameter, get_ticks() + time_base * sleep_time);
-    do_scheduler();
+    scheduler();
 }
 
 // block the pcb task into the block queue

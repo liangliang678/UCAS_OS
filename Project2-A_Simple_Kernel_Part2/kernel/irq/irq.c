@@ -93,5 +93,5 @@ void reset_irq_timer()
 
     // use sbi_set_timer and reschedule
     sbi_set_timer(get_ticks() + TIMER_INTERVAL); 
-    do_scheduler();
+    scheduler();
 }

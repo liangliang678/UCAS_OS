@@ -54,7 +54,7 @@ void futex_wait(volatile uint64_t *val_addr, uint64_t val)
 
     if (*val_addr == val) {
         do_block(&current_running->list, &node->block_queue);
-        do_scheduler();
+        scheduler();
     }
 
     enable_preempt();
@@ -73,6 +73,6 @@ void futex_wakeup(volatile uint64_t *val_addr, int num_wakeup)
         }
     }
 
-    do_scheduler();
+    scheduler();
     enable_preempt();
 }

@@ -33,12 +33,18 @@ void do_mutex_lock_init(mutex_lock_t *lock)
 
 void do_mutex_lock_acquire(mutex_lock_t *lock)
 {
-    // could not call do_block(), can't achieve
-    ;
+    while(lock->lock.status == LOCKED){
+        do_block(&(current_running->list), &(lock->block_queue));
+        do_scheduler();
+    }
+    lock->lock.status = LOCKED;
 }
 
 void do_mutex_lock_release(mutex_lock_t *lock)
 {
-    // could not call do_unblock(), can't achieve
-    ;
+    lock->lock.status = UNLOCKED;
+    if(!list_empty(&(lock->block_queue))){
+        do_unblock(lock->block_queue.prev);
+    }
+    do_scheduler();
 }

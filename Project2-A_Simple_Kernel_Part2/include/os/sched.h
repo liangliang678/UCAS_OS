@@ -120,6 +120,7 @@ extern pcb_t pcb[NUM_MAX_TASK];
 extern pcb_t pid0_pcb;
 extern const ptr_t pid0_stack;
 
+void scheduler(void);
 void do_scheduler(void);
 void do_sleep(uint32_t);
 
