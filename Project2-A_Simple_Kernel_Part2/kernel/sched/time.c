@@ -7,6 +7,7 @@ LIST_HEAD(timer_queue);
 
 uint64_t time_elapsed = 0;
 uint32_t time_base = 0;
+uint64_t timer_interval = 0;
 
 void timer_create(TimerCallback func, void* parameter, uint64_t tick)
 {

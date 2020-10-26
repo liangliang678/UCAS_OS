@@ -37,6 +37,8 @@ pid_t process_id = 1;
  */
 void scheduler(void)
 {
+    uint64_t sched_used_time = get_ticks();
+
     current_running->cursor_x = screen_cursor_x;
     current_running->cursor_y = screen_cursor_y;
     // Modify the current_running pointer and the ready queue
@@ -56,6 +58,14 @@ void scheduler(void)
                       current_running->cursor_y);
     screen_cursor_x = current_running->cursor_x;
     screen_cursor_y = current_running->cursor_y;
+
+    sched_used_time = get_ticks() - sched_used_time;
+    vt100_move_cursor(1, 13);
+    printk("time_base:\t\t%d", time_base);
+    vt100_move_cursor(1, 14);
+    printk("timer_interval:\t\t%d", timer_interval);
+    vt100_move_cursor(1, 15);
+    printk("sched_used_time:\t%d", sched_used_time);
 }
 
 // sleep(seconds)
@@ -95,11 +105,11 @@ list_node_t* max_priority_node(void)
     // max_priority_node has min points
     list_node_t* max_priority_node = ready_queue.next;
     int min_points = list_entry(max_priority_node, pcb_t, list)->priority - 
-                         (current_tick - list_entry(max_priority_node, pcb_t, list)->ready_tick)/(TIMER_INTERVAL);
+                         (current_tick - list_entry(max_priority_node, pcb_t, list)->ready_tick)/(timer_interval);
 
     for(node_p = ready_queue.next->next; node_p != &ready_queue; node_p = node_p->next){
         int node_p_points = list_entry(node_p, pcb_t, list)->priority - 
-                                (current_tick - list_entry(node_p, pcb_t, list)->ready_tick)/(TIMER_INTERVAL);
+                                (current_tick - list_entry(node_p, pcb_t, list)->ready_tick)/(timer_interval);
         if(node_p_points < min_points){
             max_priority_node = node_p;
             min_points = node_p_points;

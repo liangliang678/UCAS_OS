@@ -32,7 +32,7 @@
 #define SATP_MODE       SATP_MODE_39
 
 /* SCAUSE */
-#define SCAUSE_IRQ_FLAG   (1 << 63)
+#define SCAUSE_IRQ_FLAG   0x8000000000000000
 
 #define IRQ_U_SOFT		0
 #define IRQ_S_SOFT		1

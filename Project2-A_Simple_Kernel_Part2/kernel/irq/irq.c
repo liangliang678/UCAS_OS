@@ -42,16 +42,10 @@ void init_exception()
 void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t cause)
 {
     // call corresponding handler by the value of `cause`
-    if(cause >= 0x8000000000000000){
-        cause -= 0x8000000000000000;
-        (*irq_table[cause])(regs, stval, cause);
-    }
-    /*
     if(cause & SCAUSE_IRQ_FLAG){
-        cause = cause & !SCAUSE_IRQ_FLAG;
+        cause = cause & ~SCAUSE_IRQ_FLAG;
         (*irq_table[cause])(regs, stval, cause);
     }
-    */
     else{
         (*exc_table[cause])(regs, stval, cause);
     }
@@ -92,6 +86,6 @@ void reset_irq_timer()
     timer_check();
 
     // use sbi_set_timer and reschedule
-    sbi_set_timer(get_ticks() + TIMER_INTERVAL); 
+    sbi_set_timer(get_ticks() + timer_interval); 
     scheduler();
 }

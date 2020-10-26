@@ -184,6 +184,7 @@ int main()
 
     // read CPU frequency
     time_base = sbi_read_fdt(TIMEBASE);
+    timer_interval = (uint64_t)(time_base * 3 / 200);
 	
     // init futex mechanism
     init_system_futex();
@@ -201,7 +202,7 @@ int main()
     printk("> [INIT] SCREEN initialization succeeded.\n\r");
 
     // Setup timer interrupt and enable all interrupt
-    sbi_set_timer(get_ticks() + TIMER_INTERVAL);
+    sbi_set_timer(get_ticks() + timer_interval);
     enable_interrupt();
 
     while (1) {

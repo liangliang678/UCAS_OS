@@ -40,6 +40,7 @@ typedef atomic_int mthread_spinlock_t;
 typedef atomic_long mthread_mutex_t;
 
 typedef enum {
+    INVALID,
     UNLOCKED,
     LOCKED,
 } lock_status_t;
