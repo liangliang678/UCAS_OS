@@ -31,6 +31,16 @@ void sys_futex_wakeup(volatile uint64_t *val_addr, int num_wakeup)
     invoke_syscall(SYSCALL_FUTEX_WAKEUP, (uintptr_t)val_addr, num_wakeup, IGNORE);
 }
 
+int sys_binsem_get(int key)
+{
+    return invoke_syscall(SYSCALL_BINSEM_GET, (uintptr_t)key, IGNORE, IGNORE);
+}
+
+void sys_binsem_op(int binsem_id, int op)
+{
+    invoke_syscall(SYSCALL_BINSEM_OP, (uintptr_t)binsem_id, (uintptr_t)op, IGNORE);
+}
+
 long sys_get_timebase()
 {
     return invoke_syscall(SYSCALL_GET_TIMEBASE, IGNORE, IGNORE, IGNORE);

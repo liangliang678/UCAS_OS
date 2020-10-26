@@ -11,7 +11,6 @@ void printf_task1(void)
 {
     int i;
     int print_location = 5;
-
     for (i = 0;; i++)
     {
         sys_move_cursor(1, print_location);

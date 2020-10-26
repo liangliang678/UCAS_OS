@@ -27,6 +27,7 @@ void init_exception()
 
     exc_table[EXCC_INST_MISALIGNED] = (handler_t)handle_other;
     exc_table[EXCC_INST_ACCESS] = (handler_t)handle_other;
+    exc_table[EXCC_INST_ILLEGAL] = (handler_t)handle_other;
     exc_table[EXCC_BREAKPOINT] = (handler_t)handle_other;
     exc_table[EXCC_LOAD_ACCESS] = (handler_t)handle_other;
     exc_table[EXCC_STORE_ACCESS] = (handler_t)handle_other;

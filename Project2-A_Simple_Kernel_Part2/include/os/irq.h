@@ -49,6 +49,7 @@ enum ExcCode
 {
     EXCC_INST_MISALIGNED  = 0,
     EXCC_INST_ACCESS      = 1,
+    EXCC_INST_ILLEGAL     = 2,
     EXCC_BREAKPOINT       = 3,
     EXCC_LOAD_ACCESS      = 5,
     EXCC_STORE_ACCESS     = 7,

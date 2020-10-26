@@ -37,7 +37,7 @@ pid_t process_id = 1;
  */
 void scheduler(void)
 {
-    uint64_t sched_used_time = get_ticks();
+    //uint64_t sched_used_time = get_ticks();
 
     current_running->cursor_x = screen_cursor_x;
     current_running->cursor_y = screen_cursor_y;
@@ -58,14 +58,14 @@ void scheduler(void)
                       current_running->cursor_y);
     screen_cursor_x = current_running->cursor_x;
     screen_cursor_y = current_running->cursor_y;
-
+/*
     sched_used_time = get_ticks() - sched_used_time;
     vt100_move_cursor(1, 13);
     printk("time_base:\t\t%d", time_base);
     vt100_move_cursor(1, 14);
     printk("timer_interval:\t\t%d", timer_interval);
     vt100_move_cursor(1, 15);
-    printk("sched_used_time:\t%d", sched_used_time);
+    printk("sched_used_time:\t%d", sched_used_time);*/
 }
 
 // sleep(seconds)

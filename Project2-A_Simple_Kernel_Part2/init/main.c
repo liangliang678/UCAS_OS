@@ -31,6 +31,7 @@
 #include <os/time.h>
 #include <os/syscall.h>
 #include <os/futex.h>
+#include <os/binsem.h>
 #include <screen.h>
 #include <sbi.h>
 #include <stdio.h>
@@ -95,7 +96,7 @@ static void init_pcb()
         init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
                         lock_tasks[num_tasks - num_sched1_tasks]->entry_point, &pcb[num_tasks]); 
     }
-*//*
+*/
     // USER
     // timer_tasks
     for(num_tasks = 0; num_tasks < num_timer_tasks; num_tasks++){
@@ -139,7 +140,7 @@ static void init_pcb()
         init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
                         lock2_tasks[num_tasks - num_timer_tasks - num_sched2_tasks]->entry_point, &pcb[num_tasks]); 
     }
-*/
+/*
     // PRIORITY
     // priority_tasks
     for(num_tasks = 0; num_tasks < num_priority_tasks; num_tasks++){
@@ -155,7 +156,7 @@ static void init_pcb()
         init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
                         priority_tasks[num_tasks]->entry_point, &pcb[num_tasks]); 
     }
-
+*/
     /* initialize `current_running` */
     current_running = &pid0_pcb;
 }
@@ -166,6 +167,8 @@ static void init_syscall(void)
     syscall[SYSCALL_SLEEP] = (long(*)())do_sleep;
     syscall[SYSCALL_FUTEX_WAIT] = (long(*)())futex_wait;
     syscall[SYSCALL_FUTEX_WAKEUP] = (long(*)())futex_wakeup;
+    syscall[SYSCALL_BINSEM_GET] = (long(*)())binsem_get;
+    syscall[SYSCALL_BINSEM_OP] = (long(*)())binsem_op;
     syscall[SYSCALL_WRITE] = (long(*)())screen_write;
     syscall[SYSCALL_READ] = (long(*)())handle_other;
     syscall[SYSCALL_CURSOR] = (long(*)())screen_move_cursor;
@@ -186,8 +189,9 @@ int main()
     time_base = sbi_read_fdt(TIMEBASE);
     timer_interval = (uint64_t)(time_base * 3 / 200);
 	
-    // init futex mechanism
+    // init futex mechanism and binsem mechanism
     init_system_futex();
+    init_system_binsem();
 
     // init interrupt
     init_exception();

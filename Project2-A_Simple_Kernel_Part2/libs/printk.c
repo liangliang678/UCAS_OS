@@ -247,6 +247,8 @@ int vprintk(const char *fmt, va_list _va)
 
 int printk(const char *fmt, ...)
 {
+    __asm__ __volatile__("csrr x0, sscratch\n"); 
+    
     int ret = 0;
     va_list va;
 

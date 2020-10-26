@@ -32,8 +32,8 @@ struct task_info task2_11 = {(ptr_t)&deadlock_task, USER_PROCESS, 0};
 struct task_info *sched2_tasks[16] = {&task2_8, &task2_9, &task2_10, &task2_11};
 int num_sched2_tasks = 4;
 
-struct task_info task2_12 = {(ptr_t)&lock2_task1, USER_THREAD, 0};
-struct task_info task2_13 = {(ptr_t)&lock2_task2, USER_THREAD, 0};
+struct task_info task2_12 = {(ptr_t)&lock2_task1, USER_PROCESS, 0};
+struct task_info task2_13 = {(ptr_t)&lock2_task2, USER_PROCESS, 0};
 struct task_info *lock2_tasks[16] = {&task2_12, &task2_13};
 int num_lock2_tasks = 2;
 
