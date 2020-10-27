@@ -35,8 +35,6 @@
 #define EINVAL 2 /* the lock is invalid */
 
 typedef atomic_int mthread_spinlock_t;
-
-/* A stupid implementation, this will be slow. */
 typedef atomic_long mthread_mutex_t;
 
 typedef enum {

@@ -37,7 +37,7 @@
   sd t5, OFFSET_REG_T5(sp)
   sd t6, OFFSET_REG_T6(sp)
 
-  /* save sstatus, sepc, stval, scause,  sscratch on kernel stack */
+  /* save sstatus, sepc, stval, scause, sscratch on kernel stack */
   csrr t0, CSR_SSTATUS
   sd t0, OFFSET_REG_SSTATUS(sp)
   csrr t0, CSR_SEPC
@@ -105,6 +105,8 @@
 
 /* Only kernel process/thread can call this func */
 ENTRY(do_scheduler)
+  csrr x0, CSR_SSCRATCH
+  
   //simulate an interrupt
   csrw CSR_SEPC, ra
   li tp, SR_SPIE

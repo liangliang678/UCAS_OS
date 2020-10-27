@@ -45,12 +45,8 @@ static binsem_node_t* get_node(int key)
 
 int binsem_get(int key)
 {
-    disable_preempt();
     binsem_node_t *node = get_node(key);
-    int binsem_id = node->id;
-    enable_preempt();
-
-    return binsem_id;
+    return node->id;
 }
 
 void binsem_op(int binsem_id, int op)
@@ -58,8 +54,8 @@ void binsem_op(int binsem_id, int op)
     disable_preempt();
     
     list_node_t *head = &binsem_buckets[binsem_id];
-    binsem_node_t *node;
     list_node_t *p;
+    binsem_node_t *node;
     for (p = head->next; p != head; p = p->next) {
         node = list_entry(p, binsem_node_t, list);
         if (node->id == (uint64_t)binsem_id) {
@@ -80,6 +76,8 @@ void binsem_op(int binsem_id, int op)
     else if(op == BINSEM_OP_UNLOCK){
         node->status = UNLOCKED;
         if(!(list_empty(&node->block_queue))){
+            // the process being unblocked will acquire the lock when running
+            // LOCKED the binsem now!
             do_unblock(node->block_queue.next);
             scheduler();
             node->status = LOCKED;

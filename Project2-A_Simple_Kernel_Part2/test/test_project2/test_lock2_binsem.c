@@ -13,9 +13,9 @@
 
 static char blank[] = {"                                             "};
 
-void lock2_task1(void)
+void lock2_task3(void)
 {
-        int print_location = 3;
+        int print_location = 5;
 	int binsem_id = sys_binsem_get(LOCK2_BINSEM_KEY);
         while (1)
         {
@@ -25,29 +25,29 @@ void lock2_task1(void)
                 printf("%s", blank);
 
                 sys_move_cursor(1, print_location);
-                printf("> [TASK] Applying for a lock.\n");
+                printf("> [TASK] Applying for a binsem lock.\n");
 
                 sys_binsem_op(binsem_id, BINSEM_OP_LOCK);
 
                 for (i = 0; i < 1000; i++)
                 {
                         sys_move_cursor(1, print_location);
-                        printf("> [TASK] Has acquired lock and running.(%d)\n", i);
+                        printf("> [TASK] Has acquired binsem lock and running.(%d)\n", i);
                 }
 
                 sys_move_cursor(1, print_location);
                 printf("%s", blank);
 
                 sys_move_cursor(1, print_location);
-                printf("> [TASK] Has acquired lock and exited.\n");
+                printf("> [TASK] Has acquired binsem lock and exited.\n");
 
                 sys_binsem_op(binsem_id, BINSEM_OP_UNLOCK);
         }
 }
 
-void lock2_task2(void)
+void lock2_task4(void)
 {
-        int print_location = 4;
+        int print_location = 6;
 	int binsem_id = sys_binsem_get(LOCK2_BINSEM_KEY);
         while (1)
         {
@@ -57,21 +57,21 @@ void lock2_task2(void)
                 printf("%s", blank);
 
                 sys_move_cursor(1, print_location);
-                printf("> [TASK] Applying for a lock.\n");
+                printf("> [TASK] Applying for a binsem lock.\n");
 
                 sys_binsem_op(binsem_id, BINSEM_OP_LOCK);
 
-                for (i = 0; i < 1000; i++)
+                for (i = 0; i < 10000; i++)
                 {
                         sys_move_cursor(1, print_location);
-                        printf("> [TASK] Has acquired lock and running.(%d)\n", i);
+                        printf("> [TASK] Has acquired binsem lock and running.(%d)\n", i);
                 }
 
                 sys_move_cursor(1, print_location);
                 printf("%s", blank);
 
                 sys_move_cursor(1, print_location);
-                printf("> [TASK] Has acquired lock and exited.\n");
+                printf("> [TASK] Has acquired binsem lock and exited.\n");
 
                 sys_binsem_op(binsem_id, BINSEM_OP_UNLOCK);
         }

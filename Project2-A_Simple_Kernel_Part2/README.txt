@@ -1,3 +1,86 @@
-Todo:
-1. ä¿®å¤ä¼˜å…ˆçº§è°ƒåº¦bug
-2. å®Œæˆæ›´æ–°çš„éœ€æ±‚
+±¾ÏîÄ¿µÄÄ¿Â¼½á¹¹ÈçÏÂ£¬²¿·Ö²»ÖØÒªµÄÎÄ¼þ/ÎÄ¼þ¼ÐÎ´ÁÐ³ö£º
+
+|--arch
+Ä¿Â¼£¬RISC-V¼Ü¹¹Ïà¹ØÄÚÈÝ£¬Ö÷ÒªÎª»ã±à´úÂëÒÔ¼°Ïà¹Øºê¶¨Òå
+| |--boot
+| | |--bootblock.S
+Òýµ¼´úÂë
+| |--include
+Ä¿Â¼£¬Í·ÎÄ¼þ£¬°üÀ¨Ò»Ð©ºê¶¨Òå
+| |--kernel
+Ä¿Â¼£¬ÄÚºËÖÐÐèÒª»ã±àÊµÏÖµÄ²¿·Ö
+| | |--entry.S
+ÄÚºË´úÂë£¬°üÀ¨¿ª¹ØÖÐ¶Ï£¬½øÈëºÍÍË³öÖÐ¶ÏµÈÄÚÈÝ
+| | |--head.S
+Îª²Ù×÷ÏµÍ³×¼±¸CÓïÑÔ»·¾³
+| | |--trap.S
+ÉèÖÃÖÐ¶Ï
+| |--sbi
+| | |--common.c
+SBIµ÷ÓÃÒÔ¼°¹¦ÄÜ¼Ä´æÆ÷µÄ·ÃÎÊ
+
+|--drivers
+Ä¿Â¼£¬Çý¶¯Ïà¹Ø´úÂë
+
+|--include
+Ä¿Â¼£¬Í·ÎÄ¼þ
+
+|--init
+Ä¿Â¼£¬³õÊ¼»¯Ïà¹Ø
+| |--main.c
+ÄÚºËµÄÈë¿Ú£¬²Ù×÷ÏµÍ³µÄÆðµã
+
+|--kernel
+Ä¿Â¼£¬ÄÚºËÏà¹ØÎÄ¼þ
+| |--irq
+Ä¿Â¼£¬ÖÐ¶Ï´¦ÀíÏà¹Ø
+| | |--irq.c
+·Ö·¢ÀýÍâ´¦Àíº¯Êý£¬´¦ÀíÊ±ÖÓÖÐ¶Ï
+| |--locking
+Ä¿Â¼£¬ËøÏà¹Ø
+| | |--binsem.c
+¶þÔªÐÅºÅÁ¿ÊµÏÖ»¥³âËø
+| | |--futex.c
+Futex»úÖÆÊµÏÖ»¥³âËø
+| | |--lock.c
+ÄÚºËÌ¬×¨ÓÃËø
+| |--mm
+Ä¿Â¼£¬ÄÚ´æ¹ÜÀíÏà¹Ø
+| |--sched
+Ä¿Â¼£¬½ø³Ìµ÷¶ÈÏà¹Ø
+| | |--sched.c
+ÈÎÎñµÄµ÷¶ÈÏà¹Ø£¬Ò»¸öÈÎÎñµÄµ÷¶È¡¢¹ÒÆð¡¢»½ÐÑµÈÂß¼­
+| | |--time.c
+Ê±¼äÏà¹Øº¯Êý
+| |--syscall
+Ä¿Â¼£¬ÏµÍ³µ÷ÓÃ
+| | |--syscall.c
+ÏµÍ³µ÷ÓÃ´¦Àíº¯Êý
+
+|--libs
+Ä¿Â¼£¬Ìá¹©µÄ¿âº¯Êý
+
+|--test
+Ä¿Â¼£¬ÊµÑéµÄ²âÊÔÈÎÎñ
+
+|--tiny_libc
+Ä¿Â¼£¬ÓÃ»§³ÌÐòÔÊÐíÊ¹ÓÃµÄ¿âº¯Êý
+
+|--tools
+Ä¿Â¼£¬¹¤¾ß£¨createimage£©
+
+|--bootblock
+|--createimage
+|--design_document.pdf
+Éè¼ÆÎÄµµ
+|--image
+|--kernel.txt
+|--main
+|--Makefile
+MakefileÎÄ¼þ
+|--README.txt
+±¾ÎÄ¼þ
+|--riscv.lds
+Á´½ÓÆ÷½Å±¾ÎÄ¼þ
+
+Ö÷ÒªÎÄ¼þµÄ¹¦ÄÜ£º

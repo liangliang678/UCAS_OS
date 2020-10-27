@@ -20,6 +20,8 @@ extern void sleep_task(void);
 extern void timer_task(void);
 extern void lock2_task1(void);
 extern void lock2_task2(void);
+extern void lock2_task3(void);
+extern void lock2_task4(void);
 extern void deadlock_task(void);
 
 //task 5 test task

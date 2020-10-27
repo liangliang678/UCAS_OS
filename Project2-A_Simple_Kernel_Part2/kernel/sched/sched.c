@@ -37,19 +37,20 @@ pid_t process_id = 1;
  */
 void scheduler(void)
 {
-    //uint64_t sched_used_time = get_ticks();
-
+	test_sched_time(BEGIN);
+	
+    // store the current_running's cursor_x and cursor_y
     current_running->cursor_x = screen_cursor_x;
     current_running->cursor_y = screen_cursor_y;
+
     // Modify the current_running pointer and the ready queue
     if(current_running->status == TASK_RUNNING){
-        list_add_tail(&(current_running->list), &ready_queue);
+        list_add_tail(&current_running->list, &ready_queue);
         current_running->status = TASK_READY;
         current_running->ready_tick = get_ticks();
-    } 
-    //current_running = list_entry(ready_queue.next, pcb_t, list);
+    }
     current_running = list_entry(max_priority_node(), pcb_t, list); 
-    list_del(&(current_running->list));
+    list_del(&current_running->list);
     current_running->status = TASK_RUNNING;
     process_id = current_running->pid;
         
@@ -58,14 +59,8 @@ void scheduler(void)
                       current_running->cursor_y);
     screen_cursor_x = current_running->cursor_x;
     screen_cursor_y = current_running->cursor_y;
-/*
-    sched_used_time = get_ticks() - sched_used_time;
-    vt100_move_cursor(1, 13);
-    printk("time_base:\t\t%d", time_base);
-    vt100_move_cursor(1, 14);
-    printk("timer_interval:\t\t%d", timer_interval);
-    vt100_move_cursor(1, 15);
-    printk("sched_used_time:\t%d", sched_used_time);*/
+
+	test_sched_time(END);
 }
 
 // sleep(seconds)
@@ -74,8 +69,8 @@ void do_sleep(uint32_t sleep_time)
     // 1. block the current_running
     // 2. create a timer which calls `do_unblock` when timeout
     // 3. reschedule because the current_running is blocked
-    do_block(&(current_running->list), &sleep_queue);
-    list_node_t* parameter = &(current_running->list);
+    do_block(&current_running->list, &sleep_queue);
+    list_node_t* parameter = &current_running->list;
     timer_create((TimerCallback)do_unblock, (void*)parameter, get_ticks() + time_base * sleep_time);
     scheduler();
 }
@@ -104,16 +99,36 @@ list_node_t* max_priority_node(void)
 
     // max_priority_node has min points
     list_node_t* max_priority_node = ready_queue.next;
-    int min_points = list_entry(max_priority_node, pcb_t, list)->priority - 
-                         (current_tick - list_entry(max_priority_node, pcb_t, list)->ready_tick)/(timer_interval);
+    pcb_t* max_priority_pcb = list_entry(max_priority_node, pcb_t, list);
+    int min_points = max_priority_pcb->priority - (current_tick - max_priority_pcb->ready_tick)/timer_interval;
 
     for(node_p = ready_queue.next->next; node_p != &ready_queue; node_p = node_p->next){
-        int node_p_points = list_entry(node_p, pcb_t, list)->priority - 
-                                (current_tick - list_entry(node_p, pcb_t, list)->ready_tick)/(timer_interval);
+        pcb_t* pcb_p = list_entry(node_p, pcb_t, list);
+        int node_p_points = pcb_p->priority - (current_tick - pcb_p->ready_tick)/timer_interval;
         if(node_p_points < min_points){
             max_priority_node = node_p;
+            max_priority_pcb = pcb_p;
             min_points = node_p_points;
         }       
     }
+
     return max_priority_node;
+}
+
+uint64_t sched_used_time;
+void test_sched_time(int op)
+{
+	int print_location = 13;
+	if(op == BEGIN){
+		sched_used_time = get_ticks();
+	}
+	else if(op == END){
+		sched_used_time = get_ticks() - sched_used_time;
+	    vt100_move_cursor(1, print_location);
+	    printk("time_base:\t\t%d", time_base);
+	    vt100_move_cursor(1, print_location + 1);
+	    printk("timer_interval:\t\t%d", timer_interval);
+	    vt100_move_cursor(1, print_location + 2);
+	    printk("sched_used_time:\t%d", sched_used_time);
+	}
 }

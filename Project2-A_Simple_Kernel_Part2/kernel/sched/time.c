@@ -13,7 +13,7 @@ void timer_create(TimerCallback func, void* parameter, uint64_t tick)
 {
     disable_preempt();
 
-    list_add_tail(&(current_running->timer.list), &timer_queue);
+    list_add_tail(&current_running->timer.list, &timer_queue);
     current_running->timer.timeout_tick = tick;
     current_running->timer.callback_func = func;
     current_running->timer.parameter = parameter;
@@ -27,16 +27,17 @@ void timer_check()
     disable_preempt();
 
     uint64_t current_tick = get_ticks();
-    list_node_t* checktimer = timer_queue.next;
+    list_node_t* p = timer_queue.next;
 
-    while(checktimer != &timer_queue){
-        if(current_tick >= list_entry(checktimer, timer_t, list)->timeout_tick){
-            (list_entry(checktimer, timer_t, list)->callback_func)(list_entry(checktimer, timer_t, list)->parameter);
-            checktimer = checktimer->next;
-            list_del(checktimer->prev);
+    while(p != &timer_queue){
+        timer_t *timer_node = list_entry(p, timer_t, list);
+        if(current_tick >= timer_node->timeout_tick){
+            (timer_node->callback_func)(timer_node->parameter);
+            p = p->next;
+            list_del(p->prev);
         }
         else{
-            checktimer = checktimer->next;
+            p = p->next;
         } 
     }
 

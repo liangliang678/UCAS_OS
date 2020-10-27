@@ -60,8 +60,6 @@ enum ExcCode
     EXCC_COUNT
 };
 
-extern uint64_t timer_interval;
-
 typedef void (*handler_t)(regs_context_t*, uint64_t, uint64_t);
 
 extern handler_t irq_table[IRQC_COUNT];

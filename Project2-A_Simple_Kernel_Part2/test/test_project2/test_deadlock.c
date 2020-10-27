@@ -7,7 +7,7 @@
 void deadlock_task(void)
 {
     int keep_alive = 0;
-    int print_location = 7;
+    int print_location = 9;
     int magic = 1;
     char name[] = "Hero";
 

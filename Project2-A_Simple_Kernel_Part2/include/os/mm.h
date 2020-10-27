@@ -29,7 +29,6 @@
 
 #include <type.h>
 
-#define MEM_SIZE 32
 #define PAGE_SIZE 4096 // 4K
 #define INIT_STACK 0x50500000
 

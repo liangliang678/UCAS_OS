@@ -38,7 +38,7 @@ void lock2_task1(void)
                 printf("%s", blank);
 
                 sys_move_cursor(1, print_location);
-                printf("> [TASK] Applying for a lock.\n");
+                printf("> [TASK] Applying for a futex lock.\n");
 
 #ifdef SPIN_LOCK
                 mthread_spin_lock(&spin_lock);
@@ -51,14 +51,14 @@ void lock2_task1(void)
                 for (i = 0; i < 1000; i++)
                 {
                         sys_move_cursor(1, print_location);
-                        printf("> [TASK] Has acquired lock and running.(%d)\n", i);
+                        printf("> [TASK] Has acquired futex lock and running.(%d)\n", i);
                 }
 
                 sys_move_cursor(1, print_location);
                 printf("%s", blank);
 
                 sys_move_cursor(1, print_location);
-                printf("> [TASK] Has acquired lock and exited.\n");
+                printf("> [TASK] Has acquired futex lock and exited.\n");
 
 #ifdef SPIN_LOCK
                 mthread_spin_unlock(&spin_lock);
@@ -94,7 +94,7 @@ void lock2_task2(void)
                 printf("%s", blank);
 
                 sys_move_cursor(1, print_location);
-                printf("> [TASK] Applying for a lock.\n");
+                printf("> [TASK] Applying for a futex lock.\n");
 
 #ifdef SPIN_LOCK
                 mthread_spin_lock(&spin_lock);
@@ -104,17 +104,17 @@ void lock2_task2(void)
                 mthread_mutex_lock(&mutex_lock);
 #endif
 
-                for (i = 0; i < 1000; i++)
+                for (i = 0; i < 10000; i++)
                 {
                         sys_move_cursor(1, print_location);
-                        printf("> [TASK] Has acquired lock and running.(%d)\n", i);
+                        printf("> [TASK] Has acquired futex lock and running.(%d)\n", i);
                 }
 
                 sys_move_cursor(1, print_location);
                 printf("%s", blank);
 
                 sys_move_cursor(1, print_location);
-                printf("> [TASK] Has acquired lock and exited.\n");
+                printf("> [TASK] Has acquired futex lock and exited.\n");
 
 #ifdef SPIN_LOCK
                 mthread_spin_unlock(&spin_lock);

@@ -42,6 +42,7 @@ typedef struct timer
 } timer_t;
 
 extern uint32_t time_base;
+extern uint64_t timer_interval;
 extern uint64_t time_elapsed;
 extern uint64_t MHZ;
 

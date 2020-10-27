@@ -128,5 +128,8 @@ void do_block(list_node_t *, list_head *queue);
 void do_unblock(list_node_t *);
 
 list_node_t* max_priority_node(void);
+#define BEGIN 0
+#define END 1
+void test_sched_time(int op);
 
 #endif
