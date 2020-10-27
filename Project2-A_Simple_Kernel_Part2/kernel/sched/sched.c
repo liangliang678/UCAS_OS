@@ -94,21 +94,20 @@ void do_unblock(list_node_t *pcb_node)
 
 list_node_t* max_priority_node(void)
 {
-    list_node_t* node_p;
+    list_node_t* node;
     uint64_t current_tick = get_ticks();
 
     // max_priority_node has min points
     list_node_t* max_priority_node = ready_queue.next;
-    pcb_t* max_priority_pcb = list_entry(max_priority_node, pcb_t, list);
-    int min_points = max_priority_pcb->priority - (current_tick - max_priority_pcb->ready_tick)/timer_interval;
+    pcb_t* node_pcb = list_entry(max_priority_node, pcb_t, list);
+    int min_points = node_pcb->priority - (current_tick - node_pcb->ready_tick)/timer_interval;
 
-    for(node_p = ready_queue.next->next; node_p != &ready_queue; node_p = node_p->next){
-        pcb_t* pcb_p = list_entry(node_p, pcb_t, list);
-        int node_p_points = pcb_p->priority - (current_tick - pcb_p->ready_tick)/timer_interval;
-        if(node_p_points < min_points){
-            max_priority_node = node_p;
-            max_priority_pcb = pcb_p;
-            min_points = node_p_points;
+    for(node = ready_queue.next->next; node != &ready_queue; node = node->next){
+        node_pcb = list_entry(node, pcb_t, list);
+        int node_points = node_pcb->priority - (current_tick - node_pcb->ready_tick)/timer_interval;
+        if(node_points < min_points){
+            max_priority_node = node;
+            min_points = node_points;
         }       
     }
 

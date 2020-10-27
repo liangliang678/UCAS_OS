@@ -31,6 +31,7 @@
 #include <os/list.h>
 
 typedef enum {
+    INVALID,
     UNLOCKED,
     LOCKED,
 } lock_status_t;

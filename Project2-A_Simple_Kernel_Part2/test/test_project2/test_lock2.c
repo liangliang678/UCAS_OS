@@ -104,7 +104,7 @@ void lock2_task2(void)
                 mthread_mutex_lock(&mutex_lock);
 #endif
 
-                for (i = 0; i < 10000; i++)
+                for (i = 0; i < 1000; i++)
                 {
                         sys_move_cursor(1, print_location);
                         printf("> [TASK] Has acquired futex lock and running.(%d)\n", i);
