@@ -12,7 +12,7 @@
 
 typedef struct binsem_node
 {
-    lock_status_t status;
+    int sem;
     list_head block_queue;
 }binsem_node_t;
 

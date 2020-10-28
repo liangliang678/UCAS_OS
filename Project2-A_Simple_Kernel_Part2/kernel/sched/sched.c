@@ -37,7 +37,7 @@ pid_t process_id = 1;
  */
 void scheduler(void)
 {
-	test_sched_time(BEGIN);
+	// test_sched_time(BEGIN);
 	
     // store the current_running's cursor_x and cursor_y
     current_running->cursor_x = screen_cursor_x;
@@ -60,7 +60,7 @@ void scheduler(void)
     screen_cursor_x = current_running->cursor_x;
     screen_cursor_y = current_running->cursor_y;
 
-	test_sched_time(END);
+	// test_sched_time(END);
 }
 
 // sleep(seconds)

@@ -17,18 +17,14 @@ static int binsem_hash(uint64_t x)
 void init_system_binsem()
 {
     for(int i = 0; i < BINSEM_NUMBER; i++){
-        binsem_nodes[i].status = INVALID;
+        binsem_nodes[i].sem = 1;
+        init_list_head(&binsem_nodes[i].block_queue);
     }
 }
 
 int binsem_get(int key)
-{
-    int id = binsem_hash((uint64_t)key);
-    if(binsem_nodes[id].status == INVALID){
-        init_list_head(&binsem_nodes[id].block_queue);
-        binsem_nodes[id].status = UNLOCKED;
-    }
-    return id;
+{ 
+    return binsem_hash((uint64_t)key);
 }
 
 void binsem_op(int binsem_id, int op)
@@ -38,22 +34,17 @@ void binsem_op(int binsem_id, int op)
     binsem_node_t *node = &binsem_nodes[binsem_id];
 
     if(op == BINSEM_OP_LOCK){
-        if(node->status == LOCKED){
+        node->sem--;
+        if(node->sem < 0){
             do_block(&current_running->list, &node->block_queue);
             scheduler();
         }
-        else{
-            node->status = LOCKED;
-        }
     }
     else if(op == BINSEM_OP_UNLOCK){
-        node->status = UNLOCKED;
-        if(!(list_empty(&node->block_queue))){
-            // the process being unblocked will acquire the lock when running
-            // LOCKED the binsem now!
+        node->sem++;
+        if(node->sem <= 0){
             do_unblock(node->block_queue.next);
             scheduler();
-            node->status = LOCKED;
         }
     }
 
