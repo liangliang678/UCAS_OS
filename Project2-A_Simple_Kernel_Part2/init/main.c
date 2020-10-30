@@ -186,7 +186,7 @@ int main()
 
     // read CPU frequency and calc timer interval
     time_base = sbi_read_fdt(TIMEBASE);
-    timer_interval = (uint64_t)(time_base * 3 / 200);
+    timer_interval = (uint64_t)(time_base / 200);
 	
     // init futex mechanism and binsem mechanism
     init_system_futex();
