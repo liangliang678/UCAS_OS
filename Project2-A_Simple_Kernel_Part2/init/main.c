@@ -96,7 +96,7 @@ static void init_pcb()
         init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
                         lock_tasks[num_tasks - num_sched1_tasks]->entry_point, &pcb[num_tasks]); 
     }
-*/
+*//*
     // USER
     // timer_tasks
     for(num_tasks = 0; num_tasks < num_timer_tasks; num_tasks++){
@@ -140,7 +140,7 @@ static void init_pcb()
         init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
                         lock2_tasks[num_tasks - num_timer_tasks - num_sched2_tasks]->entry_point, &pcb[num_tasks]); 
     }
-/*
+*/
     // PRIORITY
     // priority_tasks
     for(num_tasks = 0; num_tasks < num_priority_tasks; num_tasks++){
@@ -156,7 +156,7 @@ static void init_pcb()
         init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
                         priority_tasks[num_tasks]->entry_point, &pcb[num_tasks]); 
     }
-*/
+
     /* initialize `current_running` */
     current_running = &pid0_pcb;
 }

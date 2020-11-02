@@ -11,7 +11,7 @@
  */
 #define LOCK2_BINSEM_KEY 42
 
-static char blank[] = {"                                             "};
+static char blank[] = {"                                                       "};
 
 void lock2_task3(void)
 {
@@ -29,7 +29,7 @@ void lock2_task3(void)
 
                 sys_binsem_op(binsem_id, BINSEM_OP_LOCK);
 
-                for (i = 0; i < 1000; i++)
+                for (i = 0; i < 200; i++)
                 {
                         sys_move_cursor(1, print_location);
                         printf("> [TASK] Has acquired binsem lock and running.(%d)\n", i);
@@ -61,7 +61,7 @@ void lock2_task4(void)
 
                 sys_binsem_op(binsem_id, BINSEM_OP_LOCK);
 
-                for (i = 0; i < 1000; i++)
+                for (i = 0; i < 200; i++)
                 {
                         sys_move_cursor(1, print_location);
                         printf("> [TASK] Has acquired binsem lock and running.(%d)\n", i);

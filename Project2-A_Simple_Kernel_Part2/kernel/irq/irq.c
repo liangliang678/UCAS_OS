@@ -86,6 +86,6 @@ void reset_irq_timer()
     screen_reflush();
     timer_check();
     // use sbi_set_timer and reschedule
-    sbi_set_timer(get_ticks() + timer_interval); 
     scheduler();
+    sbi_set_timer(get_ticks() + timer_interval); 
 }

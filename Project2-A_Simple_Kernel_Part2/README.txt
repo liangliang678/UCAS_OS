@@ -18,18 +18,14 @@
 | |--sbi
 | | |--common.c
 SBI调用以及功能寄存器的访问
-
 |--drivers
 目录，驱动相关代码
-
 |--include
 目录，头文件
-
 |--init
 目录，初始化相关
 | |--main.c
 内核的入口，操作系统的起点
-
 |--kernel
 目录，内核相关文件
 | |--irq
@@ -56,19 +52,14 @@ Futex机制实现互斥锁
 目录，系统调用
 | | |--syscall.c
 系统调用处理函数
-
 |--libs
 目录，提供的库函数
-
 |--test
 目录，实验的测试任务
-
 |--tiny_libc
 目录，用户程序允许使用的库函数
-
 |--tools
 目录，工具（createimage）
-
 |--bootblock
 |--createimage
 |--design_document.pdf
@@ -83,8 +74,14 @@ Makefile文件
 |--riscv.lds
 链接器脚本文件
 
+函数调用约定：
+内核进程/线程可以调用的函数：do_scheduler(), do_block(), do_unblock(), printk()等
+用户进程/线程可以调用的函数：sys_*(), mthread_spin_*(), mthread_mutex_*(), printf()等
+
 注意事项：
 1. 若不需要测量scheduler()函数时间的功能，请注释sched.c中的第40行和第63行以提高运行速度。在内核中使用printk会使时钟中断处理非常缓慢。
 2. 测量scheduler()函数时间的功能将占用屏幕的13，14，15行输出，如有需要可以在sched.c第120行处修改打印位置。
 3. 在main.c中有三组可以加载的PCB，第一组是Part1的测试用例，第二组是Part2的测试用例，第三组是优先级调度的测试用例。
-4. 在main.c中第189行处可以修改一个时间片的tick数，目前1s内有67个时间片。
+4. 在main.c中第189行处可以修改一个时间片的tick数，目前1s内约有200个时间片。
+
+更多内容请参考design_document.pdf

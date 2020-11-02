@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <sys/syscall.h>
 
-static char blank[] = {"                    "};
+static char blank[] = {"                              "};
 static char plane1[] = {"    ___         _   "};
 static char plane2[] = {"| __\\_\\______/_|  "};
 static char plane3[] = {"<[___\\_\\_______|  "};

@@ -5,7 +5,7 @@
 #include <test2.h>
 
 int is_init         = FALSE;
-static char blank[] = {"                                             "};
+static char blank[] = {"                                                       "};
 
 /* if you want to use spin lock, you need define SPIN_LOCK */
 // #define SPIN_LOCK

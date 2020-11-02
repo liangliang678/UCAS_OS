@@ -5,7 +5,7 @@
 #include <sys/syscall.h>
 
 static int is_init = FALSE;
-static char blank[] = {"                                             "};
+static char blank[] = {"                                                       "};
 
 /* if you want to use spin lock, you need define SPIN_LOCK */
 // #define SPIN_LOCK
@@ -48,7 +48,7 @@ void lock2_task1(void)
                 mthread_mutex_lock(&mutex_lock);
 #endif
 
-                for (i = 0; i < 1000; i++)
+                for (i = 0; i < 200; i++)
                 {
                         sys_move_cursor(1, print_location);
                         printf("> [TASK] Has acquired futex lock and running.(%d)\n", i);
@@ -104,7 +104,7 @@ void lock2_task2(void)
                 mthread_mutex_lock(&mutex_lock);
 #endif
 
-                for (i = 0; i < 1000; i++)
+                for (i = 0; i < 200; i++)
                 {
                         sys_move_cursor(1, print_location);
                         printf("> [TASK] Has acquired futex lock and running.(%d)\n", i);

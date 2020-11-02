@@ -2,7 +2,7 @@
 #include <test2.h>
 #include <sys/syscall.h>
 
-static char blank[] = {"                                                "};
+static char blank[] = {"                                                          "};
 
 void sleep_task(void)
 {
