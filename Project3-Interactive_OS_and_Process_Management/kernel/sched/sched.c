@@ -37,8 +37,6 @@ pid_t process_id = 1;
  */
 void scheduler(void)
 {
-	test_sched_time(BEGIN);
-	
     // store the current_running's cursor_x and cursor_y
     current_running->cursor_x = screen_cursor_x;
     current_running->cursor_y = screen_cursor_y;
@@ -59,8 +57,6 @@ void scheduler(void)
                       current_running->cursor_y);
     screen_cursor_x = current_running->cursor_x;
     screen_cursor_y = current_running->cursor_y;
-
-	test_sched_time(END);
 }
 
 // sleep(seconds)
@@ -112,22 +108,4 @@ list_node_t* max_priority_node(void)
     }
 
     return max_priority_node;
-}
-
-uint64_t sched_used_time;
-void test_sched_time(int op)
-{
-	int print_location = 13;
-	if(op == BEGIN){
-		sched_used_time = get_ticks();
-	}
-	else if(op == END){
-		sched_used_time = get_ticks() - sched_used_time;
-	    vt100_move_cursor(1, print_location);
-	    printk("time_base:\t\t%d", time_base);
-	    vt100_move_cursor(1, print_location + 1);
-	    printk("timer_interval:\t\t%d", timer_interval);
-	    vt100_move_cursor(1, print_location + 2);
-	    printk("sched_used_time:\t%d", sched_used_time);
-	}
 }

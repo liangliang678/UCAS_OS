@@ -6,26 +6,55 @@
 #include <assert.h>
 #include <sbi.h>
 #include <screen.h>
+#include <csr.h>
 
 handler_t irq_table[IRQC_COUNT];
 handler_t exc_table[EXCC_COUNT];
 uintptr_t riscv_dtb;
 
-void reset_irq_timer()
-{
-}
-
-void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t cause)
-{
-}
-
-void handle_int(regs_context_t *regs, uint64_t interrupt, uint64_t cause)
-{
- 
-}
-
+/* initialize irq_table and exc_table */
 void init_exception()
 {
+    irq_table[IRQC_U_SOFT] = (handler_t)handle_other;
+    irq_table[IRQC_S_SOFT] = (handler_t)handle_other;
+    irq_table[IRQC_M_SOFT] = (handler_t)handle_other;
+    irq_table[IRQC_U_TIMER] = (handler_t)handle_other;
+    irq_table[IRQC_S_TIMER] = (handler_t)handle_int;
+    irq_table[IRQC_M_TIMER] = (handler_t)handle_other;
+    irq_table[IRQC_U_EXT] = (handler_t)handle_other;
+    irq_table[IRQC_S_EXT] = (handler_t)handle_other;
+    irq_table[IRQC_M_EXT] = (handler_t)handle_other;
+
+    exc_table[EXCC_INST_MISALIGNED] = (handler_t)handle_other;
+    exc_table[EXCC_INST_ACCESS] = (handler_t)handle_other;
+    exc_table[EXCC_INST_ILLEGAL] = (handler_t)handle_other;
+    exc_table[EXCC_BREAKPOINT] = (handler_t)handle_other;
+    exc_table[EXCC_LOAD_ACCESS] = (handler_t)handle_other;
+    exc_table[EXCC_STORE_ACCESS] = (handler_t)handle_other;
+    exc_table[EXCC_SYSCALL] = (handler_t)handle_syscall;
+    exc_table[EXCC_INST_PAGE_FAULT] = (handler_t)handle_other;
+    exc_table[EXCC_LOAD_PAGE_FAULT] = (handler_t)handle_other;
+    exc_table[EXCC_STORE_PAGE_FAULT] = (handler_t)handle_other;
+    
+    setup_exception();
+}
+
+// interrupt handler.
+void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t cause)
+{
+    // call corresponding handler by the value of `cause`
+    if(cause & SCAUSE_IRQ_FLAG){
+        cause = cause & ~SCAUSE_IRQ_FLAG;
+        (*irq_table[cause])(regs, stval, cause);
+    }
+    else{
+        (*exc_table[cause])(regs, stval, cause);
+    }
+}
+
+void handle_int(regs_context_t *regs, uint64_t stval, uint64_t cause)
+{
+    reset_irq_timer();
 }
 
 void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause)
@@ -67,4 +96,14 @@ void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause)
     }
 
     assert(0);
+}
+
+//clock interrupt handler.
+void reset_irq_timer()
+{
+    screen_reflush();
+    timer_check();
+    // use sbi_set_timer and reschedule
+    scheduler();
+    sbi_set_timer(get_ticks() + timer_interval); 
 }

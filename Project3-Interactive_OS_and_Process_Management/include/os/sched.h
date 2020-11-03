@@ -32,6 +32,7 @@
 #include <type.h>
 #include <os/list.h>
 #include <os/mm.h>
+#include <os/time.h>
 
 #define NUM_MAX_TASK 16
 
@@ -44,16 +45,10 @@ typedef struct regs_context
     /* Saved special registers. */
     reg_t sstatus;
     reg_t sepc;
-    reg_t sbadaddr;
+    reg_t stval;
     reg_t scause;
+    reg_t sscratch;
 } regs_context_t;
-
-/* used to save register infomation in switch_to */
-typedef struct switchto_context
-{
-    /* Callee saved registers.*/
-    reg_t regs[14];
-} switchto_context_t;
 
 typedef enum {
     TASK_BLOCKED,
@@ -94,6 +89,9 @@ typedef struct pcb
     list_node_t list;
     list_head wait_list;
 
+    /* sleep timer */
+    timer_t timer;
+
     /* process id */
     pid_t pid;
 
@@ -103,6 +101,10 @@ typedef struct pcb
     /* BLOCK | READY | RUNNING | ZOMBIE */
     task_status_t status;
     spawn_mode_t mode;
+
+    /* priority and wait time */
+    uint8_t priority;
+    uint64_t ready_tick;
 
     /* cursor position */
     int cursor_x;
@@ -114,10 +116,12 @@ typedef struct task_info
 {
     ptr_t entry_point;
     task_type_t type;
+    uint8_t priority;
 } task_info_t;
 
 /* ready queue to run */
 extern list_head ready_queue;
+extern list_head sleep_queue;
 
 /* current running task PCB */
 extern pcb_t * volatile current_running;
@@ -129,7 +133,7 @@ extern pcb_t pcb[NUM_MAX_TASK];
 extern pcb_t pid0_pcb;
 extern const ptr_t pid0_stack;
 
-extern void switch_to(pcb_t *prev, pcb_t *next);
+extern void scheduler(void);
 extern void do_scheduler(void);
 
 extern pid_t do_spawn(task_info_t *task, void* arg, spawn_mode_t mode);
@@ -143,5 +147,7 @@ extern pid_t do_getpid();
 
 extern void do_block(list_node_t *, list_head *queue);
 extern void do_unblock(list_node_t *);
+
+extern list_node_t* max_priority_node(void);
 
 #endif

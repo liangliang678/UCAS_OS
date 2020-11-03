@@ -31,15 +31,22 @@
 #include <stdatomic.h>
 
 /* on success, these functions return zero. Otherwise, return an error number */
-#define EBUSY  1 /* the lock is busy(for example, it is locked by another thread) */
+#define EBUSY  1 /* the lock is busy */
 #define EINVAL 2 /* the lock is invalid */
 
 typedef atomic_int mthread_spinlock_t;
-
+typedef atomic_long mthread_mutex_t;
+/*
 typedef struct mthread_mutex
 {
     // TODO:
-} mthread_mutex_t;
+} mthread_mutex_t;*/
+
+typedef enum {
+    INVALID,
+    UNLOCKED,
+    LOCKED,
+} lock_status_t;
 
 int mthread_spin_init(mthread_spinlock_t *lock);
 int mthread_spin_destroy(mthread_spinlock_t *lock);

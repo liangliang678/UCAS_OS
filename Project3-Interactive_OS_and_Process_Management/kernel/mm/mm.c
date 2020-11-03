@@ -16,3 +16,8 @@ void* kmalloc(size_t size)
     memCurr = ret;
     return (void*)ret;
 }
+
+void freePage(ptr_t baseAddr, int numPage)
+{
+    ;
+}

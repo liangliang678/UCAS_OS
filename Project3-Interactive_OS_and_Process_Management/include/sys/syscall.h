@@ -44,6 +44,11 @@ void sys_yield();
 void sys_futex_wait(volatile uint64_t *val_addr, uint64_t val);
 void sys_futex_wakeup(volatile uint64_t *val_addr, int num_wakeup);
 
+#define BINSEM_OP_LOCK 0
+#define BINSEM_OP_UNLOCK 1
+int sys_binsem_get(int key);
+void sys_binsem_op(int binsem_id, int op);
+
 void sys_write(char *);
 void sys_move_cursor(int, int);
 void sys_reflush();
