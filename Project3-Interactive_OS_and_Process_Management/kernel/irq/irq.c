@@ -60,6 +60,7 @@ void handle_int(regs_context_t *regs, uint64_t stval, uint64_t cause)
 void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause)
 {
     // Output more debug information
+    vt100_move_cursor(1, 1);
     char* reg_name[] = {
         "zero "," ra  "," sp  "," gp  "," tp  ",
         " t0  "," t1  "," t2  ","s0/fp"," s1  ",

@@ -39,11 +39,19 @@ void binsem_op(int binsem_id, int op)
             do_block(&current_running->list, &node->block_queue);
             scheduler();
         }
+        else{
+            current_running->mutex_id[current_running->mutex_num] = binsem_id;
+            current_running->mutex_num++;
+        }
     }
     else if(op == BINSEM_OP_UNLOCK){
         node->sem++;
         if(node->sem <= 0){
-            do_unblock(node->block_queue.next);
+            list_node_t * unblocked_pcb_list = node->block_queue.next;
+            do_unblock(unblocked_pcb_list);
+            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_id[list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num] = binsem_id;
+            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num = 
+            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num + 1;           
             scheduler();
         }
     }

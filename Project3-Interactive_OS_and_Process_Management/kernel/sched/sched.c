@@ -4,9 +4,13 @@
 #include <os/sched.h>
 #include <os/time.h>
 #include <os/irq.h>
+#include <os/binsem.h>
 #include <screen.h>
 #include <stdio.h>
 #include <assert.h>
+#include <csr.h>
+
+extern void __global_pointer$();
 
 pcb_t pcb[NUM_MAX_TASK];
 const ptr_t pid0_stack = INIT_KERNEL_STACK + PAGE_SIZE;
@@ -27,7 +31,7 @@ LIST_HEAD(sleep_queue);
 pcb_t * volatile current_running;
 
 /* global process id */
-pid_t process_id = 1;
+pid_t process_id = 2;
 
 /* 
  * Only modify PCB, current_running, process_id and ready_queue
@@ -50,13 +54,89 @@ void scheduler(void)
     current_running = list_entry(max_priority_node(), pcb_t, list); 
     list_del(&current_running->list);
     current_running->status = TASK_RUNNING;
-    process_id = current_running->pid;
         
     // restore the current_running's cursor_x and cursor_y
     vt100_move_cursor(current_running->cursor_x,
                       current_running->cursor_y);
     screen_cursor_x = current_running->cursor_x;
     screen_cursor_y = current_running->cursor_y;
+}
+
+pid_t do_spawn(task_info_t *task, void* arg, spawn_mode_t mode)
+{
+    pcb_t *new_pcb = NULL;
+    for(int i = 0; i < NUM_MAX_TASK; i++){
+        if(pcb[i].pid == -1){
+            new_pcb = &pcb[i];
+            break;
+        }
+    }
+    new_pcb->kernel_sp = allocPage(1); 
+    new_pcb->user_sp = allocPage(1);
+    new_pcb->preempt_count = 0;
+    new_pcb->kernel_stack_base = new_pcb->kernel_sp;
+    new_pcb->user_stack_base = new_pcb->user_sp;
+    list_add_tail(&new_pcb->list, &ready_queue);
+    init_list_head(&new_pcb->wait_list);
+    new_pcb->mutex_num = 0;
+    new_pcb->pid = process_id++;
+    new_pcb->type = task->type;
+    new_pcb->status = TASK_READY;
+    new_pcb->mode = mode;
+    new_pcb->priority = 0;
+    new_pcb->ready_tick = get_ticks();
+
+    /* initialization registers on kernel stack */
+    regs_context_t *pt_regs = (regs_context_t *)(new_pcb->kernel_sp - sizeof(regs_context_t));
+    new_pcb->kernel_sp -= sizeof(regs_context_t);
+    pt_regs->regs[1] = (reg_t)task->entry_point;        //ra
+    pt_regs->regs[2] = (reg_t)new_pcb->user_sp;         //sp
+    pt_regs->regs[3] = (reg_t)__global_pointer$;        //gp
+    pt_regs->regs[10]= (reg_t)arg;                      //a0
+    pt_regs->sstatus = (reg_t)SR_SPIE;                  //SPP = 0, SPIE = 1
+    pt_regs->sepc = (reg_t)task->entry_point;           //sepc = ra
+    pt_regs->sscratch = (reg_t)new_pcb;                 //sscratch = tp
+
+    return new_pcb->pid;
+}
+
+void do_exit()
+{
+    // unblock tasks in wait queue
+    list_node_t *wakeup_p = current_running->wait_list.next;
+    while(wakeup_p != &current_running->wait_list){
+        wakeup_p = wakeup_p->next;
+        do_unblock(wakeup_p->prev);
+    }
+
+    // release binsem mutex
+    for(int i = 0; i < current_running->mutex_num; i++){
+        int binsem_id = current_running->mutex_id[i];
+        binsem_nodes[binsem_id].sem++;
+        if(binsem_nodes[binsem_id].sem <= 0){
+            list_node_t * unblocked_pcb_list = binsem_nodes[binsem_id].block_queue.next;
+            do_unblock(unblocked_pcb_list);
+            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_id[list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num] = binsem_id;
+            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num = 
+            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num + 1;
+        }
+    }
+
+    // release user stack
+    freePage(current_running->user_stack_base, 1);
+
+    // release pcb node
+    if(current_running->mode == AUTO_CLEANUP_ON_EXIT){
+        current_running->status = TASK_EXITED;
+    }
+    else{
+        current_running->status = TASK_ZOMBIE;
+    }
+    current_running->pid = -1;
+
+    // delete from ready queue
+    list_del(&current_running->list);
+    scheduler();
 }
 
 // sleep(seconds)
@@ -69,6 +149,121 @@ void do_sleep(uint32_t sleep_time)
     list_node_t* parameter = &current_running->list;
     timer_create((TimerCallback)do_unblock, (void*)parameter, get_ticks() + time_base * sleep_time);
     scheduler();
+}
+
+int do_kill(pid_t pid)
+{
+    // search the pcb
+    pcb_t *needed_pcb = NULL;
+    for(int i = 0; i < NUM_MAX_TASK; i++){
+        if(pcb[i].pid == pid){
+            needed_pcb = &pcb[i];
+            break;
+        }
+    }
+    if(needed_pcb == NULL){
+        return 0;
+    }
+
+    // unblock tasks in wait queue
+    list_node_t *wakeup_p = needed_pcb->wait_list.next;
+    while(wakeup_p != &needed_pcb->wait_list){
+        wakeup_p = wakeup_p->next;
+        do_unblock(wakeup_p->prev);   
+    }
+
+    // release binsem mutex
+    for(int i = 0; i < needed_pcb->mutex_num; i++){
+        int binsem_id = needed_pcb->mutex_id[i];
+        binsem_nodes[binsem_id].sem++;
+        if(binsem_nodes[binsem_id].sem <= 0){
+            list_node_t * unblocked_pcb_list = binsem_nodes[binsem_id].block_queue.next;
+            do_unblock(unblocked_pcb_list);
+            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_id[list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num] = binsem_id;
+            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num = 
+            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num + 1;
+        }
+    }
+
+    // release user stack
+    freePage(needed_pcb->user_stack_base, 1);
+    
+    // release pcb node
+    if(needed_pcb->mode == AUTO_CLEANUP_ON_EXIT){
+        needed_pcb->status = TASK_EXITED;
+    }
+    else{
+        needed_pcb->status = TASK_ZOMBIE;
+    }
+    needed_pcb->pid = -1;
+
+    // delete from ready queue
+    list_del(&needed_pcb->list);
+    scheduler();
+    
+    return 1;
+}
+
+int do_waitpid(pid_t pid)
+{
+    pcb_t *needed_pcb = NULL;
+    for(int i = 0; i < NUM_MAX_TASK; i++){
+        if(pcb[i].pid == pid){
+            needed_pcb = &pcb[i];
+            break;
+        }
+    }
+    if(needed_pcb == NULL){
+        return 0;
+    }
+    
+    if(needed_pcb->status == TASK_ZOMBIE){
+        needed_pcb->status = TASK_EXITED;
+        needed_pcb->pid = -1;
+    }
+    else{
+        do_block(&current_running->list, &needed_pcb->wait_list);
+        scheduler();
+        return 1;
+    }   
+}
+
+void do_process_show(char* buffer)
+{
+    buffer[0] = '\0';
+    kstrcat(buffer, "[PROCESS TABLE]\n");
+    for(int i = 0; i < NUM_MAX_TASK; i++){
+        if(pcb[i].pid != -1){
+            kstrcat(buffer, "PID: ");
+            char pid_c[3];
+            pid_c[0] = (char)((pcb[i].pid / 10) + '0');
+            pid_c[1] = (char)((pcb[i].pid % 10) + '0');
+            pid_c[2] = '\0';
+            kstrcat(buffer, pid_c);
+            kstrcat(buffer, "\tSTATUS: ");
+            if(pcb[i].status == TASK_BLOCKED){
+                kstrcat(buffer, "BLOCKED\n");
+            }
+            else if(pcb[i].status == TASK_RUNNING){
+                kstrcat(buffer, "RUNNING\n");
+            }
+            else if(pcb[i].status == TASK_READY){
+                kstrcat(buffer, "READY\n");
+            }
+            else if(pcb[i].status == TASK_EXITED){
+                kstrcat(buffer, "EXITED\n");
+            }
+            else if(pcb[i].status == TASK_ZOMBIE){
+                kstrcat(buffer, "ZOMBIE\n");
+            }
+        }
+    }
+    return buffer;
+}
+
+pid_t do_getpid()
+{
+    return current_running->pid;
 }
 
 // block the pcb task into the block queue

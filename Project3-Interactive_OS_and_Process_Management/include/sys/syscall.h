@@ -39,6 +39,8 @@ void sys_exit(void);
 void sys_sleep(uint32_t time);
 int sys_kill(pid_t pid);
 int sys_waitpid(pid_t pid);
+void sys_process_show(char* buffer);
+pid_t sys_getpid();
 void sys_yield();
 
 void sys_futex_wait(volatile uint64_t *val_addr, uint64_t val);
@@ -52,14 +54,12 @@ void sys_binsem_op(int binsem_id, int op);
 void sys_write(char *);
 void sys_move_cursor(int, int);
 void sys_reflush();
+void sys_screen_clear();
+void sys_screen_scroll(int line1, int line2);
 
 long sys_get_timebase();
 long sys_get_tick();
-
-void sys_process_show(char* buffer);
-void sys_screen_clear();
-pid_t sys_getpid();
 int sys_get_char();
-void sys_screen_scroll(int line1, int line2);
+
 
 #endif

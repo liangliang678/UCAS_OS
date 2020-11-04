@@ -89,6 +89,10 @@ typedef struct pcb
     list_node_t list;
     list_head wait_list;
 
+    /* acquired mutex lock id */
+    int mutex_id[100];
+    int mutex_num;
+
     /* sleep timer */
     timer_t timer;
 

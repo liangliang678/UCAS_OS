@@ -6,6 +6,11 @@
 #define MAX_MBOX_LENGTH (64)
 
 // TODO: please define mailbox_t;
+typedef struct mailbox
+{
+    /* data */
+}mailbox_t;
+
 // mailbox_t is just an id of kernel's mail box.
 
 mailbox_t mbox_open(char *);

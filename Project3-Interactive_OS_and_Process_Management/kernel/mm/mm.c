@@ -1,6 +1,8 @@
 #include <os/mm.h>
 
 ptr_t memCurr = FREEMEM;
+LIST_HEAD(free_page_queue);
+
 ptr_t allocPage(int numPage)
 {
     // align PAGE_SIZE

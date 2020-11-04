@@ -1,6 +1,6 @@
 #ifndef INCLUDE_TASK3_H_
 #define INCLUDE_TASK3_H_
-/*
+
 // [TASK2]
 void ready_to_exit_task(void);
 void wait_lock_task();
@@ -24,6 +24,6 @@ void LiuBei(void);
 void CaoCao(void);
 
 // [MULTI-CORE]
-void test_multicore(void);*/
+void test_multicore(void);
 
 #endif

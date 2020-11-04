@@ -31,7 +31,7 @@
 #include <sys/syscall.h>
 #include <stdio.h>
 #include <stdint.h>
-/*
+
 struct task_info task_test_waitpid = {(uintptr_t)&wait_exit_task, USER_PROCESS};
 struct task_info task_test_semaphore = {(uintptr_t)&semaphore_add_task1, USER_PROCESS};
 struct task_info task_test_condition = {(uintptr_t)&test_condition, USER_PROCESS};
@@ -48,11 +48,12 @@ static struct task_info *test_tasks[16] = {&task_test_waitpid,
                                            &task_test_barrier,
                                            &task13, &task14, &task15,
                                            &task_test_multicore};
-static int num_test_tasks = 8;*/
+static int num_test_tasks = 8;
 
 #define SHELL_BEGIN 15
 #define SHELL_END   30
 #define SHELL_WIDTH 80
+#define MAX_PREV    5
 
 void test_shell()
 {
@@ -63,6 +64,12 @@ void test_shell()
     const int SHELL_COMMAND_END   = SHELL_WIDTH;
     int print_location_x;
     int print_location_y;
+
+    char prev_command[MAX_PREV][100] = {0};
+    for(int i = 0; i < MAX_PREV; i++){
+        prev_command[i][0] = '\0';
+    }
+    int back_times = 0;
 
     sys_move_cursor(1, SHELL_BEGIN);
     printf("------------------- COMMAND -------------------");
@@ -78,7 +85,7 @@ void test_shell()
             sys_move_cursor(1, print_location_y);
             sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);    
         }
-        printf("%s", prompt); 
+        printf("%s", prompt);
 
         // call syscall to read UART port
         int input, buf_p = 0;
@@ -94,19 +101,36 @@ void test_shell()
                     sys_move_cursor(print_location_x, print_location_y);
                 }           
             }
+            else if(input == 27){
+                if(back_times < MAX_PREV){
+                    strcpy(buffer, prev_command[back_times++]);
+                    print_location_x = SHELL_COMMAND_BEGIN;
+                    sys_move_cursor(print_location_x, print_location_y);
+                    printf("%s", blank);
+                    sys_move_cursor(print_location_x, print_location_y);
+                    printf("%s", buffer);
+                    print_location_x += strlen(buffer);
+                    buf_p = strlen(buffer);
+                }
+            }
             else{
                 if(print_location_x < SHELL_COMMAND_END){
                     buffer[buf_p++] = (char)input;
                     print_location_x++;
                     printf("%c",input);
-                }
-                               
-            } 
+                }             
+            }
         }
+        buffer[buf_p] = '\0';
+        for(int i = MAX_PREV - 1; i > 0; i--){
+            strcpy(prev_command[i], prev_command[i-1]);
+        }
+        strcpy(prev_command[0], buffer);     
         buffer[buf_p++] = '\n';
         buffer[buf_p++] = '\0';
         printf("\n");
         print_location_y++;
+        back_times = 0;
 
         // parse input (ps, exec, kill, clear)
         int argc = 0;
@@ -132,10 +156,13 @@ void test_shell()
 
         int empty_command = (argc == 0);
         int ps_command = !strcmp(argv[0], "ps\n");
+        int reset_command = !strcmp(argv[0], "reset\n");
         int clear_command = !strcmp(argv[0], "clear\n");
+        int exec_command = !strcmp(argv[0], "exec\n");
+        int kill_command = !strcmp(argv[0], "kill\n");
 
         if(empty_command){
-            ;
+            continue;
         }
         else if(ps_command){
             if(argc >= 2){
@@ -169,6 +196,25 @@ void test_shell()
                 print_location_y++;
             }
         }
+        else if(reset_command){
+            if(argc >= 2){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too many arguments for command reset!\n");
+                print_location_y++;
+                continue;
+            }
+
+            for(int i = SHELL_BEGIN + 1; i < SHELL_END; i++){
+                sys_move_cursor(1, i);
+                printf("%s", blank);
+            }
+            print_location_y = SHELL_BEGIN + 1;
+            sys_move_cursor(1, print_location_y);
+        }
         else if(clear_command){
             if(argc >= 2){
                 if(print_location_y == SHELL_END){
@@ -180,12 +226,88 @@ void test_shell()
                 print_location_y++;
                 continue;
             }
-            for(int i = SHELL_BEGIN + 1; i < SHELL_END; i++){
-                sys_move_cursor(1, i);
-                printf("%s", blank);
-            }
+
+            sys_screen_clear();
+            sys_move_cursor(1, SHELL_BEGIN);
+            printf("------------------- COMMAND -------------------");
+            sys_move_cursor(1, SHELL_END);
+            printf("------------------- COMMAND -------------------");
             print_location_y = SHELL_BEGIN + 1;
             sys_move_cursor(1, print_location_y);
+        }
+        else if(exec_command){
+            if(argc >= 3){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too many arguments for command exec!\n");
+                print_location_y++;
+                continue;
+            }
+            else if(argc <= 1){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too few arguments for command exec!\n");
+                print_location_y++;
+                continue;
+            }
+
+            int task_num = argv[1][0] - '0';
+            sys_spawn(test_tasks[task_num], NULL, AUTO_CLEANUP_ON_EXIT);
+            if(print_location_y == SHELL_END){
+                print_location_y--;
+                sys_move_cursor(1, print_location_y);
+                sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+            }
+            printf("exec process[%d]\n", task_num);
+            print_location_y++;
+        }
+        else if(kill_command){
+            if(argc >= 3){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too many arguments for command kill!\n");
+                print_location_y++;
+                continue;
+            }
+            else if(argc <= 1){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too few arguments for command kill!\n");
+                print_location_y++;
+                continue;
+            }
+            
+            int pid = argv[1][0] - '0';
+            if(pid == 0 || pid == 1){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Cannot kill task(pid=%d): Permission Denied!\n", pid);
+                print_location_y++;
+            }
+            else if(!sys_kill(pid)){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Cannot kill task(pid=%d): task does not exist!\n", pid);
+                print_location_y++;
+            }
         }
         else{
             if(print_location_y == SHELL_END){
@@ -194,7 +316,7 @@ void test_shell()
                 sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
             }
             printf("Unknown command: ");
-            printf("%s", buffer);
+            printf("%s", argv[0]);
             print_location_y++;
         }
     }

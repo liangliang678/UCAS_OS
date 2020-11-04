@@ -32,7 +32,6 @@
 #include <os/syscall.h>
 #include <os/futex.h>
 #include <os/binsem.h>
-#include <os/func.h>
 #include <screen.h>
 #include <sbi.h>
 #include <stdio.h>
@@ -65,21 +64,27 @@ static void init_pcb_stack(ptr_t kernel_stack, ptr_t user_stack, ptr_t entry_poi
 
 static void init_pcb()
 {
-    /* initialize all pcb and add them into ready_queue */
+    /* initialize all pcb and add test_shell into ready_queue */
     for(int i = 0; i < NUM_MAX_TASK; i++){
         pcb[i].pid = -1;
     }
     
-    pcb[0].kernel_sp = allocPage(1);
+    pcb[0].kernel_sp = allocPage(2);
     pcb[0].user_sp = allocPage(2);
     pcb[0].preempt_count = 0;
+    pcb[0].kernel_stack_base = pcb[0].kernel_sp;
+    pcb[0].user_stack_base = pcb[0].user_sp;
     list_add_tail(&pcb[0].list, &ready_queue);
+    init_list_head(&pcb[0].wait_list);
+    pcb[0].mutex_num = 0;
     pcb[0].pid = 1;
     pcb[0].type = USER_PROCESS;
     pcb[0].status = TASK_READY;
+    pcb[0].mode = AUTO_CLEANUP_ON_EXIT;
     pcb[0].priority = 0;
+    pcb[0].ready_tick = get_ticks();
         
-    init_pcb_stack( pcb[0].kernel_sp, pcb[0].user_sp, &test_shell, &pcb[0]); 
+    init_pcb_stack(pcb[0].kernel_sp, pcb[0].user_sp, &test_shell, &pcb[0]); 
 
     /* initialize `current_running` */
     current_running = &pid0_pcb;
@@ -88,7 +93,14 @@ static void init_pcb()
 static void init_syscall(void)
 {
     // initialize system call table.
+    syscall[SYSCALL_SPAWN] = (long(*)())do_spawn;
+    syscall[SYSCALL_EXIT] = (long(*)())do_exit;
     syscall[SYSCALL_SLEEP] = (long(*)())do_sleep;
+    syscall[SYSCALL_KILL] = (long(*)())do_kill;
+    syscall[SYSCALL_WAITPID] = (long(*)())do_waitpid;
+    syscall[SYSCALL_PS] = (long(*)())do_process_show;
+    syscall[SYSCALL_GETPID] = (long(*)())do_getpid;
+    syscall[SYSCALL_YIELD] = (long(*)())0;
     syscall[SYSCALL_FUTEX_WAIT] = (long(*)())futex_wait;
     syscall[SYSCALL_FUTEX_WAKEUP] = (long(*)())futex_wakeup;
     syscall[SYSCALL_BINSEM_GET] = (long(*)())binsem_get;
@@ -96,11 +108,11 @@ static void init_syscall(void)
     syscall[SYSCALL_WRITE] = (long(*)())screen_write;
     syscall[SYSCALL_CURSOR] = (long(*)())screen_move_cursor;
     syscall[SYSCALL_REFLUSH] = (long(*)())screen_reflush;
-    syscall[SYSCALL_GET_TIMEBASE] = (long(*)())get_time_base;
-    syscall[SYSCALL_GET_TICK] = (long(*)())get_ticks;
-    syscall[SYSCALL_PS] = (long(*)())process_show;
-    syscall[SYSCALL_GET_CHAR] = (long(*)())sbi_console_getchar;
+    syscall[SYSCALL_SCREEN_CLEAR] = (long(*)())screen_clear;
     syscall[SYSCALL_SCREEN_SCROLL] = (long(*)())screen_scroll;
+    syscall[SYSCALL_GET_TIMEBASE] = (long(*)())get_time_base;
+    syscall[SYSCALL_GET_TICK] = (long(*)())get_ticks;   
+    syscall[SYSCALL_GET_CHAR] = (long(*)())sbi_console_getchar;  
 }
 
 // jump from bootloader

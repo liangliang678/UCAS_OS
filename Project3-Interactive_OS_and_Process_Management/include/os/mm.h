@@ -28,6 +28,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * */
 
 #include <type.h>
+#include <os/list.h>
 
 #define MEM_SIZE 32
 #define PAGE_SIZE 4096 // 4K
@@ -39,6 +40,12 @@
 #define ROUNDDOWN(a, n) (((uint64_t)(a)) & ~((n)-1))
 
 extern ptr_t memCurr;
+
+typedef struct page
+{
+    ptr_t baseAddr;
+    list_node_t list;
+}page_t;
 
 extern ptr_t allocPage(int numPage);
 extern void freePage(ptr_t baseAddr, int numPage);
