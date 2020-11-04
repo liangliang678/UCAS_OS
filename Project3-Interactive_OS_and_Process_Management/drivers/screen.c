@@ -41,27 +41,39 @@ static void vt100_hidden_cursor()
     printk("%c[?25l", 27);
 }
 
-/* write a char */
-static void screen_write_ch(char ch)
-{
-    if (ch == '\n')
-    {
-        screen_cursor_x = 1;
-        screen_cursor_y++;
-    }
-    else
-    {
-        new_screen[(screen_cursor_y - 1) * SCREEN_WIDTH + (screen_cursor_x - 1)] = ch;
-        screen_cursor_x++;
-    }
-    current_running->cursor_x = screen_cursor_x;
-    current_running->cursor_y = screen_cursor_y;
-}
-
 void init_screen(void)
 {
     vt100_hidden_cursor();
     vt100_clear();
+}
+
+// scroll screen range(line1, line2)
+void screen_scroll(int line1, int line2)
+{
+    int i, j;
+
+    for (i = line1 - 1; i < line2; i++)
+    {
+        for (j = 0; j < SCREEN_WIDTH; j++)
+        {
+            old_screen[i * SCREEN_WIDTH + j] = 0;
+        }
+    }
+
+    for (i = line1 - 1; i < line2; i++)
+    {
+        for (j = 0; j < SCREEN_WIDTH; j++)
+        {
+            if (i == line2 - 1)
+            {
+                new_screen[i * SCREEN_WIDTH + j] = ' ';
+            }
+            else
+            {
+                new_screen[i * SCREEN_WIDTH + j] = new_screen[(i + 1) * SCREEN_WIDTH + j];
+            }
+        }
+    }
 }
 
 void screen_clear(void)
@@ -83,6 +95,23 @@ void screen_move_cursor(int x, int y)
 {
     screen_cursor_x = x;
     screen_cursor_y = y;
+    current_running->cursor_x = screen_cursor_x;
+    current_running->cursor_y = screen_cursor_y;
+}
+
+/* write a char */
+static void screen_write_ch(char ch)
+{
+    if (ch == '\n')
+    {
+        screen_cursor_x = 1;
+        screen_cursor_y++;
+    }
+    else
+    {
+        new_screen[(screen_cursor_y - 1) * SCREEN_WIDTH + (screen_cursor_x - 1)] = ch;
+        screen_cursor_x++;
+    }
     current_running->cursor_x = screen_cursor_x;
     current_running->cursor_y = screen_cursor_y;
 }

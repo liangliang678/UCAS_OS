@@ -1,9 +1,8 @@
 HOST_CC = gcc
-#CROSS_PREFIX = riscv64-unknown-elf-
 CROSS_PREFIX = riscv64-unknown-linux-gnu-
 CC = ${CROSS_PREFIX}gcc
 OBJDUMP = ${CROSS_PREFIX}objdump
-CFLAGS = -O0  -fno-builtin -nostdlib -T riscv.lds -Wall -mcmodel=medany -Iinclude -Idrivers -Itest -Itest/test_project2 -Itiny_libc/include -nostdinc -g
+CFLAGS = -O0  -fno-builtin -nostdlib -T riscv.lds -Wall -mcmodel=medany -Iinclude -Idrivers -Itest -Itest/test_project3 -Itiny_libc/include -nostdinc -g
 DISK = /dev/sdb
 
 BOOTLOADER_ENTRYPOINT = 0x50200000
@@ -19,25 +18,22 @@ SRC_DRIVER	= ./drivers/screen.c
 SRC_INIT 	= ./init/main.c
 SRC_INT		= ./kernel/irq/irq.c
 SRC_LOCK	= ./kernel/locking/lock.c ./kernel/locking/futex.c ./kernel/locking/binsem.c
-SRC_SCHED	= ./kernel/sched/sched.c ./kernel/sched/time.c
+SRC_SCHED	= ./kernel/sched/sched.c ./kernel/sched/time.c ./kernel/sched/smp.c ./kernel/sched/func.c
 SRC_MM		= ./kernel/mm/mm.c
 SRC_SYSCALL	= ./kernel/syscall/syscall.c
 SRC_LIBS	= ./libs/string.c ./libs/printk.c
 
-SRC_LIBC	= ./tiny_libc/printf.c ./tiny_libc/string.c ./tiny_libc/mthread.c ./tiny_libc/syscall.c ./tiny_libc/syscall.S ./tiny_libc/time.c
+SRC_LIBC	= ./tiny_libc/getchar.c ./tiny_libc/printf.c ./tiny_libc/string.c ./tiny_libc/mthread.c ./tiny_libc/syscall.c ./tiny_libc/syscall.S ./tiny_libc/time.c
 
-SRC_TEST	= ./test/test.c
-SRC_TEST2	= ./test/test_project2/test_scheduler1.c ./test/test_project2/test_lock1.c
-SRC_TEST3	= ./test/test_project2/test_scheduler2.c ./test/test_project2/test_sleep.c ./test/test_project2/test_timer.c ./test/test_project2/test_lock2.c ./test/test_project2/test_lock2_binsem.c ./test/test_project2/test_deadlock.c
-SRC_TEST4   = ./test/test_project2/test_priority.c
-
-SRC_MAIN	= ${SRC_ARCH} ${SRC_INIT} ${SRC_INT} ${SRC_DRIVER} ${SRC_LOCK} ${SRC_SCHED} ${SRC_MM} ${SRC_SYSCALL} ${SRC_LIBS} ${SRC_LIBC} ${SRC_TEST} ${SRC_TEST2} ${SRC_TEST3} ${SRC_TEST4}
+SRC_SHELL	= ./test/test_shell.c
+SRC_TEST    = ./test/test_project3/test_affinity.c ./test/test_project3/test_barrier.c ./test/test_project3/test_condition.c ./test/test_project3/test_kill.c ./test/test_project3/test_multicore.c ./test/test_project3/test_sanguo.c ./test/test_project3/test_semaphore.c ./test/test_project3/test_wait.c
+SRC_MAIN	= ${SRC_ARCH} ${SRC_INIT} ${SRC_INT} ${SRC_DRIVER} ${SRC_LOCK} ${SRC_SCHED} ${SRC_MM} ${SRC_SYSCALL} ${SRC_LIBS} ${SRC_LIBC} ${SRC_SHELL} #${SRC_TEST}
 
 SRC_IMAGE	= ./tools/createimage.c
 
 .PHONY:all main bootblock clean
 
-all: createimage image asm # floppy
+all: createimage image asm
 
 bootblock: $(SRC_BOOT) riscv.lds
 	${CC} ${CFLAGS} -o bootblock $(SRC_BOOT) -e main -Ttext=${BOOTLOADER_ENTRYPOINT}

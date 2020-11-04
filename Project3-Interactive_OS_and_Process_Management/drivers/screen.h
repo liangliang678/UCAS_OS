@@ -38,6 +38,9 @@ void init_screen(void);
 /* clear screen */
 void screen_clear(void);
 
+/* scroll screen range(line1, line2) */
+void screen_scroll(int line1, int line2);
+
 /* reflush screen buffer */
 void screen_reflush(void);
 

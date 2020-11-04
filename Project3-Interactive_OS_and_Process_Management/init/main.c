@@ -32,6 +32,7 @@
 #include <os/syscall.h>
 #include <os/futex.h>
 #include <os/binsem.h>
+#include <os/func.h>
 #include <screen.h>
 #include <sbi.h>
 #include <stdio.h>
@@ -65,97 +66,20 @@ static void init_pcb_stack(ptr_t kernel_stack, ptr_t user_stack, ptr_t entry_poi
 static void init_pcb()
 {
     /* initialize all pcb and add them into ready_queue */
-    int num_tasks;
-/*
-    // KERNEL
-    // sched1_tasks
-    for(num_tasks = 0; num_tasks < num_sched1_tasks; num_tasks++){
-        pcb[num_tasks].kernel_sp = allocPage(1);
-        pcb[num_tasks].user_sp = pcb[num_tasks].kernel_sp;
-        pcb[num_tasks].preempt_count = 0;
-        list_add_tail(&pcb[num_tasks].list, &ready_queue);
-        pcb[num_tasks].pid = num_tasks + 1;
-        pcb[num_tasks].type = sched1_tasks[num_tasks]->type;
-        pcb[num_tasks].status = TASK_READY;
-        pcb[num_tasks].priority = sched1_tasks[num_tasks]->priority;
-        
-        init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
-                        sched1_tasks[num_tasks]->entry_point, &pcb[num_tasks]); 
+    for(int i = 0; i < NUM_MAX_TASK; i++){
+        pcb[i].pid = -1;
     }
-    // lock_tasks
-    for(num_tasks = num_sched1_tasks; num_tasks < num_lock_tasks + num_sched1_tasks; num_tasks++){
-        pcb[num_tasks].kernel_sp = allocPage(1);
-        pcb[num_tasks].user_sp = pcb[num_tasks].kernel_sp;
-        pcb[num_tasks].preempt_count = 0;
-        list_add_tail(&pcb[num_tasks].list, &ready_queue);
-        pcb[num_tasks].pid = num_tasks + 1;
-        pcb[num_tasks].type = lock_tasks[num_tasks - num_sched1_tasks]->type;
-        pcb[num_tasks].status = TASK_READY;
-        pcb[num_tasks].priority = lock_tasks[num_tasks - num_sched1_tasks]->priority;
+    
+    pcb[0].kernel_sp = allocPage(1);
+    pcb[0].user_sp = allocPage(2);
+    pcb[0].preempt_count = 0;
+    list_add_tail(&pcb[0].list, &ready_queue);
+    pcb[0].pid = 1;
+    pcb[0].type = USER_PROCESS;
+    pcb[0].status = TASK_READY;
+    pcb[0].priority = 0;
         
-        init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
-                        lock_tasks[num_tasks - num_sched1_tasks]->entry_point, &pcb[num_tasks]); 
-    }
-*//*
-    // USER
-    // timer_tasks
-    for(num_tasks = 0; num_tasks < num_timer_tasks; num_tasks++){
-        pcb[num_tasks].kernel_sp = allocPage(1);
-        pcb[num_tasks].user_sp = allocPage(1);
-        pcb[num_tasks].preempt_count = 0;
-        list_add_tail(&pcb[num_tasks].list, &ready_queue);
-        pcb[num_tasks].pid = num_tasks + 1;
-        pcb[num_tasks].type = timer_tasks[num_tasks]->type;
-        pcb[num_tasks].status = TASK_READY;
-        pcb[num_tasks].priority = timer_tasks[num_tasks]->priority;
-        
-        init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
-                        timer_tasks[num_tasks]->entry_point, &pcb[num_tasks]); 
-    }
-    // sched2_tasks
-    for(num_tasks = num_timer_tasks; num_tasks < num_timer_tasks + num_sched2_tasks; num_tasks++){
-        pcb[num_tasks].kernel_sp = allocPage(1);
-        pcb[num_tasks].user_sp = allocPage(1);
-        pcb[num_tasks].preempt_count = 0;
-        list_add_tail(&pcb[num_tasks].list, &ready_queue);
-        pcb[num_tasks].pid = num_tasks + 1;
-        pcb[num_tasks].type = sched2_tasks[num_tasks - num_timer_tasks]->type;
-        pcb[num_tasks].status = TASK_READY;
-        pcb[num_tasks].priority = sched2_tasks[num_tasks - num_timer_tasks]->priority;
-        
-        init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
-                        sched2_tasks[num_tasks - num_timer_tasks]->entry_point, &pcb[num_tasks]); 
-    }
-    // lock2_tasks
-    for(num_tasks = num_timer_tasks + num_sched2_tasks; num_tasks < num_timer_tasks + num_sched2_tasks + num_lock2_tasks; num_tasks++){
-        pcb[num_tasks].kernel_sp = allocPage(1);
-        pcb[num_tasks].user_sp = allocPage(1);
-        pcb[num_tasks].preempt_count = 0;
-        list_add_tail(&pcb[num_tasks].list, &ready_queue);
-        pcb[num_tasks].pid = num_tasks + num_timer_tasks + num_sched2_tasks + 1;
-        pcb[num_tasks].type = lock2_tasks[num_tasks - num_timer_tasks - num_sched2_tasks]->type;
-        pcb[num_tasks].status = TASK_READY;
-        pcb[num_tasks].priority = lock2_tasks[num_tasks - num_timer_tasks - num_sched2_tasks]->priority;
-        
-        init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
-                        lock2_tasks[num_tasks - num_timer_tasks - num_sched2_tasks]->entry_point, &pcb[num_tasks]); 
-    }
-*/
-    // PRIORITY
-    // priority_tasks
-    for(num_tasks = 0; num_tasks < num_priority_tasks; num_tasks++){
-        pcb[num_tasks].kernel_sp = allocPage(1);
-        pcb[num_tasks].user_sp = allocPage(1);
-        pcb[num_tasks].preempt_count = 0;
-        list_add_tail(&pcb[num_tasks].list, &ready_queue);
-        pcb[num_tasks].pid = num_tasks + 1;
-        pcb[num_tasks].type = priority_tasks[num_tasks]->type;
-        pcb[num_tasks].status = TASK_READY;
-        pcb[num_tasks].priority = priority_tasks[num_tasks]->priority;
-        
-        init_pcb_stack( pcb[num_tasks].kernel_sp, pcb[num_tasks].user_sp, 
-                        priority_tasks[num_tasks]->entry_point, &pcb[num_tasks]); 
-    }
+    init_pcb_stack( pcb[0].kernel_sp, pcb[0].user_sp, &test_shell, &pcb[0]); 
 
     /* initialize `current_running` */
     current_running = &pid0_pcb;
@@ -174,6 +98,9 @@ static void init_syscall(void)
     syscall[SYSCALL_REFLUSH] = (long(*)())screen_reflush;
     syscall[SYSCALL_GET_TIMEBASE] = (long(*)())get_time_base;
     syscall[SYSCALL_GET_TICK] = (long(*)())get_ticks;
+    syscall[SYSCALL_PS] = (long(*)())process_show;
+    syscall[SYSCALL_GET_CHAR] = (long(*)())sbi_console_getchar;
+    syscall[SYSCALL_SCREEN_SCROLL] = (long(*)())screen_scroll;
 }
 
 // jump from bootloader
@@ -186,7 +113,7 @@ int main()
 
     // read CPU frequency and calc timer interval
     time_base = sbi_read_fdt(TIMEBASE);
-    timer_interval = (uint64_t)(time_base / 200);
+    timer_interval = (uint64_t)(time_base / 50);
 	
     // init futex mechanism and binsem mechanism
     init_system_futex();
@@ -202,6 +129,7 @@ int main()
 
     // init screen
     init_screen();
+    vt100_move_cursor(1, 1);
     printk("> [INIT] SCREEN initialization succeeded.\n\r");
 
     // Setup timer interrupt and enable all interrupt

@@ -50,3 +50,18 @@ long sys_get_tick()
 {
     return invoke_syscall(SYSCALL_GET_TICK, IGNORE, IGNORE, IGNORE);
 }
+
+void sys_process_show(char* buffer)
+{
+    return invoke_syscall(SYSCALL_PS, (uintptr_t)buffer, IGNORE, IGNORE);
+}
+
+int sys_get_char()
+{
+    return invoke_syscall(SYSCALL_GET_CHAR, IGNORE, IGNORE, IGNORE);
+}
+
+void sys_screen_scroll(int line1, int line2)
+{
+    invoke_syscall(SYSCALL_SCREEN_SCROLL, (uintptr_t)line1, (uintptr_t)line2, IGNORE);
+}

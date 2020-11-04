@@ -56,9 +56,10 @@ void sys_reflush();
 long sys_get_timebase();
 long sys_get_tick();
 
-void sys_process_show(void);
-void sys_screen_clear(void);
+void sys_process_show(char* buffer);
+void sys_screen_clear();
 pid_t sys_getpid();
 int sys_get_char();
+void sys_screen_scroll(int line1, int line2);
 
 #endif

@@ -75,8 +75,8 @@ void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause)
         }
         printk("\n\r");
     }
-    printk("sstatus: 0x%lx sbadaddr: 0x%lx scause: %lx\n\r",
-           regs->sstatus, regs->sbadaddr, regs->scause);
+    printk("sstatus: 0x%lx stval: 0x%lx scause: %lx\n\r",
+           regs->sstatus, regs->stval, regs->scause);
     printk("stval: 0x%lx cause: %lx\n\r",
            stval, cause);
     printk("sepc: 0x%lx\n\r", regs->sepc);
