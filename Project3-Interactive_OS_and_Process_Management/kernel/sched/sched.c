@@ -122,20 +122,20 @@ void do_exit()
         }
     }
 
-    // release user stack
-    freePage(current_running->user_stack_base, 1);
+    // TODO: release user stack
 
-    // release pcb node
+    // delete from ready queue
+    list_del(&current_running->list);
+    
+    // enter ZOMBIE status
     if(current_running->mode == AUTO_CLEANUP_ON_EXIT){
-        current_running->status = TASK_EXITED;
+        current_running->status = TASK_ZOMBIE;
+        list_add_tail(&current_running->list, &pid0_pcb.wait_list);
     }
     else{
         current_running->status = TASK_ZOMBIE;
     }
-    current_running->pid = -1;
 
-    // delete from ready queue
-    list_del(&current_running->list);
     scheduler();
 }
 
@@ -185,46 +185,51 @@ int do_kill(pid_t pid)
         }
     }
 
-    // release user stack
-    freePage(needed_pcb->user_stack_base, 1);
-    
-    // release pcb node
+    // TODO: release user stack
+
+    // delete from ready queue
+    list_del(&needed_pcb->list);
+
+    // enter ZOMBIE status
     if(needed_pcb->mode == AUTO_CLEANUP_ON_EXIT){
-        needed_pcb->status = TASK_EXITED;
+        needed_pcb->status = TASK_ZOMBIE;
+        list_add_tail(&needed_pcb->list, &pid0_pcb.wait_list);
     }
     else{
         needed_pcb->status = TASK_ZOMBIE;
     }
-    needed_pcb->pid = -1;
 
-    // delete from ready queue
-    list_del(&needed_pcb->list);
-    scheduler();
-    
+    scheduler(); 
     return 1;
 }
 
-int do_waitpid(pid_t pid)
+int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
 {
-    pcb_t *needed_pcb = NULL;
+    pcb_t *child_pcb = NULL;
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].pid == pid){
-            needed_pcb = &pcb[i];
+            child_pcb = &pcb[i];
             break;
         }
     }
-    if(needed_pcb == NULL){
+    if(child_pcb == NULL){
         return 0;
     }
     
-    if(needed_pcb->status == TASK_ZOMBIE){
-        needed_pcb->status = TASK_EXITED;
-        needed_pcb->pid = -1;
+    if(child_pcb->status == TASK_ZOMBIE){
+        // TODO: release kernel stack
+
+        // release pcb
+        child_pcb->status = TASK_EXITED;
+        child_pcb->pid = -1;
+        return 1;
     }
     else{
-        do_block(&current_running->list, &needed_pcb->wait_list);
+        // if child task has not exited, call do_waitpid again when parent task is unblocked
+        regs->sepc = regs->sepc - 4;
+        do_block(&current_running->list, &child_pcb->wait_list);
         scheduler();
-        return 1;
+        return pid;
     }   
 }
 

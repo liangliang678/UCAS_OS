@@ -257,7 +257,16 @@ void test_shell()
                 continue;
             }
 
-            int task_num = argv[1][0] - '0';
+            int task_num = atoi(argv[1]);
+            if(task_num < 0 || task_num >= num_test_tasks){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("No such test tasks!\n");
+                print_location_y++;
+            }
             sys_spawn(test_tasks[task_num], NULL, AUTO_CLEANUP_ON_EXIT);
             if(print_location_y == SHELL_END){
                 print_location_y--;
@@ -289,7 +298,7 @@ void test_shell()
                 continue;
             }
             
-            int pid = argv[1][0] - '0';
+            int pid = atoi(argv[1]);
             if(pid == 0 || pid == 1){
                 if(print_location_y == SHELL_END){
                     print_location_y--;
@@ -320,4 +329,14 @@ void test_shell()
             print_location_y++;
         }
     }
+}
+
+int atoi(char* src)
+{
+    int ret = 0;
+    while(*src != '\n'){
+        ret = ret * 10 + *src - '0';
+        ++src;
+    }
+    return ret;
 }

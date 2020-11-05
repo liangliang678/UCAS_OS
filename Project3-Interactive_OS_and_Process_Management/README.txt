@@ -1,5 +1,5 @@
-bugs:
-1. 进程退出时未回收内存空间
+TODO
+1. 栈空间的回收
 
 新增的文件：
 /arch/riscv/kernel/smp.S

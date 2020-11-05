@@ -84,7 +84,9 @@ static void init_pcb()
     pcb[0].priority = 0;
     pcb[0].ready_tick = get_ticks();
         
-    init_pcb_stack(pcb[0].kernel_sp, pcb[0].user_sp, &test_shell, &pcb[0]); 
+    init_pcb_stack(pcb[0].kernel_sp, pcb[0].user_sp, &test_shell, &pcb[0]);
+
+    init_list_head(&pid0_pcb.wait_list);
 
     /* initialize `current_running` */
     current_running = &pid0_pcb;
@@ -149,6 +151,18 @@ int main()
     enable_interrupt();
 
     while (1) {
+        list_node_t* clean_p = pid0_pcb.wait_list.next;
+        while(clean_p != &pid0_pcb.wait_list){
+            pcb_t *clean_pcb = list_entry(clean_p, pcb_t, list);
+            // TODO: release kernel stack
+
+            // release pcb
+            clean_pcb->status = TASK_EXITED;
+            clean_pcb->pid = -1;
+
+            clean_p = clean_p->next;
+            list_del(clean_p->prev);
+        }
         __asm__ __volatile__("wfi\n\r":::);
     }
     

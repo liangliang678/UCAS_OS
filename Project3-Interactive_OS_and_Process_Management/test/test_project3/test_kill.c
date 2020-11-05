@@ -58,7 +58,7 @@ void wait_exit_task()
     sys_move_cursor(1, print_location);
     printf("> [TASK] I want to wait task (pid=%ld) to exit.", pid_task1);
 
-    sys_waitpid(pid_task1); //test waitpid
+    int ret = sys_waitpid(pid_task1); //test waitpid
 
     sys_move_cursor(1, print_location);
     printf("> [TASK] Task (pid=%d) has exited.                ", pid_task1);

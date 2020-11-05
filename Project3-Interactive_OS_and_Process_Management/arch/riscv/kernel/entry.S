@@ -103,19 +103,8 @@
   sd sp, PCB_KERNEL_SP(tp)
 .endm
 
-/* Only kernel process/thread can call this func */
-ENTRY(do_scheduler)
-  csrr x0, CSR_SSCRATCH
-  
-  //simulate an interrupt
-  csrw CSR_SEPC, ra
-  li tp, SR_SPIE
-  csrs CSR_SSTATUS, tp
-  li tp, SR_SIE
-  csrc CSR_SSTATUS, tp
-  li tp, SR_SPP
-  csrs CSR_SSTATUS, tp
 
+ENTRY(do_scheduler)
   ld tp, current_running
   SAVE_CONTEXT
 
@@ -123,6 +112,16 @@ ENTRY(do_scheduler)
 
   ld tp, current_running
   RESTORE_CONTEXT
+
+  csrrw tp, CSR_SSCRATCH, tp
+  bnez tp, to_user_1
+to_kernel_1:
+  csrrw tp, CSR_SSCRATCH, tp
+  ld sp, PCB_KERNEL_SP(tp)
+  j restore_sp_done_1
+to_user_1:
+  ld sp, PCB_USER_SP(tp)
+restore_sp_done_1:
 
   sret
 ENDPROC(do_scheduler)

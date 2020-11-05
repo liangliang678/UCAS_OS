@@ -145,7 +145,7 @@ extern void do_exit(void);
 extern void do_sleep(uint32_t);
 
 extern int do_kill(pid_t pid);
-extern int do_waitpid(pid_t pid);
+extern int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs);
 extern void do_process_show();
 extern pid_t do_getpid();
 
