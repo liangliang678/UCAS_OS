@@ -8,9 +8,20 @@
 // TODO: please define mailbox_t;
 typedef struct mailbox
 {
-    /* data */
-}mailbox_t;
+    char name[100];
+    int id;
+} mailbox_t;
 
+typedef struct mbox
+{
+    char msg[MAX_MBOX_LENGTH];
+    mthread_mutex_t mutex;
+    mthread_cond_t cond;
+    int msg_p;    
+} mbox_t;
+
+extern mailbox_t mailbox[100];
+extern mbox_t mbox[100];
 // mailbox_t is just an id of kernel's mail box.
 
 mailbox_t mbox_open(char *);
