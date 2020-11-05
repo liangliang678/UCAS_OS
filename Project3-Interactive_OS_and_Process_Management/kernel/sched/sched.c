@@ -71,6 +71,10 @@ pid_t do_spawn(task_info_t *task, void* arg, spawn_mode_t mode)
             break;
         }
     }
+    if(!new_pcb){
+        return -1;
+    }
+    
     new_pcb->kernel_sp = allocPage(1); 
     new_pcb->user_sp = allocPage(1);
     new_pcb->preempt_count = 0;

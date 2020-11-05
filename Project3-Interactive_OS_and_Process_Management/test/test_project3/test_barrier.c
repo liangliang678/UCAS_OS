@@ -15,12 +15,10 @@ void test_barrier(void)
 
     mthread_barrier_init(&barrier, NUM_TB);
 
-    struct task_info child_task = {(uintptr_t)&barrier_task,
-                                   USER_PROCESS};
+    struct task_info child_task = {(uintptr_t)&barrier_task, USER_PROCESS};
     pid_t pids[NUM_TB];
     for (int i = 0; i < NUM_TB; ++i) {
-        pids[i] = sys_spawn(&child_task, (void*)(i + 1),
-                            ENTER_ZOMBIE_ON_EXIT);
+        pids[i] = sys_spawn(&child_task, (void*)(i + 1), ENTER_ZOMBIE_ON_EXIT);
     }
 
     for (int i = 0; i < NUM_TB; ++i) {

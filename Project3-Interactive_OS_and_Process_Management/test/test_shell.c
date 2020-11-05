@@ -263,14 +263,25 @@ void test_shell()
                 printf("No such test tasks!\n");
                 print_location_y++;
             }
-            sys_spawn(test_tasks[task_num], NULL, AUTO_CLEANUP_ON_EXIT);
-            if(print_location_y == SHELL_END){
-                print_location_y--;
-                sys_move_cursor(1, print_location_y);
-                sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+            
+            if(sys_spawn(test_tasks[task_num], NULL, AUTO_CLEANUP_ON_EXIT) == -1){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too many tasks! Failed to exec process[%d]\n", task_num);
+                print_location_y++;
             }
-            printf("exec process[%d]\n", task_num);
-            print_location_y++;
+            else{
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("exec process[%d]\n", task_num);
+                print_location_y++;
+            }
         }
         else if(kill_command){
             if(argc >= 3){
@@ -310,7 +321,7 @@ void test_shell()
                     sys_move_cursor(1, print_location_y);
                     sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
                 }
-                printf("Cannot kill task(pid=%d): task does not exist!\n", pid);
+                printf("Cannot kill task(pid=%d): Task Does Not Exist!\n", pid);
                 print_location_y++;
             }
         }
@@ -320,7 +331,7 @@ void test_shell()
                 sys_move_cursor(1, print_location_y);
                 sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
             }
-            printf("Unknown command: ");
+            printf("Unknown Command: ");
             printf("%s", argv[0]);
             print_location_y++;
         }

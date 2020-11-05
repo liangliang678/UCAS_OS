@@ -18,16 +18,12 @@ void test_condition(void)
     mthread_mutex_init(&mutex);
     mthread_cond_init(&condition);
 
-    struct task_info task_p = {(uintptr_t)&producer_task,
-                              USER_PROCESS};
-    struct task_info task_c = {(uintptr_t)&consumer_task,
-                              USER_PROCESS};
+    struct task_info task_p = {(uintptr_t)&producer_task, USER_PROCESS};
+    struct task_info task_c = {(uintptr_t)&consumer_task, USER_PROCESS};
     pid_t pids[NUM_CONSUMER + 1];
-    pids[0] = sys_spawn(&task_p, NULL,
-                        ENTER_ZOMBIE_ON_EXIT);
+    pids[0] = sys_spawn(&task_p, NULL, ENTER_ZOMBIE_ON_EXIT);
     for (int i = 1; i <= NUM_CONSUMER; ++i) {
-        pids[i] = sys_spawn(&task_c, (void*)(i + 1),
-                            ENTER_ZOMBIE_ON_EXIT);
+        pids[i] = sys_spawn(&task_c, (void*)(i + 1), ENTER_ZOMBIE_ON_EXIT);
     }
 
     for (int i = 0; i < NUM_CONSUMER + 1; ++i) {
@@ -60,8 +56,8 @@ void producer_task(void)
         int next = rand() % 5;
         printf("> [TASK] Total produced %d products. (next in %d seconds)", sum_production, next);
 
-        // condition_signal(&condition);
-        mthread_cond_broadcast(&condition);
+        mthread_cond_signal(&condition);
+        //mthread_cond_broadcast(&condition);
 
         sys_sleep(next);
     }

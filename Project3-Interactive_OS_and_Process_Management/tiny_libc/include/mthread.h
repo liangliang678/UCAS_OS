@@ -34,13 +34,8 @@
 #define EBUSY  1 /* the lock is busy */
 #define EINVAL 2 /* the lock is invalid */
 
-typedef atomic_int mthread_spinlock_t;
+typedef atomic_long mthread_spinlock_t;
 typedef atomic_long mthread_mutex_t;
-/*
-typedef struct mthread_mutex
-{
-    // TODO:
-} mthread_mutex_t;*/
 
 typedef enum {
     INVALID,
@@ -62,17 +57,16 @@ int mthread_mutex_unlock(mthread_mutex_t *lock);
 
 typedef struct mthread_barrier
 {
-    // TODO:
+    int count;
+    int reached;
+    long futex;
 } mthread_barrier_t;
 
 int mthread_barrier_init(mthread_barrier_t * barrier, unsigned count);
 int mthread_barrier_wait(mthread_barrier_t *barrier);
 int mthread_barrier_destroy(mthread_barrier_t *barrier);
 
-typedef struct mthread_cond
-{
-    // TODO:
-} mthread_cond_t;
+typedef atomic_int mthread_cond_t;
 
 int mthread_cond_init(mthread_cond_t *cond);
 int mthread_cond_destroy(mthread_cond_t *cond);
