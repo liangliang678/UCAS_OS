@@ -31,21 +31,24 @@
 #include <os/list.h>
 
 #define MEM_SIZE 32
-#define PAGE_SIZE 4096 // 4K
+#define PAGE_SIZE 4096
 #define INIT_KERNEL_STACK 0x50500000lu
 #define FREEMEM (INIT_KERNEL_STACK+PAGE_SIZE)
+#define MAX_FREE_PAGE_NUM 100
 
 /* Rounding; only works for n = power of two */
 #define ROUND(a, n)     (((((uint64_t)(a))+(n)-1)) & ~((n)-1))
 #define ROUNDDOWN(a, n) (((uint64_t)(a)) & ~((n)-1))
-
-extern ptr_t memCurr;
 
 typedef struct page
 {
     ptr_t baseAddr;
     list_node_t list;
 }page_t;
+
+extern ptr_t memCurr;
+extern struct list_node free_page_queue;
+extern page_t free_page_node[MAX_FREE_PAGE_NUM];
 
 extern ptr_t allocPage(int numPage);
 extern void freePage(ptr_t baseAddr, int numPage);

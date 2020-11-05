@@ -1,6 +1,3 @@
-TODO
-1. 栈空间的回收
-
 新增的文件：
 /arch/riscv/kernel/smp.S
 /include/os/smp.h

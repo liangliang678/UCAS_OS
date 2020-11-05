@@ -58,6 +58,7 @@ static int num_test_tasks = 8;
 void test_shell()
 {
     char blank[] = "                                                                                ";
+    char blank_command[] = "                                                      ";
     char prompt[] = "> liangliang678@UCAS_OS: ";
 
     const int SHELL_COMMAND_BEGIN = strlen(prompt) + 1;
@@ -71,6 +72,7 @@ void test_shell()
     }
     int back_times = 0;
 
+    sys_screen_clear(1, SHELL_END);
     sys_move_cursor(1, SHELL_BEGIN);
     printf("------------------- COMMAND -------------------");
     sys_move_cursor(1, SHELL_END);
@@ -106,7 +108,7 @@ void test_shell()
                     strcpy(buffer, prev_command[back_times++]);
                     print_location_x = SHELL_COMMAND_BEGIN;
                     sys_move_cursor(print_location_x, print_location_y);
-                    printf("%s", blank);
+                    printf("%s", blank_command);
                     sys_move_cursor(print_location_x, print_location_y);
                     printf("%s", buffer);
                     print_location_x += strlen(buffer);
@@ -226,13 +228,7 @@ void test_shell()
                 print_location_y++;
                 continue;
             }
-
-            sys_screen_clear();
-            sys_move_cursor(1, SHELL_BEGIN);
-            printf("------------------- COMMAND -------------------");
-            sys_move_cursor(1, SHELL_END);
-            printf("------------------- COMMAND -------------------");
-            print_location_y = SHELL_BEGIN + 1;
+            sys_screen_clear(1, SHELL_BEGIN - 1);
             sys_move_cursor(1, print_location_y);
         }
         else if(exec_command){

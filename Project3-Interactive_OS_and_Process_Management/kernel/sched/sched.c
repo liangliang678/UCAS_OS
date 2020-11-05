@@ -123,10 +123,11 @@ void do_exit()
     }
 
     // TODO: release user stack
+    freePage(current_running->user_stack_base, 1);
 
     // delete from ready queue
     list_del(&current_running->list);
-    
+
     // enter ZOMBIE status
     if(current_running->mode == AUTO_CLEANUP_ON_EXIT){
         current_running->status = TASK_ZOMBIE;
@@ -186,6 +187,7 @@ int do_kill(pid_t pid)
     }
 
     // TODO: release user stack
+    freePage(needed_pcb->user_stack_base, 1);
 
     // delete from ready queue
     list_del(&needed_pcb->list);
@@ -218,7 +220,8 @@ int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
     
     if(child_pcb->status == TASK_ZOMBIE){
         // TODO: release kernel stack
-
+        freePage(child_pcb->kernel_stack_base, 1);
+        
         // release pcb
         child_pcb->status = TASK_EXITED;
         child_pcb->pid = -1;

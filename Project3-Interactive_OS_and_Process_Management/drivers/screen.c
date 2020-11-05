@@ -76,10 +76,10 @@ void screen_scroll(int line1, int line2)
     }
 }
 
-void screen_clear(void)
+void screen_clear(int line1, int line2)
 {
     int i, j;
-    for (i = 0; i < SCREEN_HEIGHT; i++)
+    for (i = line1 - 1; i < line2; i++)
     {
         for (j = 0; j < SCREEN_WIDTH; j++)
         {
@@ -87,7 +87,7 @@ void screen_clear(void)
         }
     }
     screen_cursor_x = 1;
-    screen_cursor_y = 1;
+    screen_cursor_y = line1;
     screen_reflush();
 }
 

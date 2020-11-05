@@ -155,6 +155,7 @@ int main()
         while(clean_p != &pid0_pcb.wait_list){
             pcb_t *clean_pcb = list_entry(clean_p, pcb_t, list);
             // TODO: release kernel stack
+            freePage(clean_pcb->kernel_stack_base, 1);
 
             // release pcb
             clean_pcb->status = TASK_EXITED;

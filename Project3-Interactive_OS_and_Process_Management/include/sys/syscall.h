@@ -54,7 +54,7 @@ void sys_binsem_op(int binsem_id, int op);
 void sys_write(char *);
 void sys_move_cursor(int, int);
 void sys_reflush();
-void sys_screen_clear();
+void sys_screen_clear(int line1, int line2);
 void sys_screen_scroll(int line1, int line2);
 
 long sys_get_timebase();

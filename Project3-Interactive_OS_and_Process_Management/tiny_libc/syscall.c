@@ -76,9 +76,9 @@ void sys_reflush()
     invoke_syscall(SYSCALL_REFLUSH, IGNORE, IGNORE, IGNORE);
 }
 
-void sys_screen_clear()
+void sys_screen_clear(int line1, int line2)
 {
-    invoke_syscall(SYSCALL_SCREEN_CLEAR, IGNORE, IGNORE, IGNORE);
+    invoke_syscall(SYSCALL_SCREEN_CLEAR, (uintptr_t)line1, (uintptr_t)line2, IGNORE);
 }
 
 void sys_screen_scroll(int line1, int line2)
