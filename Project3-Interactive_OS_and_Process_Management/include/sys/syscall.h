@@ -43,7 +43,7 @@ void sys_process_show(char* buffer);
 pid_t sys_getpid();
 void sys_yield();
 
-void sys_futex_wait(volatile uint64_t *val_addr, uint64_t val);
+void sys_futex_wait(volatile uint64_t *val_addr);
 void sys_futex_wakeup(volatile uint64_t *val_addr, int num_wakeup);
 
 #define BINSEM_OP_LOCK 0

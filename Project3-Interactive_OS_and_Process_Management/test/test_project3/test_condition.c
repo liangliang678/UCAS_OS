@@ -6,16 +6,14 @@
 #include <stdlib.h>
 
 #define NUM_CONSUMER 3
+#define LOCK_BINSEM_KEY 64
 
-static mthread_mutex_t mutex;
 static mthread_cond_t condition;
 static int num_staff = 0;
 
 void test_condition(void)
 {
     srand(clock());
-
-    mthread_mutex_init(&mutex);
     mthread_cond_init(&condition);
 
     struct task_info task_p = {(uintptr_t)&producer_task, USER_PROCESS};
@@ -31,8 +29,6 @@ void test_condition(void)
     }
 
     mthread_cond_destroy(&condition);
-    mthread_mutex_destroy(&mutex);
-
     sys_exit();
 }
 
@@ -42,15 +38,16 @@ void producer_task(void)
     int print_location = 1;
     int production = 3;
     int sum_production = 0;
+    int lock = sys_binsem_get(LOCK_BINSEM_KEY);
 
     for (i = 0; i < 10; i++)
     {
-        mthread_mutex_lock(&mutex);
+        sys_binsem_op(lock, BINSEM_OP_LOCK);
 
         num_staff += production;
         sum_production += production;
 
-        mthread_mutex_unlock(&mutex);
+        sys_binsem_op(lock, BINSEM_OP_UNLOCK);
 
         sys_move_cursor(1, print_location);
         int next = rand() % 5;
@@ -69,14 +66,15 @@ void consumer_task(int print_location)
 {
     int consumption = 1;
     int sum_consumption = 0;
+    int lock = sys_binsem_get(LOCK_BINSEM_KEY);
 
     while (1)
     {
-        mthread_mutex_lock(&mutex);
+        sys_binsem_op(lock, BINSEM_OP_LOCK);
 
         while (num_staff == 0)
         {
-            mthread_cond_wait(&condition, &mutex);
+            mthread_cond_wait(&condition, lock);
         }
 
         num_staff -= consumption;
@@ -86,7 +84,7 @@ void consumer_task(int print_location)
         sys_move_cursor(1, print_location);
         printf("> [TASK] Total consumed %d products. (Sleep %d seconds)", sum_consumption, next);
 
-        mthread_mutex_unlock(&mutex);
+        sys_binsem_op(lock, BINSEM_OP_UNLOCK);
         sys_sleep(next);
     }
 }

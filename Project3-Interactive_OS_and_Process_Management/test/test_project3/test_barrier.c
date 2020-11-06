@@ -43,8 +43,7 @@ void barrier_task(int print_location)
         mthread_barrier_wait(&barrier);
 
         sys_move_cursor(1, print_location);
-        printf("> [TASK] Exited barrier (%d).(sleep %d s)",
-               i, next);
+        printf("> [TASK] Exited barrier (%d).(sleep %d s)", i, next);
         sys_sleep(next);
     }
 

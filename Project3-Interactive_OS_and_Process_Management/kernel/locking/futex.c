@@ -45,17 +45,14 @@ static futex_node_t* get_node(volatile uint64_t *val_addr, int create)
     return NULL;
 }
 
-void futex_wait(volatile uint64_t *val_addr, uint64_t val)
+void futex_wait(volatile uint64_t *val_addr)
 {
     disable_preempt();
 
-    futex_node_t *node = get_node(val_addr,1);
+    futex_node_t *node = get_node(val_addr, 1);
     assert(node != NULL);
-
-    if (*val_addr == val) {
-        do_block(&current_running->list, &node->block_queue);
-        scheduler();
-    }
+    do_block(&current_running->list, &node->block_queue);
+    scheduler();
 
     enable_preempt();
 }

@@ -29,7 +29,6 @@
 #define FUTEX_H
 
 #include <os/list.h>
-#include <os/lock.h>
 #include <type.h>
 
 #define FUTEX_BUCKETS 100
@@ -48,11 +47,8 @@ typedef list_head futex_bucket_t;
 extern futex_bucket_t futex_buckets[FUTEX_BUCKETS];
 
 extern void init_system_futex();
-/* 
- * Block if *val_addr == val else do nothing.
- * wait until a futex_wakeup is called.
- */
-extern void futex_wait(volatile uint64_t *val_addr, uint64_t val);
+/* Block and wait until a futex_wakeup is called. */
+extern void futex_wait(volatile uint64_t *val_addr);
 /* Wake up at most `num_wakeup` threads. */
 extern void futex_wakeup(volatile uint64_t *val_addr, int num_wakeup);
 

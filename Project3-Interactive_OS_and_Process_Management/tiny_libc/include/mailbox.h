@@ -4,25 +4,27 @@
 #include <mthread.h>
 
 #define MAX_MBOX_LENGTH (64)
+#define MBOX_NUM 100
 
-// TODO: please define mailbox_t;
 typedef struct mailbox
 {
     char name[100];
     int id;
 } mailbox_t;
 
-typedef struct mbox
+typedef struct message
 {
-    char msg[MAX_MBOX_LENGTH];
-    mthread_mutex_t mutex;
+    int binsem_id;
     mthread_cond_t cond;
-    int msg_p;    
-} mbox_t;
+    int opned;
+    char msg[MAX_MBOX_LENGTH];
+    int msg_len;   
+} message_t;
 
-extern mailbox_t mailbox[100];
-extern mbox_t mbox[100];
-// mailbox_t is just an id of kernel's mail box.
+extern mailbox_t mailbox[MBOX_NUM];
+extern int free_mailbox;
+extern message_t message[MBOX_NUM];
+extern int message_status[MBOX_NUM];
 
 mailbox_t mbox_open(char *);
 void mbox_close(mailbox_t);

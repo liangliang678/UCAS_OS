@@ -41,9 +41,9 @@ void sys_yield()
     invoke_syscall(SYSCALL_YIELD, IGNORE, IGNORE, IGNORE);
 }
 
-void sys_futex_wait(volatile uint64_t *val_addr, uint64_t val)
+void sys_futex_wait(volatile uint64_t *val_addr)
 {
-    invoke_syscall(SYSCALL_FUTEX_WAIT, (uintptr_t)val_addr, val, IGNORE);
+    invoke_syscall(SYSCALL_FUTEX_WAIT, (uintptr_t)val_addr, IGNORE, IGNORE);
 }
 
 void sys_futex_wakeup(volatile uint64_t *val_addr, int num_wakeup)
