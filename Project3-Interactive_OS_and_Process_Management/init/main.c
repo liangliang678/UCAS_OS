@@ -145,15 +145,18 @@ int main()
         list_node_t* clean_node = pid0_pcb.wait_list.next;
         while(clean_node != &pid0_pcb.wait_list){
             pcb_t *clean_pcb = list_entry(clean_node, pcb_t, list);
-            // release kernel stack
-            freePage(clean_pcb->kernel_stack_base, 1);
-            // release pcb
-            clean_pcb->status = TASK_EXITED;
-            clean_pcb->pid = -1;
-
+            if(clean_pcb->pid != -1){
+                // release pcb
+                clean_pcb->status = TASK_EXITED;
+                clean_pcb->pid = -1;
+                // release kernel stack
+                freePage(clean_pcb->kernel_stack_base, 1);
+            }
+            
             clean_node = clean_node->next;
             list_del(clean_node->prev);
         }
+    
         enable_preempt();
         __asm__ __volatile__("wfi\n\r":::);
     }

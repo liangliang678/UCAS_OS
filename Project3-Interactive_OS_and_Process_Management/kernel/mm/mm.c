@@ -1,18 +1,15 @@
 #include <os/mm.h>
 
 ptr_t memCurr = FREEMEM;
-LIST_HEAD(free_page_queue);
-page_t free_page_node[MAX_FREE_PAGE_NUM];
-int free_node = 0;
+
+ptr_t free_page[MAX_FREE_PAGE_NUM];
+int free_page_num = 0;
 
 ptr_t allocPage(int numPage)
 {
     ptr_t ret;
-    if(numPage == 1 && !list_empty(&free_page_queue)){
-        page_t* free_page = list_entry(free_page_queue.next, page_t, list);
-        ret = free_page->baseAddr;
-        list_del(free_page_queue.next);
-        free_node--;
+    if(numPage == 1 && free_page_num){
+        ret = free_page[--free_page_num];
     }
     else{
         // align PAGE_SIZE
@@ -33,8 +30,6 @@ void* kmalloc(size_t size)
 void freePage(ptr_t baseAddr, int numPage)
 {
     for(int i = 0; i < numPage; i++){
-        free_page_node[free_node].baseAddr = baseAddr + i * PAGE_SIZE;
-        list_add_tail(&free_page_node[free_node].list, &free_page_queue);
-        free_node++;
+        free_page[free_page_num++] = baseAddr + i * PAGE_SIZE;
     }
 }

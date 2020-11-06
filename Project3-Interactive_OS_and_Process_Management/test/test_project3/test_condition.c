@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #define NUM_CONSUMER 3
-#define LOCK_BINSEM_KEY 64
+#define LOCK_BINSEM_KEY 42
 
 static mthread_cond_t condition;
 static int num_staff = 0;

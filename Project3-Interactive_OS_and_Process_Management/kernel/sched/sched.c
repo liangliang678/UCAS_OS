@@ -18,6 +18,9 @@ pcb_t pid0_pcb = {
     .kernel_sp = (ptr_t)pid0_stack,
     .user_sp = (ptr_t)pid0_stack,
     .preempt_count = 0,
+    .kernel_stack_base = (ptr_t)pid0_stack,
+    .user_stack_base = (ptr_t)pid0_stack,
+    .binsem_num = 0,
     .pid = 0,
     .type = KERNEL_PROCESS,
     .status = TASK_RUNNING,
@@ -222,13 +225,15 @@ int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
         return 0;
     }
     
-    if(child_pcb->status == TASK_ZOMBIE){
-        // release kernel stack
-        freePage(child_pcb->kernel_stack_base, 1);
-        
-        // release pcb
-        child_pcb->status = TASK_EXITED;
-        child_pcb->pid = -1;
+    if(child_pcb->status == TASK_ZOMBIE || child_pcb->status == TASK_EXITED){
+        if(child_pcb->pid != -1){
+            // release pcb
+            child_pcb->status = TASK_EXITED;
+            child_pcb->pid = -1;
+            // release kernel stack
+            freePage(child_pcb->kernel_stack_base, 1);
+        }
+
         return 1;
     }
     else{
@@ -245,6 +250,22 @@ void do_process_show(char* buffer)
 {
     buffer[0] = '\0';
     kstrcat(buffer, "[PROCESS TABLE]\n");
+    kstrcat(buffer, "PID: 0    STATUS: ");
+    if(pid0_pcb.status == TASK_BLOCKED){
+        kstrcat(buffer, "BLOCKED\n");
+    }
+    else if(pid0_pcb.status == TASK_RUNNING){
+        kstrcat(buffer, "RUNNING\n");
+    }
+    else if(pid0_pcb.status == TASK_READY){
+        kstrcat(buffer, "READY\n");
+    }
+    else if(pid0_pcb.status == TASK_EXITED){
+        kstrcat(buffer, "EXITED\n");
+    }
+    else if(pid0_pcb.status == TASK_ZOMBIE){
+        kstrcat(buffer, "ZOMBIE\n");
+    }
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].pid != -1){
             kstrcat(buffer, "PID: ");

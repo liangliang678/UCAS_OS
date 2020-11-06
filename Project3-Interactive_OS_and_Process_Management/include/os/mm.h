@@ -40,15 +40,10 @@
 #define ROUND(a, n)     (((((uint64_t)(a))+(n)-1)) & ~((n)-1))
 #define ROUNDDOWN(a, n) (((uint64_t)(a)) & ~((n)-1))
 
-typedef struct page
-{
-    ptr_t baseAddr;
-    list_node_t list;
-} page_t;
+extern ptr_t free_page[MAX_FREE_PAGE_NUM];
+extern int free_page_num;
 
 extern ptr_t memCurr;
-extern struct list_node free_page_queue;
-extern page_t free_page_node[MAX_FREE_PAGE_NUM];
 
 extern ptr_t allocPage(int numPage);
 extern void freePage(ptr_t baseAddr, int numPage);

@@ -18,7 +18,7 @@ void ready_to_exit_task()
     sys_binsem_op(lock1_id, BINSEM_OP_LOCK);
     sys_binsem_op(lock2_id, BINSEM_OP_LOCK);
 
-    for (i = 0; i < 100000 ; i++)
+    for (i = 0; i < 200 ; i++)
     {
         sys_move_cursor(1, print_location);
         printf("> [TASK] I am task with pid %d, I have acquired two binsem lock. (%d)", sys_getpid(), i++);
