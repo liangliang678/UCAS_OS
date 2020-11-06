@@ -34,6 +34,7 @@ typedef struct mthread_barrier
 {
     int count;
     int reached;
+    int binsem_id;
 } mthread_barrier_t;
 
 void mthread_barrier_init(mthread_barrier_t * barrier, unsigned count);

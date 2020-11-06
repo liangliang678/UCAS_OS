@@ -225,7 +225,7 @@ int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
         return 0;
     }
     
-    if(child_pcb->status == TASK_ZOMBIE || child_pcb->status == TASK_EXITED){
+    if(child_pcb->status == TASK_ZOMBIE){
         if(child_pcb->pid != -1){
             // release pcb
             child_pcb->status = TASK_EXITED;
