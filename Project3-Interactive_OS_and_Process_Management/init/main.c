@@ -50,16 +50,9 @@ static void init_pcb_stack(ptr_t kernel_stack, ptr_t user_stack, ptr_t entry_poi
     pt_regs->regs[1] = (reg_t)entry_point;      //ra
     pt_regs->regs[2] = (reg_t)user_stack;       //sp
     pt_regs->regs[3] = (reg_t)__global_pointer$;//gp
-    if(pcb->type == USER_PROCESS || pcb->type == USER_THREAD){
-        pt_regs->sstatus = (reg_t)SR_SPIE;      //SPP = 0, SPIE = 1
-        pt_regs->sepc = (reg_t)entry_point;
-        pt_regs->sscratch = (reg_t)pcb;         //sscratch = tp
-    }
-    else{
-        pt_regs->sstatus = (reg_t)(SR_SPP | SR_SPIE);  //SPP = 1, SPIE = 1
-        pt_regs->sepc = (reg_t)entry_point;
-        pt_regs->sscratch = (reg_t)0;                  //sscratch = 0
-    }
+    pt_regs->sstatus = (reg_t)SR_SPIE;          //SPP = 0, SPIE = 1
+    pt_regs->sepc = (reg_t)entry_point;         //sepc
+    pt_regs->sscratch = (reg_t)pcb;             //sscratch = tp
 }
 
 static void init_pcb()
@@ -68,7 +61,8 @@ static void init_pcb()
     for(int i = 0; i < NUM_MAX_TASK; i++){
         pcb[i].pid = -1;
     }
-    
+    init_list_head(&pid0_pcb.wait_list);
+
     pcb[0].kernel_sp = allocPage(2);
     pcb[0].user_sp = allocPage(2);
     pcb[0].preempt_count = 0;
@@ -76,17 +70,14 @@ static void init_pcb()
     pcb[0].user_stack_base = pcb[0].user_sp;
     list_add_tail(&pcb[0].list, &ready_queue);
     init_list_head(&pcb[0].wait_list);
-    pcb[0].mutex_num = 0;
+    pcb[0].binsem_num = 0;
     pcb[0].pid = 1;
     pcb[0].type = USER_PROCESS;
     pcb[0].status = TASK_READY;
     pcb[0].mode = AUTO_CLEANUP_ON_EXIT;
     pcb[0].priority = 0;
-    pcb[0].ready_tick = get_ticks();
-        
+    pcb[0].ready_tick = get_ticks();     
     init_pcb_stack(pcb[0].kernel_sp, pcb[0].user_sp, &test_shell, &pcb[0]);
-
-    init_list_head(&pid0_pcb.wait_list);
 
     /* initialize `current_running` */
     current_running = &pid0_pcb;
@@ -102,7 +93,7 @@ static void init_syscall(void)
     syscall[SYSCALL_WAITPID] = (long(*)())do_waitpid;
     syscall[SYSCALL_PS] = (long(*)())do_process_show;
     syscall[SYSCALL_GETPID] = (long(*)())do_getpid;
-    syscall[SYSCALL_YIELD] = (long(*)())0;
+    syscall[SYSCALL_YIELD] = (long(*)())scheduler;
     syscall[SYSCALL_FUTEX_WAIT] = (long(*)())futex_wait;
     syscall[SYSCALL_FUTEX_WAKEUP] = (long(*)())futex_wakeup;
     syscall[SYSCALL_BINSEM_GET] = (long(*)())binsem_get;
@@ -127,7 +118,7 @@ int main()
 
     // read CPU frequency and calc timer interval
     time_base = sbi_read_fdt(TIMEBASE);
-    timer_interval = (uint64_t)(time_base / 50);
+    timer_interval = (uint64_t)(time_base / 100);
 	
     // init futex mechanism and binsem mechanism
     init_system_futex();
@@ -143,7 +134,6 @@ int main()
 
     // init screen
     init_screen();
-    vt100_move_cursor(1, 1);
     printk("> [INIT] SCREEN initialization succeeded.\n\r");
 
     // Setup timer interrupt and enable all interrupt
@@ -151,21 +141,20 @@ int main()
     enable_interrupt();
 
     while (1) {
-        list_node_t* clean_p = pid0_pcb.wait_list.next;
-        while(clean_p != &pid0_pcb.wait_list){
-            pcb_t *clean_pcb = list_entry(clean_p, pcb_t, list);
-            // TODO: release kernel stack
+        disable_preempt();
+        list_node_t* clean_node = pid0_pcb.wait_list.next;
+        while(clean_node != &pid0_pcb.wait_list){
+            pcb_t *clean_pcb = list_entry(clean_node, pcb_t, list);
+            // release kernel stack
             freePage(clean_pcb->kernel_stack_base, 1);
-
             // release pcb
             clean_pcb->status = TASK_EXITED;
             clean_pcb->pid = -1;
 
-            clean_p = clean_p->next;
-            list_del(clean_p->prev);
+            clean_node = clean_node->next;
+            list_del(clean_node->prev);
         }
+        enable_preempt();
         __asm__ __volatile__("wfi\n\r":::);
     }
-    
-    return 0;
 }

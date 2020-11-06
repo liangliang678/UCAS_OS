@@ -13,4 +13,6 @@ extern char *strcpy(char *dest, const char *src);
 extern char *strcat(char *dest, const char *src);
 extern int strlen(const char *src);
 
+extern int atoi(char* src);
+
 #endif /* STRING_H */

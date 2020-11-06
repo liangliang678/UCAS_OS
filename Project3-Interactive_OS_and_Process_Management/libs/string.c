@@ -64,3 +64,35 @@ char *kstrcat(char *dest, const char *src)
 
     return tmp;
 }
+
+int katoi(char* src)
+{
+    int ret = 0;
+    while(*src != '\n'){
+        ret = ret * 10 + *src - '0';
+        ++src;
+    }
+    return ret;
+}
+
+void kitoa(char *dest, int src)
+{
+    int i = 0, j = 0;
+    while(src){
+        *(dest + i) = src % 10 + '0';
+        src /= 10; 
+        i++;
+    }
+    *(dest + i) = '\0';
+    i--;
+
+    char tmp;
+    while(i>j){
+        tmp = *(dest + j);
+        *(dest + j) = *(dest + i);
+        *(dest + i) = tmp;
+        i--;
+        j++;
+    }
+    
+}

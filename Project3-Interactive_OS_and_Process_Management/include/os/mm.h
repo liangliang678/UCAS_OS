@@ -44,7 +44,7 @@ typedef struct page
 {
     ptr_t baseAddr;
     list_node_t list;
-}page_t;
+} page_t;
 
 extern ptr_t memCurr;
 extern struct list_node free_page_queue;

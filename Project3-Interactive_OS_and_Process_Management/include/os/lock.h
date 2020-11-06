@@ -40,19 +40,9 @@ typedef struct spin_lock
     volatile lock_status_t status;
 } spin_lock_t;
 
-typedef struct mutex_lock
-{
-    spin_lock_t lock;
-    list_head block_queue;
-} mutex_lock_t;
-
 void spin_lock_init(spin_lock_t *lock);
 void spin_lock_try_acquire(spin_lock_t *lock);
 void spin_lock_acquire(spin_lock_t *lock);
 void spin_lock_release(spin_lock_t *lock);
-
-void do_mutex_lock_init(mutex_lock_t *lock);
-void do_mutex_lock_acquire(mutex_lock_t *lock);
-void do_mutex_lock_release(mutex_lock_t *lock);
 
 #endif

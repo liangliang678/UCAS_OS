@@ -40,18 +40,18 @@ void binsem_op(int binsem_id, int op)
             scheduler();
         }
         else{
-            current_running->mutex_id[current_running->mutex_num] = binsem_id;
-            current_running->mutex_num++;
+            current_running->binsem_id[current_running->binsem_num] = binsem_id;
+            current_running->binsem_num++;
         }
     }
     else if(op == BINSEM_OP_UNLOCK){
         node->sem++;
         if(node->sem <= 0){
             list_node_t * unblocked_pcb_list = node->block_queue.next;
-            do_unblock(unblocked_pcb_list);
-            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_id[list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num] = binsem_id;
-            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num = 
-            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num + 1;           
+            pcb_t *unblocked_pcb = list_entry(unblocked_pcb_list, pcb_t, list);
+            unblocked_pcb->binsem_id[unblocked_pcb->binsem_num] = binsem_id;
+            unblocked_pcb->binsem_num++; 
+            do_unblock(unblocked_pcb_list);        
             scheduler();
         }
     }

@@ -65,3 +65,13 @@ char *strcat(char *dest, const char *src)
 
     return tmp;
 }
+
+int atoi(char* src)
+{
+    int ret = 0;
+    while(*src != '\0'){
+        ret = ret * 10 + *src - '0';
+        ++src;
+    }
+    return ret;
+}

@@ -53,11 +53,12 @@ static int num_test_tasks = 8;
 #define SHELL_BEGIN 15
 #define SHELL_END   30
 #define SHELL_WIDTH 80
+#define MAX_ARGC    5
 #define MAX_PREV    5
 
 void test_shell()
 {
-    char blank[] = "                                                                                ";
+    char blank_line[] = "                                                                                ";
     char blank_command[] = "                                                      ";
     char prompt[] = "> liangliang678@UCAS_OS: ";
 
@@ -65,10 +66,12 @@ void test_shell()
     const int SHELL_COMMAND_END   = SHELL_WIDTH;
     int print_location_x;
     int print_location_y;
+    int input, buf_p;
+    char buffer[100];
 
     char prev_command[MAX_PREV][100] = {0};
     for(int i = 0; i < MAX_PREV; i++){
-        prev_command[i][0] = '\0';
+        strcpy(prev_command[i], "\0");
     }
     int back_times = 0;
 
@@ -77,9 +80,9 @@ void test_shell()
     printf("------------------- COMMAND -------------------");
     sys_move_cursor(1, SHELL_END);
     printf("------------------- COMMAND -------------------");
+
     print_location_y = SHELL_BEGIN + 1;
     sys_move_cursor(1, print_location_y);
-
     while (1)
     {   
         if(print_location_y == SHELL_END){
@@ -90,8 +93,7 @@ void test_shell()
         printf("%s", prompt);
 
         // call syscall to read UART port
-        int input, buf_p = 0;
-        char buffer[100];
+        buf_p = 0;
         print_location_x = SHELL_COMMAND_BEGIN;
         while((input = getchar()) != 13 && input != '\n'){
             if(input == '\b' || input == 127){
@@ -123,32 +125,41 @@ void test_shell()
                 }             
             }
         }
-        buffer[buf_p] = '\0';
+        buffer[buf_p++] = '\0';
         for(int i = MAX_PREV - 1; i > 0; i--){
             strcpy(prev_command[i], prev_command[i-1]);
         }
-        strcpy(prev_command[0], buffer);     
-        buffer[buf_p++] = '\n';
-        buffer[buf_p++] = '\0';
+        strcpy(prev_command[0], buffer);
         printf("\n");
         print_location_y++;
         back_times = 0;
 
-        // parse input (ps, exec, kill, clear)
+        // parse input (ps, exec, kill, clear, reset)
         int argc = 0;
-        char argv[5][100];
+        char argv[MAX_ARGC][100];
         int argv_p = 0;
         int in_argv_flag = 0;
  
-        for(int i = 0; buffer[i]; i++){
-            if(buffer[i] == ' ' || buffer[i] == '\n'){
+        for(int i = 0; ; i++){
+            if(buffer[i] == ' ' || buffer[i] == '\0'){
                 if(in_argv_flag){
-                    argv[argc][argv_p++] = '\n';
+                    if(argc >= MAX_ARGC){
+                        if(print_location_y == SHELL_END){
+                            print_location_y--;
+                            sys_move_cursor(1, print_location_y);
+                            sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);    
+                        }
+                        printf("Too many arguments!\n");
+                        print_location_y++;
+                    }
                     argv[argc][argv_p++] = '\0';
                     argc++;
                     argv_p = 0;
                 }
                 in_argv_flag = 0;
+                if(buffer[i] == '\0'){
+                    break;
+                }
             }
             else{
                 in_argv_flag = 1;
@@ -157,12 +168,13 @@ void test_shell()
         }
 
         int empty_command = (argc == 0);
-        int ps_command = !strcmp(argv[0], "ps\n");
-        int reset_command = !strcmp(argv[0], "reset\n");
-        int clear_command = !strcmp(argv[0], "clear\n");
-        int exec_command = !strcmp(argv[0], "exec\n");
-        int kill_command = !strcmp(argv[0], "kill\n");
+        int ps_command = !strcmp(argv[0], "ps");
+        int reset_command = !strcmp(argv[0], "reset");
+        int clear_command = !strcmp(argv[0], "clear");
+        int exec_command = !strcmp(argv[0], "exec");
+        int kill_command = !strcmp(argv[0], "kill");
 
+        // exec command and output
         if(empty_command){
             continue;
         }
@@ -177,7 +189,7 @@ void test_shell()
                 print_location_y++;
                 continue;
             }
-            char ps_context[18 * SHELL_WIDTH];
+            char ps_context[(SHELL_END - SHELL_BEGIN - 1) * SHELL_WIDTH + 1];
             sys_process_show(ps_context);
 
             char ps_buffer[SHELL_WIDTH + 1];
@@ -210,10 +222,7 @@ void test_shell()
                 continue;
             }
 
-            for(int i = SHELL_BEGIN + 1; i < SHELL_END; i++){
-                sys_move_cursor(1, i);
-                printf("%s", blank);
-            }
+            sys_screen_clear(SHELL_BEGIN + 1, SHELL_END - 1);
             print_location_y = SHELL_BEGIN + 1;
             sys_move_cursor(1, print_location_y);
         }
@@ -228,6 +237,7 @@ void test_shell()
                 print_location_y++;
                 continue;
             }
+
             sys_screen_clear(1, SHELL_BEGIN - 1);
             sys_move_cursor(1, print_location_y);
         }
@@ -254,7 +264,7 @@ void test_shell()
             }
 
             int task_num = atoi(argv[1]);
-            if(task_num < 0 || task_num >= num_test_tasks){
+            if(task_num >= num_test_tasks || task_num < 0){
                 if(print_location_y == SHELL_END){
                     print_location_y--;
                     sys_move_cursor(1, print_location_y);
@@ -262,6 +272,7 @@ void test_shell()
                 }
                 printf("No such test tasks!\n");
                 print_location_y++;
+                continue;
             }
             
             if(sys_spawn(test_tasks[task_num], NULL, AUTO_CLEANUP_ON_EXIT) == -1){
@@ -324,6 +335,15 @@ void test_shell()
                 printf("Cannot kill task(pid=%d): Task Does Not Exist!\n", pid);
                 print_location_y++;
             }
+            else{
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Task(pid=%d) killed\n", pid);
+                print_location_y++;
+            }
         }
         else{
             if(print_location_y == SHELL_END){
@@ -332,18 +352,8 @@ void test_shell()
                 sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
             }
             printf("Unknown Command: ");
-            printf("%s", argv[0]);
+            printf("%s\n", argv[0]);
             print_location_y++;
         }
     }
-}
-
-int atoi(char* src)
-{
-    int ret = 0;
-    while(*src != '\n'){
-        ret = ret * 10 + *src - '0';
-        ++src;
-    }
-    return ret;
 }

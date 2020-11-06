@@ -85,13 +85,13 @@ typedef struct pcb
     ptr_t kernel_stack_base;
     ptr_t user_stack_base;
 
-    /* previous, next pointer */
+    /* previous, next pointer and wait queue*/
     list_node_t list;
     list_head wait_list;
 
-    /* acquired mutex lock id */
-    int mutex_id[100];
-    int mutex_num;
+    /* acquired binsem lock */
+    int binsem_id[100];
+    int binsem_num;
 
     /* sleep timer */
     timer_t timer;
@@ -138,7 +138,6 @@ extern pcb_t pid0_pcb;
 extern const ptr_t pid0_stack;
 
 extern void scheduler(void);
-extern void do_scheduler(void);
 
 extern pid_t do_spawn(task_info_t *task, void* arg, spawn_mode_t mode);
 extern void do_exit(void);

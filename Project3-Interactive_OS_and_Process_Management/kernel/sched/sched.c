@@ -82,7 +82,7 @@ pid_t do_spawn(task_info_t *task, void* arg, spawn_mode_t mode)
     new_pcb->user_stack_base = new_pcb->user_sp;
     list_add_tail(&new_pcb->list, &ready_queue);
     init_list_head(&new_pcb->wait_list);
-    new_pcb->mutex_num = 0;
+    new_pcb->binsem_num = 0;
     new_pcb->pid = process_id++;
     new_pcb->type = task->type;
     new_pcb->status = TASK_READY;
@@ -107,26 +107,26 @@ pid_t do_spawn(task_info_t *task, void* arg, spawn_mode_t mode)
 void do_exit()
 {
     // unblock tasks in wait queue
-    list_node_t *wakeup_p = current_running->wait_list.next;
-    while(wakeup_p != &current_running->wait_list){
-        wakeup_p = wakeup_p->next;
-        do_unblock(wakeup_p->prev);
+    list_node_t *wakeup_pcb = current_running->wait_list.next;
+    while(wakeup_pcb != &current_running->wait_list){
+        wakeup_pcb = wakeup_pcb->next;
+        do_unblock(wakeup_pcb->prev);
     }
 
-    // release binsem mutex
-    for(int i = 0; i < current_running->mutex_num; i++){
-        int binsem_id = current_running->mutex_id[i];
+    // release binsem
+    for(int i = 0; i < current_running->binsem_num; i++){
+        int binsem_id = current_running->binsem_id[i];
         binsem_nodes[binsem_id].sem++;
         if(binsem_nodes[binsem_id].sem <= 0){
-            list_node_t * unblocked_pcb_list = binsem_nodes[binsem_id].block_queue.next;
+            list_node_t *unblocked_pcb_list = binsem_nodes[binsem_id].block_queue.next;
+            pcb_t *unblocked_pcb = list_entry(unblocked_pcb_list, pcb_t, list);
             do_unblock(unblocked_pcb_list);
-            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_id[list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num] = binsem_id;
-            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num = 
-            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num + 1;
+            unblocked_pcb->binsem_id[unblocked_pcb->binsem_num] = binsem_id;
+            unblocked_pcb->binsem_num++;
         }
     }
 
-    // TODO: release user stack
+    // release user stack
     freePage(current_running->user_stack_base, 1);
 
     // delete from ready queue
@@ -159,50 +159,50 @@ void do_sleep(uint32_t sleep_time)
 int do_kill(pid_t pid)
 {
     // search the pcb
-    pcb_t *needed_pcb = NULL;
+    pcb_t *killed_pcb = NULL;
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].pid == pid){
-            needed_pcb = &pcb[i];
+            killed_pcb = &pcb[i];
             break;
         }
     }
-    if(needed_pcb == NULL){
+    if(killed_pcb == NULL){
         return 0;
     }
 
     // unblock tasks in wait queue
-    list_node_t *wakeup_p = needed_pcb->wait_list.next;
-    while(wakeup_p != &needed_pcb->wait_list){
-        wakeup_p = wakeup_p->next;
-        do_unblock(wakeup_p->prev);   
+    list_node_t *wakeup_pcb = killed_pcb->wait_list.next;
+    while(wakeup_pcb != &killed_pcb->wait_list){
+        wakeup_pcb = wakeup_pcb->next;
+        do_unblock(wakeup_pcb->prev);   
     }
 
     // release binsem mutex
-    for(int i = 0; i < needed_pcb->mutex_num; i++){
-        int binsem_id = needed_pcb->mutex_id[i];
+    for(int i = 0; i < killed_pcb->binsem_num; i++){
+        int binsem_id = killed_pcb->binsem_id[i];
         binsem_nodes[binsem_id].sem++;
         if(binsem_nodes[binsem_id].sem <= 0){
             list_node_t * unblocked_pcb_list = binsem_nodes[binsem_id].block_queue.next;
+            pcb_t *unblocked_pcb = list_entry(unblocked_pcb_list, pcb_t, list);
             do_unblock(unblocked_pcb_list);
-            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_id[list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num] = binsem_id;
-            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num = 
-            list_entry(unblocked_pcb_list, pcb_t, list)->mutex_num + 1;
+            unblocked_pcb->binsem_id[unblocked_pcb->binsem_num] = binsem_id;
+            unblocked_pcb->binsem_num++;
         }
     }
 
-    // TODO: release user stack
-    freePage(needed_pcb->user_stack_base, 1);
+    // release user stack
+    freePage(killed_pcb->user_stack_base, 1);
 
     // delete from ready queue
-    list_del(&needed_pcb->list);
+    list_del(&killed_pcb->list);
 
     // enter ZOMBIE status
-    if(needed_pcb->mode == AUTO_CLEANUP_ON_EXIT){
-        needed_pcb->status = TASK_ZOMBIE;
-        list_add_tail(&needed_pcb->list, &pid0_pcb.wait_list);
+    if(killed_pcb->mode == AUTO_CLEANUP_ON_EXIT){
+        killed_pcb->status = TASK_ZOMBIE;
+        list_add_tail(&killed_pcb->list, &pid0_pcb.wait_list);
     }
     else{
-        needed_pcb->status = TASK_ZOMBIE;
+        killed_pcb->status = TASK_ZOMBIE;
     }
 
     scheduler(); 
@@ -223,7 +223,7 @@ int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
     }
     
     if(child_pcb->status == TASK_ZOMBIE){
-        // TODO: release kernel stack
+        // release kernel stack
         freePage(child_pcb->kernel_stack_base, 1);
         
         // release pcb
@@ -233,6 +233,7 @@ int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
     }
     else{
         // if child task has not exited, call do_waitpid again when parent task is unblocked
+        // trick: return pid to keep a0 unchanged
         regs->sepc = regs->sepc - 4;
         do_block(&current_running->list, &child_pcb->wait_list);
         scheduler();
@@ -247,12 +248,10 @@ void do_process_show(char* buffer)
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].pid != -1){
             kstrcat(buffer, "PID: ");
-            char pid_c[3];
-            pid_c[0] = (char)((pcb[i].pid / 10) + '0');
-            pid_c[1] = (char)((pcb[i].pid % 10) + '0');
-            pid_c[2] = '\0';
-            kstrcat(buffer, pid_c);
-            kstrcat(buffer, "\tSTATUS: ");
+            char pid[10];
+            kitoa(pid, pcb[i].pid);
+            kstrcat(buffer, pid);
+            kstrcat(buffer, "    STATUS: ");
             if(pcb[i].status == TASK_BLOCKED){
                 kstrcat(buffer, "BLOCKED\n");
             }

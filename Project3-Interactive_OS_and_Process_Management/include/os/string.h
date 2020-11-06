@@ -37,5 +37,7 @@ int kstrcmp(const char *str1, const char *str2);
 char *kstrcpy(char *dest, const char *src);
 char *kstrcat(char *dest, const char *src);
 int kstrlen(const char *src);
+int katoi(char* src);
+void kitoa(char *dest, int src);
 
 #endif

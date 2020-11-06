@@ -29,6 +29,5 @@
 #include <test_project3/test3.h>
 
 extern void test_shell();
-extern int atoi(char* src);
 
 #endif

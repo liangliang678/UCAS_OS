@@ -21,7 +21,7 @@ void ready_to_exit_task()
     for (i = 0; i < 100000 ; i++)
     {
         sys_move_cursor(1, print_location);
-        printf("> [TASK] I am task with pid %d, I have acquired two mutex lock. (%d)", sys_getpid(), i++);
+        printf("> [TASK] I am task with pid %d, I have acquired two binsem lock. (%d)", sys_getpid(), i++);
     }
 
     sys_exit(); // test exit
@@ -32,7 +32,7 @@ void wait_lock_task(long other_pid)
     int print_location = 2;
 
     sys_move_cursor(1, print_location);
-    printf("> [TASK] I want to acquire a mutex lock from task(pid=%ld).", (long)other_pid);
+    printf("> [TASK] I want to acquire a binsem lock from task(pid=%ld).", (long)other_pid);
 
     int lock1_id = sys_binsem_get(LOCK1_BINSEM_KEY);
     sys_binsem_op(lock1_id, BINSEM_OP_LOCK);
@@ -58,7 +58,7 @@ void wait_exit_task()
     sys_move_cursor(1, print_location);
     printf("> [TASK] I want to wait task (pid=%ld) to exit.", pid_task1);
 
-    int ret = sys_waitpid(pid_task1); //test waitpid
+    sys_waitpid(pid_task1); //test waitpid
 
     sys_move_cursor(1, print_location);
     printf("> [TASK] Task (pid=%d) has exited.                ", pid_task1);

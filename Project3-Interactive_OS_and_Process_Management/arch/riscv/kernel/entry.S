@@ -103,29 +103,6 @@
   sd sp, PCB_KERNEL_SP(tp)
 .endm
 
-
-ENTRY(do_scheduler)
-  ld tp, current_running
-  SAVE_CONTEXT
-
-  jal scheduler
-
-  ld tp, current_running
-  RESTORE_CONTEXT
-
-  csrrw tp, CSR_SSCRATCH, tp
-  bnez tp, to_user_1
-to_kernel_1:
-  csrrw tp, CSR_SSCRATCH, tp
-  ld sp, PCB_KERNEL_SP(tp)
-  j restore_sp_done_1
-to_user_1:
-  ld sp, PCB_USER_SP(tp)
-restore_sp_done_1:
-
-  sret
-ENDPROC(do_scheduler)
-
 /* 
  * trick: during an irq handling, current_running may be modified
  * but $tp will not be modified until ret_from_exception()
