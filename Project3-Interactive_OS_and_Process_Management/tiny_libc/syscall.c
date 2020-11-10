@@ -100,3 +100,23 @@ int sys_get_char()
 {
     return invoke_syscall(SYSCALL_GET_CHAR, IGNORE, IGNORE, IGNORE);
 }
+
+int sys_mbox_open(char *name)
+{
+    return invoke_syscall(SYSCALL_MAILBOX_OPEN, name, IGNORE, IGNORE);
+}
+
+void sys_mbox_close(int mailbox)
+{
+    invoke_syscall(SYSCALL_MAILBOX_CLOSE, mailbox, IGNORE, IGNORE);
+}
+
+int sys_mbox_send(int mailbox, void *msg, int msg_length)
+{
+    return invoke_syscall(SYSCALL_MAILBOX_SEND, mailbox, msg, msg_length);
+}
+
+int sys_mbox_recv(int mailbox, void *msg, int msg_length)
+{
+    return invoke_syscall(SYSCALL_MAILBOX_RECV, mailbox, msg, msg_length);
+}

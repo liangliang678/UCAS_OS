@@ -2,13 +2,13 @@
 #include <asm/sbiasm.h>
 #include <csr.h>
 
-// 1. kernel address (move kernel to here ~)
+// kernel address
 .equ kernel, 0x50201000
 
-// 2. kernel main address (jmp here to start kernel main!)
+// kernel main address
 .equ kernel_main, 0x50201000
 
-// 3. os size location (get the size of your OS here)
+// os size location
 .equ os_size_loc, 0x502001fc
 
 .text
@@ -27,12 +27,18 @@ main:
 	SBI_CALL SBI_CONSOLE_PUTCHAR
 
 	// The core whose mhartid=0 is selected to boot the kernel.
-	// Other cores should wait until the kernel's initialization
-	// has been finished.
+	// Other cores should wait until the kernel's initialization has been finished.
  	move a0, s0
 	bnez a0, secondary
 
-	// your code
+	// call BIOS read kernel in SD card and jump to kernel start
+	li a0, kernel
+	li t0, os_size_loc
+	lh a1, 0(t0)
+	li a2, 1
+	SBI_CALL SBI_SD_READ
+
+    j kernel_main
 
 secondary:
 	/* TODO: 
@@ -40,7 +46,12 @@ secondary:
 	 * 2. let stvec pointer to kernel_main
 	 * 3. enable software interrupt for ipi
 	 */
-
+	csrw CSR_SIE, zero
+	ld t0, kernel_main
+	csrw CSR_STVEC, t0
+	li t0, SIE_SSIE
+	csrs CSR_SIE, t0
+	
 wait_for_wakeup:
 	wfi
 	j wait_for_wakeup
@@ -51,5 +62,4 @@ stop:
 	nop
 
 .data
-
 msg: .string "It's a bootloader...\n\r"

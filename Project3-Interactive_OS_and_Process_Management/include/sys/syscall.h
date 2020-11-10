@@ -61,5 +61,9 @@ long sys_get_timebase();
 long sys_get_tick();
 int sys_get_char();
 
+int sys_mbox_open(char *);
+void sys_mbox_close(int);
+int sys_mbox_send(int, void *, int);
+int sys_mbox_recv(int, void *, int);
 
 #endif

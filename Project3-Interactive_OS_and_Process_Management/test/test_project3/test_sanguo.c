@@ -13,7 +13,7 @@ static struct task_info cc_task = {(uintptr_t)&CaoCao, USER_PROCESS};
 
 void SunQuan(void)
 {
-    mailbox_t pub = mbox_open("SunQuan-Publish-PID");
+    int pub = mbox_open("SunQuan-Publish-PID");
     pid_t myPid = sys_getpid();
 
     /* Send PID twice, once for LiuBei,
@@ -26,7 +26,7 @@ void SunQuan(void)
     mbox_send(pub, &myPid, sizeof(pid_t));
 
     /* Find LiuBei's PID */
-    mailbox_t sub = mbox_open("LiuBei-Publish-PID");
+    int sub = mbox_open("LiuBei-Publish-PID");
 
     for (;;)
     {
@@ -51,7 +51,7 @@ void SunQuan(void)
 
 void LiuBei(void)
 {
-    mailbox_t pub = mbox_open("LiuBei-Publish-PID");
+    int pub = mbox_open("LiuBei-Publish-PID");
     pid_t myPid = sys_getpid();
 
     /* Send PID twice, once for sunquan Hood,
@@ -60,7 +60,7 @@ void LiuBei(void)
     mbox_send(pub, &myPid, sizeof(pid_t));
 
     /* Find sunquan's PID */
-    mailbox_t sub = mbox_open("SunQuan-Publish-PID");
+    int sub = mbox_open("SunQuan-Publish-PID");
 
     // sys_move_cursor(1, 2);
     // printf("LiuBei(%d): Hello, I am Liubei          ", myPid);
@@ -90,8 +90,8 @@ void CaoCao(void)
 {
     pid_t myPid = sys_getpid();
 
-    mailbox_t subSunQuan = mbox_open("SunQuan-Publish-PID");
-    mailbox_t subLiuBei = mbox_open("LiuBei-Publish-PID");
+    int subSunQuan = mbox_open("SunQuan-Publish-PID");
+    int subLiuBei = mbox_open("LiuBei-Publish-PID");
 
     int i;
     pid_t sunquan, liubei;

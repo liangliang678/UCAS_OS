@@ -32,6 +32,7 @@
 #include <os/syscall.h>
 #include <os/futex.h>
 #include <os/binsem.h>
+#include <os/mailbox.h>
 #include <screen.h>
 #include <sbi.h>
 #include <stdio.h>
@@ -105,7 +106,11 @@ static void init_syscall(void)
     syscall[SYSCALL_SCREEN_SCROLL] = (long(*)())screen_scroll;
     syscall[SYSCALL_GET_TIMEBASE] = (long(*)())get_time_base;
     syscall[SYSCALL_GET_TICK] = (long(*)())get_ticks;   
-    syscall[SYSCALL_GET_CHAR] = (long(*)())sbi_console_getchar;  
+    syscall[SYSCALL_GET_CHAR] = (long(*)())sbi_console_getchar; 
+    syscall[SYSCALL_MAILBOX_OPEN] = (long(*)())do_mbox_open;   
+    syscall[SYSCALL_MAILBOX_CLOSE] = (long(*)())do_mbox_close; 
+    syscall[SYSCALL_MAILBOX_SEND] = (long(*)())do_mbox_send;  
+    syscall[SYSCALL_MAILBOX_RECV] = (long(*)())do_mbox_recv;  
 }
 
 // jump from bootloader

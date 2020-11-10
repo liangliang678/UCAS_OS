@@ -20,7 +20,7 @@ SRC_INT		= ./kernel/irq/irq.c
 SRC_LOCK	= ./kernel/locking/lock.c ./kernel/locking/futex.c ./kernel/locking/binsem.c
 SRC_SCHED	= ./kernel/sched/sched.c ./kernel/sched/time.c ./kernel/sched/smp.c
 SRC_MM		= ./kernel/mm/mm.c
-SRC_SYSCALL	= ./kernel/syscall/syscall.c
+SRC_SYSCALL	= ./kernel/syscall/syscall.c ./kernel/syscall/mailbox.c
 SRC_LIBS	= ./libs/string.c ./libs/printk.c
 
 SRC_LIBC	= ./tiny_libc/getchar.c ./tiny_libc/printf.c ./tiny_libc/string.c ./tiny_libc/mthread.c ./tiny_libc/syscall.c ./tiny_libc/syscall.S ./tiny_libc/rand.c ./tiny_libc/time.c ./tiny_libc/mailbox.c

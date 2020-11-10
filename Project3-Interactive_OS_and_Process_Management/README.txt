@@ -1,8 +1,3 @@
-关于实现的锁：
-内核使用：/kernel/locking/lock中的自旋锁
-用户程序使用：binsem锁
-libc库中同步原语实现使用：futex锁
-
 新增的文件：
 /arch/riscv/kernel/smp.S
 /include/os/smp.h
