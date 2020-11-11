@@ -111,6 +111,10 @@ typedef struct pcb
     uint8_t priority;
     uint64_t ready_tick;
 
+    /* hart mask */
+    unsigned long mask;
+    unsigned long cpu_id;
+
     /* cursor position */
     int cursor_x;
     int cursor_y;
@@ -150,6 +154,7 @@ extern int do_kill(pid_t pid);
 extern int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs);
 extern void do_process_show();
 extern pid_t do_getpid();
+extern int do_taskset(pid_t pid, unsigned long mask);
 
 extern void do_block(list_node_t *, list_head *queue);
 extern void do_unblock(list_node_t *);

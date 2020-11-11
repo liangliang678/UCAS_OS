@@ -38,7 +38,7 @@ void integer_test_task(int print_location)
     for (int i = 0; i < MAX_ITERATION; ++i) {
         for (int j = 0; j < INTEGER_TEST_CHUNK; ++j) {
             ans += rand();
-	}
+	    }
         sys_move_cursor(1, print_location);
         printf("[%ld] integer test (%d/%d)\n\r", pid, i, MAX_ITERATION);
     }

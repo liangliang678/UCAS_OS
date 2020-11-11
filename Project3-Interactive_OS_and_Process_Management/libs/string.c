@@ -77,6 +77,12 @@ int katoi(char* src)
 
 void kitoa(char *dest, int src)
 {
+    if(src == 0){
+        *dest = '0';
+        *(dest + 1) = '\0';
+        return;
+    }
+
     int i = 0, j = 0;
     while(src){
         *(dest + i) = src % 10 + '0';
@@ -94,5 +100,4 @@ void kitoa(char *dest, int src)
         i--;
         j++;
     }
-    
 }

@@ -42,6 +42,7 @@ int sys_waitpid(pid_t pid);
 void sys_process_show(char* buffer);
 pid_t sys_getpid();
 void sys_yield();
+int sys_taskset(pid_t pid, unsigned long mask);
 
 void sys_futex_wait(volatile uint64_t *val_addr);
 void sys_futex_wakeup(volatile uint64_t *val_addr, int num_wakeup);

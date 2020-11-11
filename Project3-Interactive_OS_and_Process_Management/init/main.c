@@ -69,6 +69,8 @@ static void init_pcb()
     kernel_pcb[0].type = KERNEL_PROCESS;
     kernel_pcb[0].status = TASK_RUNNING;
     kernel_pcb[0].priority = 0;
+    kernel_pcb[0].mask = 1;
+    kernel_pcb[0].cpu_id = 0;
     init_list_head(&kernel_pcb[0].wait_list);
 
     kernel_pcb[1].kernel_sp = (ptr_t)kernel_stack_1;
@@ -81,7 +83,8 @@ static void init_pcb()
     kernel_pcb[1].type = KERNEL_PROCESS;
     kernel_pcb[1].status = TASK_RUNNING;
     kernel_pcb[1].priority = 0;
-
+    kernel_pcb[1].mask = 2;
+    kernel_pcb[1].cpu_id = 1;
 
     /* initialize all pcb and add test_shell into ready_queue */
     for(int i = 0; i < NUM_MAX_TASK; i++){
@@ -101,7 +104,8 @@ static void init_pcb()
     pcb[0].status = TASK_READY;
     pcb[0].mode = AUTO_CLEANUP_ON_EXIT;
     pcb[0].priority = 0;
-    pcb[0].ready_tick = get_ticks();     
+    pcb[0].ready_tick = get_ticks();    
+    pcb[0].mask = 3; 
     init_pcb_stack(pcb[0].kernel_sp, pcb[0].user_sp, &test_shell, &pcb[0]);
 
     /* initialize `current_running` */
@@ -120,6 +124,7 @@ static void init_syscall(void)
     syscall[SYSCALL_PS] = (long(*)())do_process_show;
     syscall[SYSCALL_GETPID] = (long(*)())do_getpid;
     syscall[SYSCALL_YIELD] = (long(*)())scheduler;
+    syscall[SYSCALL_TASKSET] = (long(*)())do_taskset;
     syscall[SYSCALL_FUTEX_WAIT] = (long(*)())futex_wait;
     syscall[SYSCALL_FUTEX_WAKEUP] = (long(*)())futex_wakeup;
     syscall[SYSCALL_BINSEM_GET] = (long(*)())binsem_get;
@@ -181,13 +186,11 @@ int main()
         list_node_t* clean_node = kernel_pcb[0].wait_list.next;
         while(clean_node != &kernel_pcb[0].wait_list){
             pcb_t *clean_pcb = list_entry(clean_node, pcb_t, list);
-            if(clean_pcb->pid != -1){
-                // release pcb
-                clean_pcb->status = TASK_EXITED;
-                clean_pcb->pid = -1;
-                // release kernel stack
-                freePage(clean_pcb->kernel_stack_base, 1);
-            }
+            // release pcb
+            clean_pcb->status = TASK_EXITED;
+            clean_pcb->pid = -1;
+            // release kernel stack
+            freePage(clean_pcb->kernel_stack_base, 1);
             
             clean_node = clean_node->next;
             list_del(clean_node->prev);

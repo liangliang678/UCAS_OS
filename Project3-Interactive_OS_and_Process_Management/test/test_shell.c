@@ -41,14 +41,16 @@ struct task_info task13 = {(uintptr_t)&SunQuan, USER_PROCESS};
 struct task_info task14 = {(uintptr_t)&LiuBei, USER_PROCESS};
 struct task_info task15 = {(uintptr_t)&CaoCao, USER_PROCESS};
 struct task_info task_test_multicore = {(uintptr_t)&test_multicore, USER_PROCESS};
+struct task_info task_test_taskset = {(uintptr_t)&test_affinity, USER_PROCESS};
 
 static struct task_info *test_tasks[16] = {&task_test_waitpid,
                                            &task_test_semaphore,
                                            &task_test_condition,
                                            &task_test_barrier,
                                            &task13, &task14, &task15,
-                                           &task_test_multicore};
-static int num_test_tasks = 8;
+                                           &task_test_multicore,
+                                           &task_test_taskset};
+static int num_test_tasks = 9;
 
 #define SHELL_BEGIN 15
 #define SHELL_END   30
@@ -173,6 +175,7 @@ void test_shell()
         int clear_command = !strcmp(argv[0], "clear");
         int exec_command = !strcmp(argv[0], "exec");
         int kill_command = !strcmp(argv[0], "kill");
+        int taskset_command = !strcmp(argv[0], "taskset");
 
         // exec command and output
         if(empty_command){
@@ -343,6 +346,78 @@ void test_shell()
                 }
                 printf("Task(pid=%d) killed\n", pid);
                 print_location_y++;
+            }
+        }
+        else if(taskset_command){
+            int spawn = strcmp(argv[1], "-p");
+            if((spawn && argc >= 4) || (!spawn && argc >= 5)){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too many arguments for command taskset!\n");
+                print_location_y++;
+                continue;
+            }
+            else if((spawn && argc <=2) || (!spawn && argc <=3)){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too few arguments for command taskset!\n");
+                print_location_y++;
+                continue;
+            }
+
+            if(spawn){
+                unsigned long mask = atoi(argv[1]);
+                int task_num = atoi(argv[2]); 
+                if(task_num >= num_test_tasks || task_num < 0){
+                    if(print_location_y == SHELL_END){
+                        print_location_y--;
+                        sys_move_cursor(1, print_location_y);
+                        sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                    }
+                    printf("No such test tasks!\n");
+                    print_location_y++;
+                    continue;
+                }
+                
+                int spawn_pid;
+                if((spawn_pid = sys_spawn(test_tasks[task_num], NULL, AUTO_CLEANUP_ON_EXIT)) == -1){
+                    if(print_location_y == SHELL_END){
+                        print_location_y--;
+                        sys_move_cursor(1, print_location_y);
+                        sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                    }
+                    printf("Too many tasks! Failed to exec process[%d]\n", task_num);
+                    print_location_y++;
+                }
+                else{
+                    sys_taskset(spawn_pid, mask);
+                    if(print_location_y == SHELL_END){
+                        print_location_y--;
+                        sys_move_cursor(1, print_location_y);
+                        sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                    }
+                    printf("exec process[%d] and set mask 0x%x\n", task_num, mask);
+                    print_location_y++;
+                }
+            }
+            else{
+                unsigned long mask = atoi(argv[2]);
+                int pid = atoi(argv[3]);
+                if(!sys_taskset(pid, mask)){
+                    if(print_location_y == SHELL_END){
+                        print_location_y--;
+                        sys_move_cursor(1, print_location_y);
+                        sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                    }
+                    printf("Cannot set mask of task(pid=%d): Task Does Not Exist!\n", pid);
+                    print_location_y++;
+                }
             }
         }
         else{

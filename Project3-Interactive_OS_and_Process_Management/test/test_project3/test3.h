@@ -25,5 +25,6 @@ void CaoCao(void);
 
 // [MULTI-CORE]
 void test_multicore(void);
+void test_affinity(void);
 
 #endif

@@ -51,6 +51,7 @@ void scheduler(void)
     current_running[cpu_id] = list_entry(max_priority_node(), pcb_t, list); 
     list_del(&current_running[cpu_id]->list);
     current_running[cpu_id]->status = TASK_RUNNING;
+    current_running[cpu_id]->cpu_id = cpu_id;
     current_cpu_running = current_running[cpu_id];
     
     // restore the current_running's cursor_x and cursor_y
@@ -87,6 +88,7 @@ pid_t do_spawn(task_info_t *task, void* arg, spawn_mode_t mode)
     new_pcb->mode = mode;
     new_pcb->priority = 0;
     new_pcb->ready_tick = get_ticks();
+    new_pcb->mask = current_running[cpu_id]->mask;
 
     /* initialization registers on kernel stack */
     regs_context_t *pt_regs = (regs_context_t *)(new_pcb->kernel_sp - sizeof(regs_context_t));
@@ -234,14 +236,13 @@ int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
         return 0;
     }
     
+    child_pcb->mode = ENTER_ZOMBIE_ON_EXIT;
     if(child_pcb->status == TASK_ZOMBIE){
-        if(child_pcb->pid != -1){
-            // release pcb
-            child_pcb->status = TASK_EXITED;
-            child_pcb->pid = -1;
-            // release kernel stack
-            freePage(child_pcb->kernel_stack_base, 1);
-        }
+        // release pcb
+        child_pcb->status = TASK_EXITED;
+        child_pcb->pid = -1;
+        // release kernel stack
+        freePage(child_pcb->kernel_stack_base, 1);
 
         return 1;
     }
@@ -261,19 +262,43 @@ void do_process_show(char* buffer)
     kstrcat(buffer, "[PROCESS TABLE]\n");
     kstrcat(buffer, "INIT 0    STATUS: ");
     if(kernel_pcb[0].status == TASK_BLOCKED){
-        kstrcat(buffer, "BLOCKED\n");
+        kstrcat(buffer, "BLOCKED    MASK: ");
+        char mask[2];
+        kitoa(mask, kernel_pcb[0].mask);
+        kstrcat(buffer, mask);
+        kstrcat(buffer, "\n");
     }
     else if(kernel_pcb[0].status == TASK_RUNNING){
-        kstrcat(buffer, "RUNNING\n");
+        kstrcat(buffer, "RUNNING    MASK: ");
+        char mask[2];
+        kitoa(mask, kernel_pcb[0].mask);
+        kstrcat(buffer, mask);
+        kstrcat(buffer, "    CORE: ");
+        char cpu_id[2];
+        kitoa(cpu_id, kernel_pcb[0].cpu_id);
+        kstrcat(buffer, cpu_id);
+        kstrcat(buffer, "\n");
     }
     else if(kernel_pcb[0].status == TASK_READY){
-        kstrcat(buffer, "READY\n");
+        kstrcat(buffer, "READY    MASK: ");
+        char mask[2];
+        kitoa(mask, kernel_pcb[0].mask);
+        kstrcat(buffer, mask);
+        kstrcat(buffer, "\n");
     }
     else if(kernel_pcb[0].status == TASK_EXITED){
-        kstrcat(buffer, "EXITED\n");
+        kstrcat(buffer, "EXITED    MASK: ");
+        char mask[2];
+        kitoa(mask, kernel_pcb[0].mask);
+        kstrcat(buffer, mask);
+        kstrcat(buffer, "\n");
     }
     else if(kernel_pcb[0].status == TASK_ZOMBIE){
-        kstrcat(buffer, "ZOMBIE\n");
+        kstrcat(buffer, "ZOMBIE    MASK: ");
+        char mask[2];
+        kitoa(mask, kernel_pcb[0].mask);
+        kstrcat(buffer, mask);
+        kstrcat(buffer, "\n");
     }
     
     kstrcat(buffer, "INIT 1    STATUS: ");
@@ -281,16 +306,36 @@ void do_process_show(char* buffer)
         kstrcat(buffer, "BLOCKED\n");
     }
     else if(kernel_pcb[1].status == TASK_RUNNING){
-        kstrcat(buffer, "RUNNING\n");
+        kstrcat(buffer, "RUNNING    MASK: ");
+        char mask[2];
+        kitoa(mask, kernel_pcb[1].mask);
+        kstrcat(buffer, mask);
+        kstrcat(buffer, "    CORE: ");
+        char cpu_id[2];
+        kitoa(cpu_id, kernel_pcb[1].cpu_id);
+        kstrcat(buffer, cpu_id);
+        kstrcat(buffer, "\n");
     }
     else if(kernel_pcb[1].status == TASK_READY){
-        kstrcat(buffer, "READY\n");
+        kstrcat(buffer, "READY    MASK: ");
+        char mask[2];
+        kitoa(mask, kernel_pcb[1].mask);
+        kstrcat(buffer, mask);
+        kstrcat(buffer, "\n");
     }
     else if(kernel_pcb[1].status == TASK_EXITED){
-        kstrcat(buffer, "EXITED\n");
+        kstrcat(buffer, "EXITED    MASK: ");
+        char mask[2];
+        kitoa(mask, kernel_pcb[1].mask);
+        kstrcat(buffer, mask);
+        kstrcat(buffer, "\n");
     }
     else if(kernel_pcb[1].status == TASK_ZOMBIE){
-        kstrcat(buffer, "ZOMBIE\n");
+        kstrcat(buffer, "ZOMBIE    MASK: ");
+        char mask[2];
+        kitoa(mask, kernel_pcb[1].mask);
+        kstrcat(buffer, mask);
+        kstrcat(buffer, "\n");
     }
 
     for(int i = 0; i < NUM_MAX_TASK; i++){
@@ -301,19 +346,43 @@ void do_process_show(char* buffer)
             kstrcat(buffer, pid);
             kstrcat(buffer, "    STATUS: ");
             if(pcb[i].status == TASK_BLOCKED){
-                kstrcat(buffer, "BLOCKED\n");
+                kstrcat(buffer, "BLOCKED    MASK: ");
+                char mask[2];
+                kitoa(mask, pcb[i].mask);
+                kstrcat(buffer, mask);
+                kstrcat(buffer, "\n");
             }
             else if(pcb[i].status == TASK_RUNNING){
-                kstrcat(buffer, "RUNNING\n");
+                kstrcat(buffer, "RUNNING    MASK: ");
+                char mask[2];
+                kitoa(mask, pcb[i].mask);
+                kstrcat(buffer, mask);
+                kstrcat(buffer, "    CORE: ");
+                char cpu_id[2];
+                kitoa(cpu_id, pcb[i].cpu_id);
+                kstrcat(buffer, cpu_id);
+                kstrcat(buffer, "\n");
             }
             else if(pcb[i].status == TASK_READY){
-                kstrcat(buffer, "READY\n");
+                kstrcat(buffer, "READY    MASK: ");
+                char mask[2];
+                kitoa(mask, pcb[i].mask);
+                kstrcat(buffer, mask);
+                kstrcat(buffer, "\n");
             }
             else if(pcb[i].status == TASK_EXITED){
-                kstrcat(buffer, "EXITED\n");
+                kstrcat(buffer, "EXITED    MASK: ");
+                char mask[2];
+                kitoa(mask, pcb[i].mask);
+                kstrcat(buffer, mask);
+                kstrcat(buffer, "\n");
             }
             else if(pcb[i].status == TASK_ZOMBIE){
-                kstrcat(buffer, "ZOMBIE\n");
+                kstrcat(buffer, "ZOMBIE    MASK: ");
+                char mask[2];
+                kitoa(mask, pcb[i].mask);
+                kstrcat(buffer, mask);
+                kstrcat(buffer, "\n");
             }
         }
     }
@@ -323,6 +392,24 @@ void do_process_show(char* buffer)
 pid_t do_getpid()
 {
     return current_running[cpu_id]->pid;
+}
+
+int do_taskset(pid_t pid, unsigned long mask)
+{
+    // search the pcb
+    pcb_t *set_pcb = NULL;
+    for(int i = 0; i < NUM_MAX_TASK; i++){
+        if(pcb[i].pid == pid){
+            set_pcb = &pcb[i];
+            break;
+        }
+    }
+    if(set_pcb == NULL){
+        return 0;
+    }
+
+    set_pcb->mask = mask;
+    return 1;
 }
 
 // block the pcb task into the block queue
@@ -344,22 +431,25 @@ void do_unblock(list_node_t *pcb_node)
 
 list_node_t* max_priority_node(void)
 {
-    list_node_t* node;
+    int mask_flag;
     uint64_t current_tick = get_ticks();
 
     // max_priority_node has min points
-    list_node_t* max_priority_node = ready_queue.next;
-    pcb_t* node_pcb = list_entry(max_priority_node, pcb_t, list);
-    int min_points = node_pcb->priority - (current_tick - node_pcb->ready_tick)/timer_interval;
-
-    for(node = ready_queue.next->next; node != &ready_queue; node = node->next){
-        node_pcb = list_entry(node, pcb_t, list);
+    list_node_t* node;
+    list_node_t* max_priority_node = NULL;
+    int min_points = INT32_MAX;
+    for(node = ready_queue.next; node != &ready_queue; node = node->next){
+        pcb_t *node_pcb = list_entry(node, pcb_t, list);
+        mask_flag = (cpu_id == 0 && ((node_pcb->mask & 0x1) == 0x1)) || (cpu_id == 1 && ((node_pcb->mask & 0x2) == 0x2));
+        if(!mask_flag){
+            continue;
+        }
         int node_points = node_pcb->priority - (current_tick - node_pcb->ready_tick)/timer_interval;
         if(node_points < min_points){
             max_priority_node = node;
             min_points = node_points;
-        }       
+        }
     }
-
+    assert(max_priority_node);
     return max_priority_node;
 }

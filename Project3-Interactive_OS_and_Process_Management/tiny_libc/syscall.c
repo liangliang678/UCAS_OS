@@ -41,6 +41,11 @@ void sys_yield()
     invoke_syscall(SYSCALL_YIELD, IGNORE, IGNORE, IGNORE);
 }
 
+int sys_taskset(pid_t pid, unsigned long mask)
+{
+    return invoke_syscall(SYSCALL_TASKSET, (uintptr_t)pid, (uintptr_t)mask, IGNORE);
+}
+
 void sys_futex_wait(volatile uint64_t *val_addr)
 {
     invoke_syscall(SYSCALL_FUTEX_WAIT, (uintptr_t)val_addr, IGNORE, IGNORE);
