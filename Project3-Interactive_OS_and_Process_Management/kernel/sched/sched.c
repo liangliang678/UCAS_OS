@@ -127,7 +127,7 @@ void do_exit()
     // release user stack
     freePage(current_running[cpu_id]->user_stack_base, 1);
 
-    // delete from ready queue
+    // delete from ready queue or blocked queue
     list_del(&current_running[cpu_id]->list);
 
     // enter ZOMBIE status
@@ -191,8 +191,22 @@ int do_kill(pid_t pid)
     // release user stack
     freePage(killed_pcb->user_stack_base, 1);
 
-    // delete from ready queue
+    // delete from ready queue or blocked queue
     list_del(&killed_pcb->list);
+
+    // delete timer
+    list_node_t *p = timer_queue.next;
+    while(p != &timer_queue){
+        timer_t *timer_node = list_entry(p, timer_t, list);
+        pcb_t *pcb_node = list_entry(timer_node, pcb_t, timer);
+        if(pcb_node == killed_pcb){
+            p = p->next;
+            list_del(p->prev);
+        }
+        else{
+            p = p->next;
+        } 
+    }
 
     // enter ZOMBIE status
     if(killed_pcb->mode == AUTO_CLEANUP_ON_EXIT){
@@ -203,7 +217,7 @@ int do_kill(pid_t pid)
         killed_pcb->status = TASK_ZOMBIE;
     }
 
-    scheduler(); 
+    scheduler();
     return 1;
 }
 

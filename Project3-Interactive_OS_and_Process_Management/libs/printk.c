@@ -241,15 +241,6 @@ static int _vprint(const char* fmt, va_list _va,
     buff[ret] = '\0';
 
     output(buff);
-    for (int i = 0; i < ret; ++i) {
-        if (buff[i] == '\n') {
-            current_running[cpu_id]->cursor_y++;
-        } else if (buff[i] == '\r') {
-            current_running[cpu_id]->cursor_x = 1;
-        } else {
-            current_running[cpu_id]->cursor_x++;
-        }
-    }
 
     return ret;
 }

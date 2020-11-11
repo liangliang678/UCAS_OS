@@ -33,7 +33,7 @@
 typedef struct mthread_barrier
 {
     int count;
-    int reached;
+    atomic_int reached;
     int binsem_id;
 } mthread_barrier_t;
 

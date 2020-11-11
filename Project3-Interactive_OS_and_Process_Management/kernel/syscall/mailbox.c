@@ -64,6 +64,7 @@ int do_mbox_send(int mailbox_id, void *msg, int msg_length)
         while(!list_empty(&cur_message->wait_queue)){
             do_unblock(cur_message->wait_queue.next);
         }
+        scheduler();
         return 1;
     }
 }
@@ -82,6 +83,7 @@ int do_mbox_recv(int mailbox_id, void *msg, int msg_length)
         while(!list_empty(&cur_message->wait_queue)){
             do_unblock(cur_message->wait_queue.next);
         }
+        scheduler();
         return 1;
     }
 }

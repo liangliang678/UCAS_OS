@@ -7,15 +7,15 @@
 void mthread_barrier_init(mthread_barrier_t * barrier, unsigned count)
 {
     barrier->count = count;
-    barrier->reached = 0;
+    atomic_exchange(&barrier->reached, 0);
     barrier->binsem_id = sys_binsem_get((int)barrier);
 }
 void mthread_barrier_wait(mthread_barrier_t *barrier)
 {
     sys_binsem_op(barrier->binsem_id, BINSEM_OP_LOCK);
-    (barrier->reached)++;
+    fetch_add(&barrier->reached, 1);
     if((barrier->reached) == (barrier->count)){
-        barrier->reached = 0;
+        atomic_exchange(&barrier->reached, 0);
         sys_binsem_op(barrier->binsem_id, BINSEM_OP_UNLOCK);
         sys_futex_wakeup(barrier, barrier->count);                    
     }
