@@ -85,7 +85,7 @@ static inline void sbi_clear_ipi(void)
     SBI_CALL_0(SBI_CLEAR_IPI);
 }
 
-static inline void sbi_send_ipi(const unsigned long *hart_mask)
+static inline void sbi_send_ipi(uint64_t hart_mask)
 {
     SBI_CALL_1(SBI_SEND_IPI, hart_mask);
 }

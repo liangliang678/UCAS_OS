@@ -35,8 +35,6 @@ void init_exception()
     exc_table[EXCC_INST_PAGE_FAULT] = (handler_t)handle_other;
     exc_table[EXCC_LOAD_PAGE_FAULT] = (handler_t)handle_other;
     exc_table[EXCC_STORE_PAGE_FAULT] = (handler_t)handle_other;
-    
-    setup_exception();
 }
 
 // interrupt handler.

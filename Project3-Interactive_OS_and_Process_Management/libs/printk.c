@@ -240,7 +240,6 @@ static int _vprint(const char* fmt, va_list _va,
 
     buff[ret] = '\0';
 
-    disable_preempt();
     output(buff);
     for (int i = 0; i < ret; ++i) {
         if (buff[i] == '\n') {
@@ -251,7 +250,6 @@ static int _vprint(const char* fmt, va_list _va,
             current_running->cursor_x++;
         }
     }
-    enable_preempt();
 
     return ret;
 }

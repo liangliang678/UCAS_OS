@@ -12,6 +12,5 @@ extern void lock_kernel();
 extern void unlock_kernel();
 
 extern struct spin_lock kernel_lock;
-extern volatile int init_flag;
 
 #endif /* SMP_H */

@@ -30,6 +30,7 @@
 #define INCLUDE_SCHEDULER_H_
 
 #include <type.h>
+#include <os/smp.h>
 #include <os/list.h>
 #include <os/mm.h>
 #include <os/time.h>
@@ -133,9 +134,11 @@ extern pcb_t * volatile current_running;
 extern pid_t process_id;
 
 extern pcb_t pcb[NUM_MAX_TASK];
-// extern pcb_t kernel_pcb[NR_CPUS];
-extern pcb_t pid0_pcb;
-extern const ptr_t pid0_stack;
+extern pcb_t kernel_pcb[NR_CPUS];
+extern const ptr_t kernel_stack_1;
+extern const ptr_t kernel_stack_2;
+
+extern void set_tp(uint64_t);
 
 extern void scheduler(void);
 

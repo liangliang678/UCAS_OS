@@ -195,3 +195,8 @@ store_sp_done:
   csrr a2, CSR_SCAUSE
   j interrupt_helper
 ENDPROC(exception_handler_entry)
+
+ENTRY(set_tp)
+  mv tp, a0
+  jr ra
+ENDPROC(set_tp)

@@ -7,11 +7,9 @@ futex_bucket_t futex_buckets[FUTEX_BUCKETS];
 
 void init_system_futex()
 {
-    disable_preempt();
     for (int i = 0; i < FUTEX_BUCKETS; ++i) {
         init_list_head(&futex_buckets[i]);
     }
-    enable_preempt();
 }
 
 // a simple hash function

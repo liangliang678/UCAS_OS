@@ -32,15 +32,27 @@ clear_bss:
   blt a3, a4, clear_bss
 clear_bss_done:
 
+  csrr t0, CSR_MHARTID
+  bnez t0, secondary
+
   /* setup C environment */
-  la tp, pid0_pcb
-  lw sp, pid0_stack
-  csrw CSR_SSCRATCH, x0
+  lw sp, kernel_stack_1
+  csrw CSR_SSCRATCH, zero
 
   la a0, riscv_dtb
   sd a1, (a0)
 
   call main
+
+secondary:
+  /* setup C environment */
+  lw sp, kernel_stack_2
+  csrw CSR_SSCRATCH, zero
+
+  la a0, riscv_dtb
+  sd a1, (a0)
+
+  call smp_init
 
 loop:
   wfi

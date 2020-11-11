@@ -1,13 +1,15 @@
 #include <asm/sbidef.h>
 #include <asm/sbiasm.h>
+#include <csr.h>
 
-.equ os_size_loc, 0x502001fc
-
-//kernel address
+// kernel address
 .equ kernel, 0x50201000
 
-//kernel main address
+// kernel main address
 .equ kernel_main, 0x50201000
+
+// os size location
+.equ os_size_loc, 0x502001fc
 
 .text
 .global main
@@ -16,13 +18,18 @@ main:
 	// fence on all memory and I/O
 	fence
 
-	// print a \n to avoid system output error...
+	// a0 is mhartid, a1 is the pointer of fdt
+	move s0,a0
+	move s1,a1
+
+	// output a \n
 	li a0, 10
 	SBI_CALL SBI_CONSOLE_PUTCHAR
 
-	// call BIOS print string "It's bootblock!"
-	la a0, msg
-	SBI_CALL SBI_CONSOLE_PUTSTR
+	// The core whose mhartid=0 is selected to boot the kernel.
+	// Other cores should wait until the kernel's initialization has been finished.
+ 	move a0, s0
+	bnez a0, secondary
 
 	// call BIOS read kernel in SD card and jump to kernel start
 	li a0, kernel
@@ -32,6 +39,28 @@ main:
 	SBI_CALL SBI_SD_READ
 
     j kernel_main
+
+secondary:
+	// Mask all interrupts
+	li t0, SR_SIE
+  	csrc CSR_SSTATUS, t0
+	csrw CSR_SIE, zero
+	// let stvec pointer to kernel_main
+	li t0, kernel_main
+	csrw CSR_STVEC, t0
+	// enable software interrupt for ipi
+	li t0, SIE_SSIE
+	csrs CSR_SIE, t0
+	li t0, SR_SIE
+  	csrs CSR_SSTATUS, t0
+	
+wait_for_wakeup:
+	wfi
+	j wait_for_wakeup
+
+stop:
+	j stop
+	nop
 
 .data
 msg: .string "It's a bootloader...\n\r"

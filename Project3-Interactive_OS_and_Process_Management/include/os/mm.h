@@ -33,7 +33,7 @@
 #define MEM_SIZE 32
 #define PAGE_SIZE 4096
 #define INIT_KERNEL_STACK 0x50500000lu
-#define FREEMEM (INIT_KERNEL_STACK+PAGE_SIZE)
+#define FREEMEM (INIT_KERNEL_STACK + 2 * PAGE_SIZE)
 #define MAX_FREE_PAGE_NUM 100
 
 /* Rounding; only works for n = power of two */

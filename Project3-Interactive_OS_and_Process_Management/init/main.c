@@ -33,6 +33,7 @@
 #include <os/futex.h>
 #include <os/binsem.h>
 #include <os/mailbox.h>
+#include <os/smp.h>
 #include <screen.h>
 #include <sbi.h>
 #include <stdio.h>
@@ -58,12 +59,35 @@ static void init_pcb_stack(ptr_t kernel_stack, ptr_t user_stack, ptr_t entry_poi
 
 static void init_pcb()
 {
+    kernel_pcb[0].kernel_sp = (ptr_t)kernel_stack_1;
+    kernel_pcb[0].user_sp = (ptr_t)kernel_stack_1;
+    kernel_pcb[0].preempt_count = 0;
+    kernel_pcb[0].kernel_stack_base = (ptr_t)kernel_stack_1;
+    kernel_pcb[0].user_stack_base = (ptr_t)kernel_stack_1;
+    kernel_pcb[0].binsem_num = 0;
+    kernel_pcb[0].pid = 0;
+    kernel_pcb[0].type = KERNEL_PROCESS;
+    kernel_pcb[0].status = TASK_RUNNING;
+    kernel_pcb[0].priority = 0;
+    init_list_head(&kernel_pcb[0].wait_list);
+
+    kernel_pcb[1].kernel_sp = (ptr_t)kernel_stack_2;
+    kernel_pcb[1].user_sp = (ptr_t)kernel_stack_2;
+    kernel_pcb[1].preempt_count = 0;
+    kernel_pcb[1].kernel_stack_base = (ptr_t)kernel_stack_2;
+    kernel_pcb[1].user_stack_base = (ptr_t)kernel_stack_2;
+    kernel_pcb[1].binsem_num = 0;
+    kernel_pcb[1].pid = 0;
+    kernel_pcb[1].type = KERNEL_PROCESS;
+    kernel_pcb[1].status = TASK_RUNNING;
+    kernel_pcb[1].priority = 0;
+
+
     /* initialize all pcb and add test_shell into ready_queue */
     for(int i = 0; i < NUM_MAX_TASK; i++){
         pcb[i].pid = -1;
     }
-    init_list_head(&pid0_pcb.wait_list);
-
+    
     pcb[0].kernel_sp = allocPage(2);
     pcb[0].user_sp = allocPage(2);
     pcb[0].preempt_count = 0;
@@ -81,7 +105,7 @@ static void init_pcb()
     init_pcb_stack(pcb[0].kernel_sp, pcb[0].user_sp, &test_shell, &pcb[0]);
 
     /* initialize `current_running` */
-    current_running = &pid0_pcb;
+    current_running = &kernel_pcb[0];
 }
 
 static void init_syscall(void)
@@ -117,14 +141,17 @@ static void init_syscall(void)
 // The beginning of everything
 int main()
 {
-    // init Process Control Block
-    init_pcb();
-    printk("> [INIT] PCB initialization succeeded.\n\r");
+    // set $tp
+    set_tp((uint64_t)&kernel_pcb[0]);
 
     // read CPU frequency and calc timer interval
     time_base = sbi_read_fdt(TIMEBASE);
     timer_interval = (uint64_t)(time_base / 100);
-	
+
+    // init Process Control Block
+    init_pcb();
+    printk("> [INIT] PCB initialization succeeded.\n\r");
+
     // init futex mechanism and binsem mechanism
     init_system_futex();
     init_system_binsem();
@@ -140,15 +167,20 @@ int main()
     // init screen
     init_screen();
     printk("> [INIT] SCREEN initialization succeeded.\n\r");
-
+    
+    // wakeup another core
+    wakeup_other_hart();
+ 
     // Setup timer interrupt and enable all interrupt
-    sbi_set_timer(get_ticks() + timer_interval);
     enable_interrupt();
+    setup_exception();
+    while(1);
+    sbi_set_timer(get_ticks() + timer_interval);
 
-    while (1) {
+    while (1){
         disable_preempt();
-        list_node_t* clean_node = pid0_pcb.wait_list.next;
-        while(clean_node != &pid0_pcb.wait_list){
+        list_node_t* clean_node = kernel_pcb[0].wait_list.next;
+        while(clean_node != &kernel_pcb[0].wait_list){
             pcb_t *clean_pcb = list_entry(clean_node, pcb_t, list);
             if(clean_pcb->pid != -1){
                 // release pcb

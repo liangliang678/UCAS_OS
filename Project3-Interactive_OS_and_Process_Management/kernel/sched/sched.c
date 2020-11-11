@@ -13,19 +13,9 @@
 extern void __global_pointer$();
 
 pcb_t pcb[NUM_MAX_TASK];
-const ptr_t pid0_stack = INIT_KERNEL_STACK + PAGE_SIZE;
-pcb_t pid0_pcb = {
-    .kernel_sp = (ptr_t)pid0_stack,
-    .user_sp = (ptr_t)pid0_stack,
-    .preempt_count = 0,
-    .kernel_stack_base = (ptr_t)pid0_stack,
-    .user_stack_base = (ptr_t)pid0_stack,
-    .binsem_num = 0,
-    .pid = 0,
-    .type = KERNEL_PROCESS,
-    .status = TASK_RUNNING,
-    .priority = 0
-};
+const ptr_t kernel_stack_1 = INIT_KERNEL_STACK + PAGE_SIZE;
+const ptr_t kernel_stack_2 = INIT_KERNEL_STACK + 2 * PAGE_SIZE;
+pcb_t kernel_pcb[NR_CPUS];
 
 LIST_HEAD(ready_queue);
 LIST_HEAD(sleep_queue);
@@ -138,7 +128,7 @@ void do_exit()
     // enter ZOMBIE status
     if(current_running->mode == AUTO_CLEANUP_ON_EXIT){
         current_running->status = TASK_ZOMBIE;
-        list_add_tail(&current_running->list, &pid0_pcb.wait_list);
+        list_add_tail(&current_running->list, &kernel_pcb[0].wait_list);
     }
     else{
         current_running->status = TASK_ZOMBIE;
@@ -202,7 +192,7 @@ int do_kill(pid_t pid)
     // enter ZOMBIE status
     if(killed_pcb->mode == AUTO_CLEANUP_ON_EXIT){
         killed_pcb->status = TASK_ZOMBIE;
-        list_add_tail(&killed_pcb->list, &pid0_pcb.wait_list);
+        list_add_tail(&killed_pcb->list, &kernel_pcb[0].wait_list);
     }
     else{
         killed_pcb->status = TASK_ZOMBIE;
@@ -251,21 +241,7 @@ void do_process_show(char* buffer)
     buffer[0] = '\0';
     kstrcat(buffer, "[PROCESS TABLE]\n");
     kstrcat(buffer, "PID: 0    STATUS: ");
-    if(pid0_pcb.status == TASK_BLOCKED){
-        kstrcat(buffer, "BLOCKED\n");
-    }
-    else if(pid0_pcb.status == TASK_RUNNING){
-        kstrcat(buffer, "RUNNING\n");
-    }
-    else if(pid0_pcb.status == TASK_READY){
-        kstrcat(buffer, "READY\n");
-    }
-    else if(pid0_pcb.status == TASK_EXITED){
-        kstrcat(buffer, "EXITED\n");
-    }
-    else if(pid0_pcb.status == TASK_ZOMBIE){
-        kstrcat(buffer, "ZOMBIE\n");
-    }
+    kstrcat(buffer, "READY\n");
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].pid != -1){
             kstrcat(buffer, "PID: ");
