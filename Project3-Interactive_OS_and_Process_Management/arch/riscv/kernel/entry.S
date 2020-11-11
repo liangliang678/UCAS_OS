@@ -199,11 +199,6 @@ store_sp_done:
   j interrupt_helper
 ENDPROC(exception_handler_entry)
 
-ENTRY(set_tp)
-  mv tp, a0
-  jr ra
-ENDPROC(set_tp)
-
 ENTRY(clear_ipi)
   li t0, SIE_SSIE
   csrc CSR_SIP, t0

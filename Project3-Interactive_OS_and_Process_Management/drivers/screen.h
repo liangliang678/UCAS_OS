@@ -27,8 +27,16 @@
 #ifndef INCLUDE_CONSOLE_H_
 #define INCLUDE_CONSOLE_H_
 
-extern int screen_cursor_x;
-extern int screen_cursor_y;
+#include <common.h>
+#include <stdio.h>
+#include <os/string.h>
+#include <os/lock.h>
+#include <os/sched.h>
+#include <os/irq.h>
+#include <os/smp.h>
+
+extern int screen_cursor_x[NR_CPUS];
+extern int screen_cursor_y[NR_CPUS];
 
 void vt100_move_cursor(int, int);
 

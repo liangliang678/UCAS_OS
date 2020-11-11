@@ -14,9 +14,11 @@
 extern void __global_pointer$();
 
 pcb_t pcb[NUM_MAX_TASK];
-const ptr_t kernel_stack_1 = INIT_KERNEL_STACK + PAGE_SIZE;
-const ptr_t kernel_stack_2 = INIT_KERNEL_STACK + 2 * PAGE_SIZE;
 pcb_t kernel_pcb[NR_CPUS];
+const pcb_t *core0_tp = &kernel_pcb[0];
+const pcb_t *core1_tp = &kernel_pcb[1];
+const ptr_t kernel_stack_0 = INIT_KERNEL_STACK + PAGE_SIZE;
+const ptr_t kernel_stack_1 = INIT_KERNEL_STACK + 2 * PAGE_SIZE;
 
 LIST_HEAD(ready_queue);
 LIST_HEAD(sleep_queue);
@@ -37,8 +39,8 @@ pid_t process_id = 2;
 void scheduler(void)
 {
     // store the current_running's cursor_x and cursor_y
-    current_running[cpu_id]->cursor_x = screen_cursor_x;
-    current_running[cpu_id]->cursor_y = screen_cursor_y;
+    current_running[cpu_id]->cursor_x = screen_cursor_x[cpu_id];
+    current_running[cpu_id]->cursor_y = screen_cursor_y[cpu_id];
 
     // Modify the current_running pointer and the ready queue
     if(current_running[cpu_id]->status == TASK_RUNNING){
@@ -54,8 +56,8 @@ void scheduler(void)
     // restore the current_running's cursor_x and cursor_y
     vt100_move_cursor(current_running[cpu_id]->cursor_x,
                       current_running[cpu_id]->cursor_y);
-    screen_cursor_x = current_running[cpu_id]->cursor_x;
-    screen_cursor_y = current_running[cpu_id]->cursor_y;
+    screen_cursor_x[cpu_id] = current_running[cpu_id]->cursor_x;
+    screen_cursor_y[cpu_id] = current_running[cpu_id]->cursor_y;
 }
 
 pid_t do_spawn(task_info_t *task, void* arg, spawn_mode_t mode)
@@ -243,8 +245,40 @@ void do_process_show(char* buffer)
 {
     buffer[0] = '\0';
     kstrcat(buffer, "[PROCESS TABLE]\n");
-    kstrcat(buffer, "PID: 0    STATUS: ");
-    kstrcat(buffer, "READY\n");
+    kstrcat(buffer, "INIT 0    STATUS: ");
+    if(kernel_pcb[0].status == TASK_BLOCKED){
+        kstrcat(buffer, "BLOCKED\n");
+    }
+    else if(kernel_pcb[0].status == TASK_RUNNING){
+        kstrcat(buffer, "RUNNING\n");
+    }
+    else if(kernel_pcb[0].status == TASK_READY){
+        kstrcat(buffer, "READY\n");
+    }
+    else if(kernel_pcb[0].status == TASK_EXITED){
+        kstrcat(buffer, "EXITED\n");
+    }
+    else if(kernel_pcb[0].status == TASK_ZOMBIE){
+        kstrcat(buffer, "ZOMBIE\n");
+    }
+    
+    kstrcat(buffer, "INIT 1    STATUS: ");
+    if(kernel_pcb[1].status == TASK_BLOCKED){
+        kstrcat(buffer, "BLOCKED\n");
+    }
+    else if(kernel_pcb[1].status == TASK_RUNNING){
+        kstrcat(buffer, "RUNNING\n");
+    }
+    else if(kernel_pcb[1].status == TASK_READY){
+        kstrcat(buffer, "READY\n");
+    }
+    else if(kernel_pcb[1].status == TASK_EXITED){
+        kstrcat(buffer, "EXITED\n");
+    }
+    else if(kernel_pcb[1].status == TASK_ZOMBIE){
+        kstrcat(buffer, "ZOMBIE\n");
+    }
+
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].pid != -1){
             kstrcat(buffer, "PID: ");

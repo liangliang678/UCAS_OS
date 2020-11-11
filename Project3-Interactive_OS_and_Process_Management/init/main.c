@@ -59,11 +59,11 @@ static void init_pcb_stack(ptr_t kernel_stack, ptr_t user_stack, ptr_t entry_poi
 
 static void init_pcb()
 {
-    kernel_pcb[0].kernel_sp = (ptr_t)kernel_stack_1;
-    kernel_pcb[0].user_sp = (ptr_t)kernel_stack_1;
+    kernel_pcb[0].kernel_sp = (ptr_t)kernel_stack_0;
+    kernel_pcb[0].user_sp = (ptr_t)kernel_stack_0;
     kernel_pcb[0].preempt_count = 0;
-    kernel_pcb[0].kernel_stack_base = (ptr_t)kernel_stack_1;
-    kernel_pcb[0].user_stack_base = (ptr_t)kernel_stack_1;
+    kernel_pcb[0].kernel_stack_base = (ptr_t)kernel_stack_0;
+    kernel_pcb[0].user_stack_base = (ptr_t)kernel_stack_0;
     kernel_pcb[0].binsem_num = 0;
     kernel_pcb[0].pid = 0;
     kernel_pcb[0].type = KERNEL_PROCESS;
@@ -71,11 +71,11 @@ static void init_pcb()
     kernel_pcb[0].priority = 0;
     init_list_head(&kernel_pcb[0].wait_list);
 
-    kernel_pcb[1].kernel_sp = (ptr_t)kernel_stack_2;
-    kernel_pcb[1].user_sp = (ptr_t)kernel_stack_2;
+    kernel_pcb[1].kernel_sp = (ptr_t)kernel_stack_1;
+    kernel_pcb[1].user_sp = (ptr_t)kernel_stack_1;
     kernel_pcb[1].preempt_count = 0;
-    kernel_pcb[1].kernel_stack_base = (ptr_t)kernel_stack_2;
-    kernel_pcb[1].user_stack_base = (ptr_t)kernel_stack_2;
+    kernel_pcb[1].kernel_stack_base = (ptr_t)kernel_stack_1;
+    kernel_pcb[1].user_stack_base = (ptr_t)kernel_stack_1;
     kernel_pcb[1].binsem_num = 0;
     kernel_pcb[1].pid = 0;
     kernel_pcb[1].type = KERNEL_PROCESS;
@@ -142,9 +142,6 @@ static void init_syscall(void)
 // The beginning of everything
 int main()
 {
-    // set $tp
-    set_tp((uint64_t)&kernel_pcb[0]);
-
     // read CPU frequency and calc timer interval
     time_base = sbi_read_fdt(TIMEBASE);
     timer_interval = (uint64_t)(time_base / 100);

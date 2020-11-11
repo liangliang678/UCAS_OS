@@ -36,7 +36,8 @@ clear_bss:
 clear_bss_done:
 
   /* setup C environment */
-  lw sp, kernel_stack_1
+  ld tp, core0_tp
+  ld sp, kernel_stack_0
   csrw CSR_SSCRATCH, zero
 
   la a0, riscv_dtb
@@ -46,7 +47,8 @@ clear_bss_done:
 
 secondary:
   /* setup C environment */
-  lw sp, kernel_stack_2
+  ld tp, core1_tp
+  lw sp, kernel_stack_1
   csrw CSR_SSCRATCH, zero
 
   la a0, riscv_dtb

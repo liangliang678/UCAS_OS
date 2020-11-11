@@ -1,17 +1,11 @@
 #include <screen.h>
-#include <common.h>
-#include <stdio.h>
-#include <os/string.h>
-#include <os/lock.h>
-#include <os/sched.h>
-#include <os/irq.h>
-#include <os/smp.h>
+
 
 #define SCREEN_WIDTH    80
 #define SCREEN_HEIGHT   50
 
-int screen_cursor_x;
-int screen_cursor_y;
+int screen_cursor_x[NR_CPUS];
+int screen_cursor_y[NR_CPUS];
 
 /* screen buffer */
 char new_screen[SCREEN_HEIGHT * SCREEN_WIDTH] = {0};
@@ -87,17 +81,17 @@ void screen_clear(int line1, int line2)
             new_screen[i * SCREEN_WIDTH + j] = ' ';
         }
     }
-    screen_cursor_x = 1;
-    screen_cursor_y = line1;
+    screen_cursor_x[cpu_id] = 1;
+    screen_cursor_y[cpu_id] = line1;
     screen_reflush();
 }
 
 void screen_move_cursor(int x, int y)
 {
-    screen_cursor_x = x;
-    screen_cursor_y = y;
-    current_running[cpu_id]->cursor_x = screen_cursor_x;
-    current_running[cpu_id]->cursor_y = screen_cursor_y;
+    screen_cursor_x[cpu_id] = x;
+    screen_cursor_y[cpu_id] = y;
+    current_running[cpu_id]->cursor_x = screen_cursor_x[cpu_id];
+    current_running[cpu_id]->cursor_y = screen_cursor_y[cpu_id];
 }
 
 /* write a char */
@@ -105,16 +99,16 @@ static void screen_write_ch(char ch)
 {
     if (ch == '\n')
     {
-        screen_cursor_x = 1;
-        screen_cursor_y++;
+        screen_cursor_x[cpu_id] = 1;
+        screen_cursor_y[cpu_id]++;
     }
     else
     {
-        new_screen[(screen_cursor_y - 1) * SCREEN_WIDTH + (screen_cursor_x - 1)] = ch;
-        screen_cursor_x++;
+        new_screen[(screen_cursor_y[cpu_id] - 1) * SCREEN_WIDTH + (screen_cursor_x[cpu_id] - 1)] = ch;
+        screen_cursor_x[cpu_id]++;
     }
-    current_running[cpu_id]->cursor_x = screen_cursor_x;
-    current_running[cpu_id]->cursor_y = screen_cursor_y;
+    current_running[cpu_id]->cursor_x = screen_cursor_x[cpu_id];
+    current_running[cpu_id]->cursor_y = screen_cursor_y[cpu_id];
 }
 
 void screen_write(char *buff)
@@ -154,5 +148,5 @@ void screen_reflush(void)
     }
 
     /* recover cursor position */
-    vt100_move_cursor(screen_cursor_x, screen_cursor_y);
+    vt100_move_cursor(screen_cursor_x[cpu_id], screen_cursor_y[cpu_id]);
 }

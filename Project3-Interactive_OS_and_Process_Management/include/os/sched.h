@@ -135,10 +135,10 @@ extern pid_t process_id;
 
 extern pcb_t pcb[NUM_MAX_TASK];
 extern pcb_t kernel_pcb[NR_CPUS];
+extern const pcb_t *core0_tp;
+extern const pcb_t *core1_tp;
+extern const ptr_t kernel_stack_0;
 extern const ptr_t kernel_stack_1;
-extern const ptr_t kernel_stack_2;
-
-extern void set_tp(uint64_t);
 
 extern void scheduler(void);
 
