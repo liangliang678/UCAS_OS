@@ -1,6 +1,7 @@
 #include <os/binsem.h>
 #include <os/irq.h>
 #include <os/mm.h>
+#include <os/smp.h>
 #include <assert.h>
 
 binsem_node_t binsem_nodes[BINSEM_NUMBER];
@@ -36,12 +37,12 @@ void binsem_op(int binsem_id, int op)
     if(op == BINSEM_OP_LOCK){
         node->sem--;
         if(node->sem < 0){
-            do_block(&current_running->list, &node->block_queue);
+            do_block(&current_running[cpu_id]->list, &node->block_queue);
             scheduler();
         }
         else{
-            current_running->binsem_id[current_running->binsem_num] = binsem_id;
-            current_running->binsem_num++;
+            current_running[cpu_id]->binsem_id[current_running[cpu_id]->binsem_num] = binsem_id;
+            current_running[cpu_id]->binsem_num++;
         }
     }
     else if(op == BINSEM_OP_UNLOCK){

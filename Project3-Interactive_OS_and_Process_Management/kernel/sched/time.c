@@ -1,6 +1,7 @@
 #include <os/time.h>
 #include <os/mm.h>
 #include <os/irq.h>
+#include <os/smp.h>
 #include <type.h>
 
 LIST_HEAD(timer_queue);
@@ -13,10 +14,10 @@ void timer_create(TimerCallback func, void* parameter, uint64_t tick)
 {
     disable_preempt();
 
-    list_add_tail(&current_running->timer.list, &timer_queue);
-    current_running->timer.timeout_tick = tick;
-    current_running->timer.callback_func = func;
-    current_running->timer.parameter = parameter;
+    list_add_tail(&current_running[cpu_id]->timer.list, &timer_queue);
+    current_running[cpu_id]->timer.timeout_tick = tick;
+    current_running[cpu_id]->timer.callback_func = func;
+    current_running[cpu_id]->timer.parameter = parameter;
 
     enable_preempt();
 }

@@ -11,6 +11,7 @@
 handler_t irq_table[IRQC_COUNT];
 handler_t exc_table[EXCC_COUNT];
 uintptr_t riscv_dtb;
+int cpu_id;
 
 /* initialize irq_table and exc_table */
 void init_exception()
@@ -41,6 +42,8 @@ void init_exception()
 void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t cause)
 {
     // call corresponding handler by the value of `cause`
+    cpu_id = get_current_cpu_id();
+    current_cpu_running = current_running[cpu_id];
     if(cause & SCAUSE_IRQ_FLAG){
         cause = cause & ~SCAUSE_IRQ_FLAG;
         (*irq_table[cause])(regs, stval, cause);
@@ -79,7 +82,7 @@ void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause)
     printk("stval: 0x%lx cause: %lx\n\r",
            stval, cause);
     printk("sepc: 0x%lx\n\r", regs->sepc);
-    // printk("mhartid: 0x%lx\n\r", get_current_cpu_id());
+    // printk("mhartid: 0x%lx\n\r", cpu_id);
 
     uintptr_t fp = regs->regs[8], sp = regs->regs[2];
     printk("[Backtrace]\n\r");

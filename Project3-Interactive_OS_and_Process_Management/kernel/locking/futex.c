@@ -2,6 +2,7 @@
 #include <os/irq.h>
 #include <os/mm.h>
 #include <assert.h>
+#include <os/smp.h>
 
 futex_bucket_t futex_buckets[FUTEX_BUCKETS];
 
@@ -49,7 +50,7 @@ void futex_wait(volatile uint64_t *val_addr)
 
     futex_node_t *node = get_node(val_addr, 1);
     assert(node != NULL);
-    do_block(&current_running->list, &node->block_queue);
+    do_block(&current_running[cpu_id]->list, &node->block_queue);
     scheduler();
 
     enable_preempt();

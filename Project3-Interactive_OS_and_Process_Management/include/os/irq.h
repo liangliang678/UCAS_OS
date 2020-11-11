@@ -84,5 +84,6 @@ extern void enable_preempt(void);
 extern void disable_preempt(void);
 
 extern uintptr_t riscv_dtb;
+extern int cpu_id;
 
 #endif

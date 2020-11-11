@@ -13,7 +13,7 @@ ARCH_DIR = ./arch/$(ARCH)
 CFLAGS += -Iarch/$(ARCH)/include
 
 SRC_BOOT 	= $(ARCH_DIR)/boot/bootblock.S
-SRC_ARCH	= $(ARCH_DIR)/kernel/trap.S $(ARCH_DIR)/kernel/entry.S $(ARCH_DIR)/kernel/head.S $(ARCH_DIR)/sbi/common.c
+SRC_ARCH	= $(ARCH_DIR)/kernel/trap.S $(ARCH_DIR)/kernel/entry.S $(ARCH_DIR)/kernel/smp.S $(ARCH_DIR)/kernel/head.S $(ARCH_DIR)/sbi/common.c
 SRC_DRIVER	= ./drivers/screen.c
 SRC_INIT 	= ./init/main.c
 SRC_INT		= ./kernel/irq/irq.c

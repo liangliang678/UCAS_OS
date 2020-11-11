@@ -1,6 +1,7 @@
 #include <os/mailbox.h>
 #include <string.h>
 #include <os/sched.h>
+#include <os/irq.h>
 
 mailbox_t mailbox[MBOX_NUM];
 int free_mailbox = 0;
@@ -53,7 +54,7 @@ int do_mbox_send(int mailbox_id, void *msg, int msg_length)
 {
     message_t *cur_message = &message[mailbox_id];
     if(cur_message->msg_len + msg_length >= MAX_MBOX_LENGTH){
-        do_block(&current_running->list, &cur_message->wait_queue);
+        do_block(&current_running[cpu_id]->list, &cur_message->wait_queue);
         scheduler();
         return 0;
     }
@@ -71,7 +72,7 @@ int do_mbox_recv(int mailbox_id, void *msg, int msg_length)
 {
     message_t *cur_message = &message[mailbox_id];
     if(msg_length > cur_message->msg_len){
-        do_block(&current_running->list, &cur_message->wait_queue);
+        do_block(&current_running[cpu_id]->list, &cur_message->wait_queue);
         scheduler();
         return 0;
     }

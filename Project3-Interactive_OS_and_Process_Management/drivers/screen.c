@@ -5,6 +5,7 @@
 #include <os/lock.h>
 #include <os/sched.h>
 #include <os/irq.h>
+#include <os/smp.h>
 
 #define SCREEN_WIDTH    80
 #define SCREEN_HEIGHT   50
@@ -22,8 +23,8 @@ void vt100_move_cursor(int x, int y)
     // \033[y;xH
     disable_preempt();
     printk("%c[%d;%dH", 27, y, x);
-    current_running->cursor_x = x;
-    current_running->cursor_y = y;
+    current_running[cpu_id]->cursor_x = x;
+    current_running[cpu_id]->cursor_y = y;
     enable_preempt();
 }
 
@@ -95,8 +96,8 @@ void screen_move_cursor(int x, int y)
 {
     screen_cursor_x = x;
     screen_cursor_y = y;
-    current_running->cursor_x = screen_cursor_x;
-    current_running->cursor_y = screen_cursor_y;
+    current_running[cpu_id]->cursor_x = screen_cursor_x;
+    current_running[cpu_id]->cursor_y = screen_cursor_y;
 }
 
 /* write a char */
@@ -112,8 +113,8 @@ static void screen_write_ch(char ch)
         new_screen[(screen_cursor_y - 1) * SCREEN_WIDTH + (screen_cursor_x - 1)] = ch;
         screen_cursor_x++;
     }
-    current_running->cursor_x = screen_cursor_x;
-    current_running->cursor_y = screen_cursor_y;
+    current_running[cpu_id]->cursor_x = screen_cursor_x;
+    current_running[cpu_id]->cursor_y = screen_cursor_y;
 }
 
 void screen_write(char *buff)

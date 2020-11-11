@@ -12,7 +12,7 @@ void smp_init()
     set_tp((uint64_t)&kernel_pcb[1]);
     enable_interrupt();
     setup_exception();
-    // sbi_set_timer(get_ticks() + timer_interval);
+    sbi_set_timer(get_ticks() + timer_interval);
     while (1){
         __asm__ __volatile__("wfi\n\r":::);
     }

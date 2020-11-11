@@ -129,8 +129,8 @@ extern list_head ready_queue;
 extern list_head sleep_queue;
 
 /* current running task PCB */
-extern pcb_t * volatile current_running;
-// extern pcb_t * volatile current_running[NR_CPUS];
+extern pcb_t * volatile current_running[NR_CPUS];
+extern pcb_t * volatile current_cpu_running;
 extern pid_t process_id;
 
 extern pcb_t pcb[NUM_MAX_TASK];

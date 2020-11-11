@@ -105,7 +105,8 @@ static void init_pcb()
     init_pcb_stack(pcb[0].kernel_sp, pcb[0].user_sp, &test_shell, &pcb[0]);
 
     /* initialize `current_running` */
-    current_running = &kernel_pcb[0];
+    current_running[0] = &kernel_pcb[0];
+    current_running[1] = &kernel_pcb[1];
 }
 
 static void init_syscall(void)
@@ -168,6 +169,8 @@ int main()
     init_screen();
     printk("> [INIT] SCREEN initialization succeeded.\n\r");
     
+    spin_lock_init(&kernel_lock);
+
     // wakeup another core
     wakeup_other_hart();
  

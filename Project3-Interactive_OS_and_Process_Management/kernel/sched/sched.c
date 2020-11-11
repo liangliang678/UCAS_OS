@@ -5,6 +5,7 @@
 #include <os/time.h>
 #include <os/irq.h>
 #include <os/binsem.h>
+#include <os/smp.h>
 #include <screen.h>
 #include <stdio.h>
 #include <assert.h>
@@ -21,7 +22,8 @@ LIST_HEAD(ready_queue);
 LIST_HEAD(sleep_queue);
 
 /* current running task PCB */
-pcb_t * volatile current_running;
+pcb_t * volatile current_running[NR_CPUS];
+pcb_t * volatile current_cpu_running;
 
 /* global process id */
 pid_t process_id = 2;
@@ -35,24 +37,25 @@ pid_t process_id = 2;
 void scheduler(void)
 {
     // store the current_running's cursor_x and cursor_y
-    current_running->cursor_x = screen_cursor_x;
-    current_running->cursor_y = screen_cursor_y;
+    current_running[cpu_id]->cursor_x = screen_cursor_x;
+    current_running[cpu_id]->cursor_y = screen_cursor_y;
 
     // Modify the current_running pointer and the ready queue
-    if(current_running->status == TASK_RUNNING){
-        list_add_tail(&current_running->list, &ready_queue);
-        current_running->status = TASK_READY;
-        current_running->ready_tick = get_ticks();
+    if(current_running[cpu_id]->status == TASK_RUNNING){
+        list_add_tail(&current_running[cpu_id]->list, &ready_queue);
+        current_running[cpu_id]->status = TASK_READY;
+        current_running[cpu_id]->ready_tick = get_ticks();
     }
-    current_running = list_entry(max_priority_node(), pcb_t, list); 
-    list_del(&current_running->list);
-    current_running->status = TASK_RUNNING;
-        
+    current_running[cpu_id] = list_entry(max_priority_node(), pcb_t, list); 
+    list_del(&current_running[cpu_id]->list);
+    current_running[cpu_id]->status = TASK_RUNNING;
+    current_cpu_running = current_running[cpu_id];
+    
     // restore the current_running's cursor_x and cursor_y
-    vt100_move_cursor(current_running->cursor_x,
-                      current_running->cursor_y);
-    screen_cursor_x = current_running->cursor_x;
-    screen_cursor_y = current_running->cursor_y;
+    vt100_move_cursor(current_running[cpu_id]->cursor_x,
+                      current_running[cpu_id]->cursor_y);
+    screen_cursor_x = current_running[cpu_id]->cursor_x;
+    screen_cursor_y = current_running[cpu_id]->cursor_y;
 }
 
 pid_t do_spawn(task_info_t *task, void* arg, spawn_mode_t mode)
@@ -100,15 +103,15 @@ pid_t do_spawn(task_info_t *task, void* arg, spawn_mode_t mode)
 void do_exit()
 {
     // unblock tasks in wait queue
-    list_node_t *wakeup_pcb = current_running->wait_list.next;
-    while(wakeup_pcb != &current_running->wait_list){
+    list_node_t *wakeup_pcb = current_running[cpu_id]->wait_list.next;
+    while(wakeup_pcb != &current_running[cpu_id]->wait_list){
         wakeup_pcb = wakeup_pcb->next;
         do_unblock(wakeup_pcb->prev);
     }
 
     // release binsem
-    for(int i = 0; i < current_running->binsem_num; i++){
-        int binsem_id = current_running->binsem_id[i];
+    for(int i = 0; i < current_running[cpu_id]->binsem_num; i++){
+        int binsem_id = current_running[cpu_id]->binsem_id[i];
         binsem_nodes[binsem_id].sem++;
         if(binsem_nodes[binsem_id].sem <= 0){
             list_node_t *unblocked_pcb_list = binsem_nodes[binsem_id].block_queue.next;
@@ -120,18 +123,18 @@ void do_exit()
     }
 
     // release user stack
-    freePage(current_running->user_stack_base, 1);
+    freePage(current_running[cpu_id]->user_stack_base, 1);
 
     // delete from ready queue
-    list_del(&current_running->list);
+    list_del(&current_running[cpu_id]->list);
 
     // enter ZOMBIE status
-    if(current_running->mode == AUTO_CLEANUP_ON_EXIT){
-        current_running->status = TASK_ZOMBIE;
-        list_add_tail(&current_running->list, &kernel_pcb[0].wait_list);
+    if(current_running[cpu_id]->mode == AUTO_CLEANUP_ON_EXIT){
+        current_running[cpu_id]->status = TASK_ZOMBIE;
+        list_add_tail(&current_running[cpu_id]->list, &kernel_pcb[0].wait_list);
     }
     else{
-        current_running->status = TASK_ZOMBIE;
+        current_running[cpu_id]->status = TASK_ZOMBIE;
     }
 
     scheduler();
@@ -143,8 +146,8 @@ void do_sleep(uint32_t sleep_time)
     // 1. block the current_running
     // 2. create a timer which calls `do_unblock` when timeout
     // 3. reschedule because the current_running is blocked
-    do_block(&current_running->list, &sleep_queue);
-    list_node_t* parameter = &current_running->list;
+    do_block(&current_running[cpu_id]->list, &sleep_queue);
+    list_node_t* parameter = &current_running[cpu_id]->list;
     timer_create((TimerCallback)do_unblock, (void*)parameter, get_ticks() + time_base * sleep_time);
     scheduler();
 }
@@ -230,7 +233,7 @@ int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
         // if child task has not exited, call do_waitpid again when parent task is unblocked
         // trick: return pid to keep a0 unchanged
         regs->sepc = regs->sepc - 4;
-        do_block(&current_running->list, &child_pcb->wait_list);
+        do_block(&current_running[cpu_id]->list, &child_pcb->wait_list);
         scheduler();
         return pid;
     }   
@@ -271,7 +274,7 @@ void do_process_show(char* buffer)
 
 pid_t do_getpid()
 {
-    return current_running->pid;
+    return current_running[cpu_id]->pid;
 }
 
 // block the pcb task into the block queue
