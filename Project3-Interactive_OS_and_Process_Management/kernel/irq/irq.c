@@ -16,7 +16,7 @@ uintptr_t riscv_dtb;
 void init_exception()
 {
     irq_table[IRQC_U_SOFT] = (handler_t)handle_other;
-    irq_table[IRQC_S_SOFT] = (handler_t)handle_other;
+    irq_table[IRQC_S_SOFT] = (handler_t)clear_ipi;
     irq_table[IRQC_M_SOFT] = (handler_t)handle_other;
     irq_table[IRQC_U_TIMER] = (handler_t)handle_other;
     irq_table[IRQC_S_TIMER] = (handler_t)handle_int;

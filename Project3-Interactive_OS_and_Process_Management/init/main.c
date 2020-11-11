@@ -174,7 +174,6 @@ int main()
     // Setup timer interrupt and enable all interrupt
     enable_interrupt();
     setup_exception();
-    while(1);
     sbi_set_timer(get_ticks() + timer_interval);
 
     while (1){

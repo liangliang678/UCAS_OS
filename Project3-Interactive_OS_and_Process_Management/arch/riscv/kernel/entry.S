@@ -200,3 +200,9 @@ ENTRY(set_tp)
   mv tp, a0
   jr ra
 ENDPROC(set_tp)
+
+ENTRY(clear_ipi)
+  li t0, SIE_SSIE
+  csrc CSR_SIP, t0
+  jr ra
+ENDPROC(clear_ipi)
