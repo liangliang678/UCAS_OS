@@ -1,7 +1,8 @@
 #include <os/mailbox.h>
-#include <string.h>
+#include <os/string.h>
 #include <os/sched.h>
 #include <os/irq.h>
+
 
 mailbox_t mailbox[MBOX_NUM];
 int free_mailbox = 0;

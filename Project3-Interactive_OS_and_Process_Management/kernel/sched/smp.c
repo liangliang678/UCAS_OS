@@ -3,6 +3,7 @@
 #include <os/sched.h>
 #include <os/smp.h>
 #include <os/lock.h>
+#include <os/irq.h>
 
 struct spin_lock kernel_lock;
 
@@ -18,8 +19,7 @@ void smp_init()
 
 void wakeup_other_hart()
 {
-    unsigned long hart_mask = 2;
-    sbi_send_ipi(&hart_mask);
+    sbi_send_ipi(NULL);
 }
 
 void lock_kernel()
@@ -31,4 +31,3 @@ void unlock_kernel()
 {
     spin_lock_release(&kernel_lock);
 }
-

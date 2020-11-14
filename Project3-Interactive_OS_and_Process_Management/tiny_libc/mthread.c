@@ -17,11 +17,11 @@ void mthread_barrier_wait(mthread_barrier_t *barrier)
     if((barrier->reached) == (barrier->count)){
         atomic_exchange(&barrier->reached, 0);
         sys_binsem_op(barrier->binsem_id, BINSEM_OP_UNLOCK);
-        sys_futex_wakeup(barrier, barrier->count);                    
+        sys_futex_wakeup((unsigned long*)barrier, barrier->count);                    
     }
     else{
         sys_binsem_op(barrier->binsem_id, BINSEM_OP_UNLOCK);      
-        sys_futex_wait(barrier);
+        sys_futex_wait((unsigned long*)barrier);
     }
 }
 void mthread_barrier_destroy(mthread_barrier_t *barrier)
@@ -33,42 +33,51 @@ void mthread_barrier_destroy(mthread_barrier_t *barrier)
 int mthread_cond_init(mthread_cond_t *cond)
 {
     atomic_exchange(cond, 0);
+    return 1;
 }
 int mthread_cond_destroy(mthread_cond_t *cond) 
 {
-    sys_futex_wakeup(cond, *cond);
+    sys_futex_wakeup((unsigned long*)cond, *cond);
     atomic_exchange(cond, -1);
+    return 1;
 }
 int mthread_cond_wait(mthread_cond_t *cond, int binsem_id)
 {
     fetch_add(cond, 1);
     sys_binsem_op(binsem_id, BINSEM_OP_UNLOCK);
-    sys_futex_wait(cond);
+    sys_futex_wait((unsigned long*)cond);
+    return 1;
 }
 int mthread_cond_signal(mthread_cond_t *cond)
 {
-    sys_futex_wakeup(cond, 1);
+    sys_futex_wakeup((unsigned long*)cond, 1);
     fetch_sub(cond, 1);
+    return 1;
 }
 int mthread_cond_broadcast(mthread_cond_t *cond)
 {
-    sys_futex_wakeup(cond, *cond);
+    sys_futex_wakeup((unsigned long*)cond, *cond);
     atomic_exchange(cond, 0);
+    return 1;
 }
 
 int mthread_semaphore_init(mthread_semaphore_t *sem, int val)
 {
     // TODO:
+    return 0;
 }
 int mthread_semaphore_up(mthread_semaphore_t *sem)
 {
     // TODO:
+    return 0;
 }
 int mthread_semaphore_down(mthread_semaphore_t *sem)
 {
     // TODO:
+    return 0;
 }
 int mthread_semaphore_destroy(mthread_semaphore_t *sem)
 {
     // TODO:
+    return 0;
 }

@@ -60,7 +60,6 @@ static int num_test_tasks = 9;
 
 void test_shell()
 {
-    char blank_line[] = "                                                                                ";
     char blank_command[] = "                                                      ";
     char prompt[] = "> liangliang678@UCAS_OS: ";
 

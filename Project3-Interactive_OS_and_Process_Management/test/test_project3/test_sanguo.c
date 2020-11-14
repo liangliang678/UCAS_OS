@@ -9,7 +9,6 @@
 
 static struct task_info sq_task = {(uintptr_t)&SunQuan, USER_PROCESS};
 static struct task_info lb_task = {(uintptr_t)&LiuBei, USER_PROCESS};
-static struct task_info cc_task = {(uintptr_t)&CaoCao, USER_PROCESS};
 
 void SunQuan(void)
 {

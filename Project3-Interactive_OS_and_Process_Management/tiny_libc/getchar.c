@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include <sys/syscall.h>
 
 char getchar()
 {

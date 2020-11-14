@@ -8,7 +8,7 @@ int kstrlen(const char *src)
     return i;
 }
 
-void kmemcpy(uint8_t *dest, const uint8_t *src, uint32_t len)
+void kmemcpy(char *dest, const char *src, uint32_t len)
 {
     for (; len != 0; len--) {
         *dest++ = *src++;

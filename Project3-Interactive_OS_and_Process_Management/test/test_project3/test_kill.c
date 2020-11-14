@@ -51,7 +51,7 @@ void wait_exit_task()
     struct task_info task2 = {(uintptr_t)&wait_lock_task, USER_PROCESS};
 
     pid_t pid_task1 = sys_spawn(&task1, NULL, ENTER_ZOMBIE_ON_EXIT);
-    pid_t pid_task2 = sys_spawn(&task2, (void*)(long)pid_task1, AUTO_CLEANUP_ON_EXIT);
+    sys_spawn(&task2, (void*)(long)pid_task1, AUTO_CLEANUP_ON_EXIT);
 
     int print_location = 3;
 

@@ -4,8 +4,8 @@
 #include <stdarg.h>
 #include <stddef.h>
 
-int printf(const char *fmt, ...);
-int vprintf(const char *fmt, va_list va);
-char getchar();
+extern int printf(const char *fmt, ...);
+extern int vprintf(const char *fmt, va_list va);
+extern char getchar();
 
 #endif

@@ -106,7 +106,7 @@ static void init_pcb()
     pcb[0].priority = 0;
     pcb[0].ready_tick = get_ticks();    
     pcb[0].mask = 3; 
-    init_pcb_stack(pcb[0].kernel_sp, pcb[0].user_sp, &test_shell, &pcb[0]);
+    init_pcb_stack((ptr_t)pcb[0].kernel_sp, (ptr_t)pcb[0].user_sp, (ptr_t)test_shell, &pcb[0]);
 
     /* initialize `current_running` */
     current_running[0] = &kernel_pcb[0];

@@ -28,7 +28,7 @@ int sys_waitpid(pid_t pid)
 
 void sys_process_show(char* buffer)
 {
-    return invoke_syscall(SYSCALL_PS, (uintptr_t)buffer, IGNORE, IGNORE);
+    invoke_syscall(SYSCALL_PS, (uintptr_t)buffer, IGNORE, IGNORE);
 }
 
 pid_t sys_getpid()
@@ -108,20 +108,20 @@ int sys_get_char()
 
 int sys_mbox_open(char *name)
 {
-    return invoke_syscall(SYSCALL_MAILBOX_OPEN, name, IGNORE, IGNORE);
+    return invoke_syscall(SYSCALL_MAILBOX_OPEN, (uintptr_t)name, IGNORE, IGNORE);
 }
 
 void sys_mbox_close(int mailbox)
 {
-    invoke_syscall(SYSCALL_MAILBOX_CLOSE, mailbox, IGNORE, IGNORE);
+    invoke_syscall(SYSCALL_MAILBOX_CLOSE, (uintptr_t)mailbox, IGNORE, IGNORE);
 }
 
 int sys_mbox_send(int mailbox, void *msg, int msg_length)
 {
-    return invoke_syscall(SYSCALL_MAILBOX_SEND, mailbox, msg, msg_length);
+    return invoke_syscall(SYSCALL_MAILBOX_SEND, (uintptr_t)mailbox, (uintptr_t)msg, (uintptr_t)msg_length);
 }
 
 int sys_mbox_recv(int mailbox, void *msg, int msg_length)
 {
-    return invoke_syscall(SYSCALL_MAILBOX_RECV, mailbox, msg, msg_length);
+    return invoke_syscall(SYSCALL_MAILBOX_RECV, (uintptr_t)mailbox, (uintptr_t)msg, (uintptr_t)msg_length);
 }

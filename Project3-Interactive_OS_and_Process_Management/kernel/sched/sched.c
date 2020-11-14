@@ -386,7 +386,6 @@ void do_process_show(char* buffer)
             }
         }
     }
-    return buffer;
 }
 
 pid_t do_getpid()
