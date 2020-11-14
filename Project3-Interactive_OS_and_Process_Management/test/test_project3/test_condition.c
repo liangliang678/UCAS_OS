@@ -72,7 +72,7 @@ void consumer_task(int print_location)
     {
         sys_binsem_op(lock, BINSEM_OP_LOCK);
 
-        while (num_staff == 0)
+        while(num_staff == 0)
         {
             mthread_cond_wait(&condition, lock);
         }

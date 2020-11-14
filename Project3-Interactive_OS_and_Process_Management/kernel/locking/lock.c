@@ -15,7 +15,6 @@ void spin_lock_try_acquire(spin_lock_t *lock)
 void spin_lock_acquire(spin_lock_t *lock)
 {
     spin_lock_try_acquire(lock);
-    atomic_swap(LOCKED, (ptr_t)(&lock->status));
 }
 void spin_lock_release(spin_lock_t *lock)
 {

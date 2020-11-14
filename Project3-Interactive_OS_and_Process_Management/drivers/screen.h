@@ -43,7 +43,7 @@ void vt100_move_cursor(int, int);
 /* configuring screen properties */
 void init_screen(void);
 
-/* clear screen */
+/* clear screen range(line1, line2) */
 void screen_clear(int line1, int line2);
 
 /* scroll screen range(line1, line2) */

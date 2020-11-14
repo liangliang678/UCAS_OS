@@ -1,6 +1,5 @@
 #include <screen.h>
 
-
 #define SCREEN_WIDTH    80
 #define SCREEN_HEIGHT   50
 
@@ -42,42 +41,35 @@ void init_screen(void)
     vt100_clear();
 }
 
-// scroll screen range(line1, line2)
+/* scroll screen range(line1, line2) */
 void screen_scroll(int line1, int line2)
 {
     int i, j;
 
-    for (i = line1 - 1; i < line2; i++)
-    {
-        for (j = 0; j < SCREEN_WIDTH; j++)
-        {
+    for (i = line1 - 1; i < line2; i++){
+        for (j = 0; j < SCREEN_WIDTH; j++){
             old_screen[i * SCREEN_WIDTH + j] = 0;
         }
     }
 
-    for (i = line1 - 1; i < line2; i++)
-    {
-        for (j = 0; j < SCREEN_WIDTH; j++)
-        {
-            if (i == line2 - 1)
-            {
+    for (i = line1 - 1; i < line2; i++){
+        for (j = 0; j < SCREEN_WIDTH; j++){
+            if (i == line2 - 1){
                 new_screen[i * SCREEN_WIDTH + j] = ' ';
             }
-            else
-            {
+            else{
                 new_screen[i * SCREEN_WIDTH + j] = new_screen[(i + 1) * SCREEN_WIDTH + j];
             }
         }
     }
 }
 
+/* clear screen range(line1, line2) */
 void screen_clear(int line1, int line2)
 {
     int i, j;
-    for (i = line1 - 1; i < line2; i++)
-    {
-        for (j = 0; j < SCREEN_WIDTH; j++)
-        {
+    for (i = line1 - 1; i < line2; i++){
+        for (j = 0; j < SCREEN_WIDTH; j++){
             new_screen[i * SCREEN_WIDTH + j] = ' ';
         }
     }
@@ -97,13 +89,11 @@ void screen_move_cursor(int x, int y)
 /* write a char */
 static void screen_write_ch(char ch)
 {
-    if (ch == '\n')
-    {
+    if (ch == '\n'){
         screen_cursor_x[cpu_id] = 1;
         screen_cursor_y[cpu_id]++;
     }
-    else
-    {
+    else{
         new_screen[(screen_cursor_y[cpu_id] - 1) * SCREEN_WIDTH + (screen_cursor_x[cpu_id] - 1)] = ch;
         screen_cursor_x[cpu_id]++;
     }
@@ -116,8 +106,7 @@ void screen_write(char *buff)
     int i = 0;
     int l = kstrlen(buff);
 
-    for (i = 0; i < l; i++)
-    {
+    for (i = 0; i < l; i++){
         screen_write_ch(buff[i]);
     }
 }
@@ -133,13 +122,10 @@ void screen_reflush(void)
     int i, j;
 
     /* here to reflush screen buffer to serial port */
-    for (i = 0; i < SCREEN_HEIGHT; i++)
-    {
-        for (j = 0; j < SCREEN_WIDTH; j++)
-        {
+    for (i = 0; i < SCREEN_HEIGHT; i++){
+        for (j = 0; j < SCREEN_WIDTH; j++){
             /* We only print the data of the modified location. */
-            if (new_screen[i * SCREEN_WIDTH + j] != old_screen[i * SCREEN_WIDTH + j])
-            {
+            if (new_screen[i * SCREEN_WIDTH + j] != old_screen[i * SCREEN_WIDTH + j]){
                 vt100_move_cursor(j + 1, i + 1);
                 port_write_ch(new_screen[i * SCREEN_WIDTH + j]);
                 old_screen[i * SCREEN_WIDTH + j] = new_screen[i * SCREEN_WIDTH + j];

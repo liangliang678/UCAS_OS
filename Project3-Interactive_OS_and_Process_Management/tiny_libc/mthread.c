@@ -46,6 +46,7 @@ int mthread_cond_wait(mthread_cond_t *cond, int binsem_id)
     fetch_add(cond, 1);
     sys_binsem_op(binsem_id, BINSEM_OP_UNLOCK);
     sys_futex_wait((unsigned long*)cond);
+    sys_binsem_op(binsem_id, BINSEM_OP_LOCK);
     return 1;
 }
 int mthread_cond_signal(mthread_cond_t *cond)
