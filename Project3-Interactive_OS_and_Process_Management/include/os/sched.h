@@ -57,6 +57,7 @@ typedef enum {
     TASK_READY,
     TASK_ZOMBIE,
     TASK_EXITED,
+    TASK_KILLED,
 } task_status_t;
 
 typedef enum {

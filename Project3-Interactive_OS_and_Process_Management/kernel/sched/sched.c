@@ -48,6 +48,39 @@ void scheduler(void)
         current_running[cpu_id]->status = TASK_READY;
         current_running[cpu_id]->ready_tick = get_ticks();
     }
+    else if(current_running[cpu_id]->status == TASK_KILLED){
+        // unblock tasks in wait queue
+        list_node_t *wakeup_pcb = current_running[cpu_id]->wait_list.next;
+        while(wakeup_pcb != &current_running[cpu_id]->wait_list){
+            wakeup_pcb = wakeup_pcb->next;
+            do_unblock(wakeup_pcb->prev);
+        }
+
+        // release binsem
+        for(int i = 0; i < current_running[cpu_id]->binsem_num; i++){
+            int binsem_id = current_running[cpu_id]->binsem_id[i];
+            binsem_nodes[binsem_id].sem++;
+            if(binsem_nodes[binsem_id].sem <= 0){
+                list_node_t *unblocked_pcb_list = binsem_nodes[binsem_id].block_queue.next;
+                pcb_t *unblocked_pcb = list_entry(unblocked_pcb_list, pcb_t, list);
+                do_unblock(unblocked_pcb_list);
+                unblocked_pcb->binsem_id[unblocked_pcb->binsem_num] = binsem_id;
+                unblocked_pcb->binsem_num++;
+            }
+        }
+
+        // release user stack
+        freePage(current_running[cpu_id]->user_stack_base, 1);
+
+        // enter ZOMBIE status
+        if(current_running[cpu_id]->mode == AUTO_CLEANUP_ON_EXIT){
+            current_running[cpu_id]->status = TASK_ZOMBIE;
+            list_add_tail(&current_running[cpu_id]->list, &kernel_pcb[0].wait_list);
+        }
+        else{
+            current_running[cpu_id]->status = TASK_ZOMBIE;
+        }
+    }
     current_running[cpu_id] = list_entry(max_priority_node(), pcb_t, list); 
     list_del(&current_running[cpu_id]->list);
     current_running[cpu_id]->status = TASK_RUNNING;
@@ -168,6 +201,11 @@ int do_kill(pid_t pid)
     }
     if(killed_pcb == NULL){
         return 0;
+    }
+
+    if(killed_pcb->status == TASK_RUNNING){
+        killed_pcb->status = TASK_KILLED;
+        return 1;
     }
 
     // unblock tasks in wait queue

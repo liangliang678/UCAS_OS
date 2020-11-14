@@ -47,6 +47,7 @@ void binsem_op(int binsem_id, int op)
     }
     else if(op == BINSEM_OP_UNLOCK){
         node->sem++;
+        current_running[cpu_id]->binsem_num--;
         if(node->sem <= 0){
             list_node_t * unblocked_pcb_list = node->block_queue.next;
             pcb_t *unblocked_pcb = list_entry(unblocked_pcb_list, pcb_t, list);
