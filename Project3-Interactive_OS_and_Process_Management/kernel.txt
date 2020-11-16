@@ -856,7 +856,7 @@ Disassembly of section .text:
     50201980:	84018793          	addi	a5,gp,-1984 # 5020a108 <time_base>
     50201984:	439c                	lw	a5,0(a5)
     50201986:	873e                	mv	a4,a5
-    50201988:	06400793          	li	a5,100
+    50201988:	07800793          	li	a5,120
     5020198c:	02f757bb          	divuw	a5,a4,a5
     50201990:	2781                	sext.w	a5,a5
     50201992:	02079713          	slli	a4,a5,0x20
@@ -10675,7 +10675,7 @@ Disassembly of section .text:
     50208abe:	3b650513          	addi	a0,a0,950 # 50209e70 <__FUNCTION__.1481+0xad0>
     50208ac2:	ebefd0ef          	jal	ra,50206180 <printf>
     50208ac6:	0001                	nop
-    50208ac8:	4505                	li	a0,1
+    50208ac8:	450d                	li	a0,3
     50208aca:	cfdfd0ef          	jal	ra,502067c6 <sys_sleep>
     50208ace:	fec42783          	lw	a5,-20(s0)
     50208ad2:	2785                	addiw	a5,a5,1
