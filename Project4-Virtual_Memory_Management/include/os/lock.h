@@ -2,6 +2,8 @@
  *            Copyright (C) 2018 Institute of Computing Technology, CAS
  *               Author : Han Shukai (email : hanshukai@ict.ac.cn)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
+ *                                   Thread Lock
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +25,24 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * */
 
-#ifndef INCLUDE_TEST_H_
-#define INCLUDE_TEST_H_
+#ifndef INCLUDE_LOCK_H_
+#define INCLUDE_LOCK_H_
 
-extern void test_shell();
+#include <os/list.h>
+
+typedef enum {
+    UNLOCKED,
+    LOCKED,
+} lock_status_t;
+
+typedef struct spin_lock
+{
+    volatile lock_status_t status;
+} spin_lock_t;
+
+void spin_lock_init(spin_lock_t *lock);
+void spin_lock_try_acquire(spin_lock_t *lock);
+void spin_lock_acquire(spin_lock_t *lock);
+void spin_lock_release(spin_lock_t *lock);
 
 #endif

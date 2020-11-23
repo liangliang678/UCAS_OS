@@ -1,7 +1,6 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
- *            Copyright (C) 2018 Institute of Computing Technology, CAS
- *               Author : Han Shukai (email : hanshukai@ict.ac.cn)
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
+/*===---- stdarg.h - Variable argument handling ----------------------------===
+ *
+ * Copyright (c) 2008 Eli Friedman
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,11 +20,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * */
+ *===-----------------------------------------------------------------------===
+ */
 
-#ifndef INCLUDE_TEST_H_
-#define INCLUDE_TEST_H_
+#ifndef __STDARG_H
+#define __STDARG_H
 
-extern void test_shell();
-
+#ifndef _VA_LIST
+typedef __builtin_va_list va_list;
+#define _VA_LIST
 #endif
+#define va_start(ap, param) __builtin_va_start(ap, param)
+#define va_end(ap) __builtin_va_end(ap)
+#define va_arg(ap, type) __builtin_va_arg(ap, type)
+
+/* GCC always defines __va_copy, but does not define va_copy unless in c99 mode
+ * or -ansi is not specified, since it was not part of C90.
+ */
+#define __va_copy(d, s) __builtin_va_copy(d, s)
+
+#if __STDC_VERSION__ >= 199901L || __cplusplus >= 201103L || !defined(__STRICT_ANSI__)
+#define va_copy(dest, src) __builtin_va_copy(dest, src)
+#endif
+
+/* Hack required to make standard headers work, at least on Ubuntu */
+#ifndef __GNUC_VA_LIST
+#define __GNUC_VA_LIST 1
+#endif
+typedef __builtin_va_list __gnuc_va_list;
+
+#endif /* __STDARG_H */

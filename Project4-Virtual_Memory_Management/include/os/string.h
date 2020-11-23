@@ -2,6 +2,8 @@
  *            Copyright (C) 2018 Institute of Computing Technology, CAS
  *               Author : Han Shukai (email : hanshukai@ict.ac.cn)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
+ *                    string library like clib("string.h")
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +25,19 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * */
 
-#ifndef INCLUDE_TEST_H_
-#define INCLUDE_TEST_H_
+#ifndef INCLUDE_STRING_H_
+#define INCLUDE_STRING_H_
 
-extern void test_shell();
+#include <type.h>
+
+void kmemcpy(char *dest, const char *src, uint32_t len);
+void kmemset(void *dest, uint8_t val, uint32_t len);
+void kbzero(void *dest, uint32_t len);
+int kstrcmp(const char *str1, const char *str2);
+char *kstrcpy(char *dest, const char *src);
+char *kstrcat(char *dest, const char *src);
+int kstrlen(const char *src);
+int katoi(char* src);
+void kitoa(char *dest, int src);
 
 #endif

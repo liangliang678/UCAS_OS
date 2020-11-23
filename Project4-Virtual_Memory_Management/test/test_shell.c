@@ -85,27 +85,6 @@ void test_shell_task3()
 static int shell_tail = 0;
 static char shell_buff[SHELL_BUFF_SIZE];
 
-/*struct task_info task_test_waitpid = {
-    (uintptr_t)&wait_exit_task, USER_PROCESS};
-struct task_info task_test_semaphore = {
-    (uintptr_t)&semaphore_add_task1, USER_PROCESS};
-struct task_info task_test_condition = {
-    (uintptr_t)&test_condition, USER_PROCESS};
-struct task_info task_test_barrier = {
-    (uintptr_t)&test_barrier, USER_PROCESS};
-
-struct task_info task13 = {(uintptr_t)&SunQuan, USER_PROCESS};
-struct task_info task14 = {(uintptr_t)&LiuBei, USER_PROCESS};
-struct task_info task15 = {(uintptr_t)&CaoCao, USER_PROCESS};
-
-static struct task_info *test_tasks[16] = {&task_test_waitpid,
-                                           &task_test_semaphore,
-                                           &task_test_condition,
-                                           &task_test_barrier,
-                                           &task13, &task14, &task15};
-                                           */
-// static int start_test_task = 3;
-
 int main()
 {
     char ch;

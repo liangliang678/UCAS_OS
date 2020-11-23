@@ -2,6 +2,8 @@
  *            Copyright (C) 2018 Institute of Computing Technology, CAS
  *               Author : Han Shukai (email : hanshukai@ict.ac.cn)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
+ *                                  Timer
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +25,38 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * */
 
-#ifndef INCLUDE_TEST_H_
-#define INCLUDE_TEST_H_
+#ifndef INCLUDE_TIME_H_
+#define INCLUDE_TIME_H_
 
-extern void test_shell();
+#include <type.h>
+#include <os/list.h>
+
+typedef void (*TimerCallback)(void *parameter);
+
+typedef struct timer
+{
+    list_node_t list;
+    uint64_t timeout_tick;
+    TimerCallback callback_func;
+    void *parameter;
+} timer_t;
+
+extern uint32_t time_base;
+extern uint64_t timer_interval;
+extern uint64_t time_elapsed;
+extern uint64_t MHZ;
+
+uint64_t get_timer(void);
+uint64_t get_ticks(void);
+
+extern uint64_t get_time_base();
+
+extern list_head timer_queue;
+void timer_create(TimerCallback func, void* parameter, uint64_t tick);
+
+// this should be called by handle_int
+void timer_check(void);
+
+void latency(uint64_t time);
 
 #endif

@@ -2,6 +2,9 @@
  *            Copyright (C) 2018 Institute of Computing Technology, CAS
  *               Author : Han Shukai (email : hanshukai@ict.ac.cn)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
+ *            Synchronous primitive related content implementation,
+ *                 such as: locks, barriers, semaphores, etc.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +26,9 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * */
 
-#ifndef INCLUDE_TEST_H_
-#define INCLUDE_TEST_H_
+#ifndef INCLUDE_SYNC_H_
+#define INCLUDE_SYNC_H_
 
-extern void test_shell();
+#include <os/lock.h>
 
 #endif

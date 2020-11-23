@@ -2,6 +2,8 @@
  *            Copyright (C) 2018 Institute of Computing Technology, CAS
  *               Author : Han Shukai (email : hanshukai@ict.ac.cn)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
+ *                       System call related processing
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +25,14 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * */
 
-#ifndef INCLUDE_TEST_H_
-#define INCLUDE_TEST_H_
+#ifndef OS_SYSCALL_H_
+#define OS_SYSCALL_H_
 
-extern void test_shell();
+#include <os/sched.h>
+#include <os/syscall_number.h>
+
+/* syscall function pointer */
+extern long (*syscall[NUM_SYSCALLS])();
+extern void handle_syscall(regs_context_t *regs, uint64_t interrupt, uint64_t cause);
 
 #endif

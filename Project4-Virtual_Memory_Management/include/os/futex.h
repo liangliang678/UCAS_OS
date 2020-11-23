@@ -1,6 +1,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
- *            Copyright (C) 2018 Institute of Computing Technology, CAS
- *               Author : Han Shukai (email : hanshukai@ict.ac.cn)
+ *            Copyright (C) 2019 Institute of Computing Technology, CAS
+ *               Author : Wang Luming (email : wangluming@ict.ac.cn)
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
+ *                          simplified version of Linux's futex
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * *
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,9 +25,31 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * */
 
-#ifndef INCLUDE_TEST_H_
-#define INCLUDE_TEST_H_
+#ifndef FUTEX_H
+#define FUTEX_H
 
-extern void test_shell();
+#include <os/list.h>
+#include <type.h>
 
-#endif
+#define FUTEX_BUCKETS 100
+
+typedef uint64_t futex_key_t;
+
+typedef struct futex_node
+{
+    futex_key_t futex_key;
+    list_node_t list;
+    list_head block_queue;
+}futex_node_t;
+
+typedef list_head futex_bucket_t;
+
+extern futex_bucket_t futex_buckets[FUTEX_BUCKETS];
+
+extern void init_system_futex();
+/* Block and wait until a futex_wakeup is called. */
+extern void futex_wait(volatile uint64_t *val_addr);
+/* Wake up at most `num_wakeup` threads. */
+extern void futex_wakeup(volatile uint64_t *val_addr, int num_wakeup);
+
+#endif /* FUTEX_H */
