@@ -60,7 +60,7 @@ static inline void set_satp(
     __asm__ __volatile__("sfence.vma\ncsrw satp, %0" : : "rK"(__v) : "memory");
 }
 
-#define PGDIR_PA 0x5e000000lu  // use bootblock's page as PGDIR
+#define PGDIR_PA 0x5e000000lu  // use bootblock's page as PGDIR?
 
 /*
  * PTE format:
@@ -98,6 +98,7 @@ static inline uintptr_t kva2pa(uintptr_t kva)
 static inline uintptr_t pa2kva(uintptr_t pa)
 {
     // TODO:
+    return (uintptr_t)(pa + 0xffffffc000000000);
 }
 
 static inline uint64_t get_pa(PTE entry)
@@ -133,6 +134,7 @@ static inline void set_attribute(PTE *entry, uint64_t bits)
 static inline void clear_pgdir(uintptr_t pgdir_addr)
 {
     // TODO:
+    memset(pgdir_addr, 0, 4096);
 }
 
 #endif  // PGTABLE_H

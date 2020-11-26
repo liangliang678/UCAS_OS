@@ -25,6 +25,8 @@ void enable_vm()
 {
     // TODO: write satp to enable paging
     // remember to flush TLB
+    set_satp(SATP_MODE_SV39, 0, (PGDIR_PA >> NORMAL_PAGE_SHIFT));
+    flush_tlb_all();
 }
 
 /* Sv-39 mode
@@ -38,9 +40,16 @@ void setup_vm()
     // map kernel virtual address(kva) to kernel physical
     // address(kpa) kva = kpa + 0xffff_ffc0_0000_0000 use 2MB page,
     // map all physical memory
-
+    PTE *pgdir = (PTE*)PGDIR_PA;
+    *(pgdir + 0x101) = (((PGDIR_PA + NORMAL_PAGE_SIZE) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_GLOBAL | _PAGE_PRESENT;
+    *(pgdir + 0x001) = (((PGDIR_PA + NORMAL_PAGE_SIZE) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_GLOBAL | _PAGE_PRESENT;
+    PTE *last_level_pgdir = (PTE*)(PGDIR_PA + NORMAL_PAGE_SIZE);
+    for(int i = 0; i < 128; i++){
+        *(last_level_pgdir + 0x80 + i) = (((0x50000000 + 2 * i * 1024 * 1024) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) |
+                                         _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_GLOBAL | _PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
+    }
     // enable virtual memory
-    
+    enable_vm();
 }
 
 uintptr_t directmap(uintptr_t kva, uintptr_t pgdir)
@@ -57,9 +66,7 @@ int boot_kernel(unsigned long mhartid, uintptr_t riscv_dtb)
     if (mhartid == 0) {
         setup_vm();
         // load kernel
-        start_kernel =
-            (kernel_entry_t)load_elf(_elf_main, _length_main,
-                                     PGDIR_PA, directmap);
+        start_kernel = (kernel_entry_t)load_elf(_elf_main, _length_main, PGDIR_PA, directmap);
     } else {
         // TODO: what should we do for other cores?
     }

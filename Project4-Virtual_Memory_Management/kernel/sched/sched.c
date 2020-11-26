@@ -70,7 +70,7 @@ void scheduler(void)
         }
 
         // release user stack
-        freePage(current_running[cpu_id]->user_stack_base, 1);
+        freePage(current_running[cpu_id]->user_stack_base);
 
         // enter ZOMBIE status
         if(current_running[cpu_id]->mode == AUTO_CLEANUP_ON_EXIT){
@@ -160,7 +160,7 @@ void do_exit()
     }
 
     // release user stack
-    freePage(current_running[cpu_id]->user_stack_base, 1);
+    freePage(current_running[cpu_id]->user_stack_base);
 
     // delete from ready queue or blocked queue
     list_del(&current_running[cpu_id]->list);
@@ -229,7 +229,7 @@ int do_kill(pid_t pid)
     }
 
     // release user stack
-    freePage(killed_pcb->user_stack_base, 1);
+    freePage(killed_pcb->user_stack_base);
 
     // delete from ready queue or blocked queue
     list_del(&killed_pcb->list);
@@ -280,7 +280,7 @@ int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
         child_pcb->status = TASK_EXITED;
         child_pcb->pid = -1;
         // release kernel stack
-        freePage(child_pcb->kernel_stack_base, 1);
+        freePage(child_pcb->kernel_stack_base);
 
         return 1;
     }
@@ -297,130 +297,130 @@ int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
 void do_process_show(char* buffer)
 {
     buffer[0] = '\0';
-    kstrcat(buffer, "[PROCESS TABLE]\n");
-    kstrcat(buffer, "INIT 0    STATUS: ");
+    strcat(buffer, "[PROCESS TABLE]\n");
+    strcat(buffer, "INIT 0    STATUS: ");
     if(kernel_pcb[0].status == TASK_BLOCKED){
-        kstrcat(buffer, "BLOCKED    MASK: ");
+        strcat(buffer, "BLOCKED    MASK: ");
         char mask[2];
-        kitoa(mask, kernel_pcb[0].mask);
-        kstrcat(buffer, mask);
-        kstrcat(buffer, "\n");
+        itoa(mask, kernel_pcb[0].mask);
+        strcat(buffer, mask);
+        strcat(buffer, "\n");
     }
     else if(kernel_pcb[0].status == TASK_RUNNING){
-        kstrcat(buffer, "RUNNING    MASK: ");
+        strcat(buffer, "RUNNING    MASK: ");
         char mask[2];
-        kitoa(mask, kernel_pcb[0].mask);
-        kstrcat(buffer, mask);
-        kstrcat(buffer, "    CORE: ");
+        itoa(mask, kernel_pcb[0].mask);
+        strcat(buffer, mask);
+        strcat(buffer, "    CORE: ");
         char cpu_id[2];
-        kitoa(cpu_id, kernel_pcb[0].cpu_id);
-        kstrcat(buffer, cpu_id);
-        kstrcat(buffer, "\n");
+        itoa(cpu_id, kernel_pcb[0].cpu_id);
+        strcat(buffer, cpu_id);
+        strcat(buffer, "\n");
     }
     else if(kernel_pcb[0].status == TASK_READY){
-        kstrcat(buffer, "READY    MASK: ");
+        strcat(buffer, "READY    MASK: ");
         char mask[2];
-        kitoa(mask, kernel_pcb[0].mask);
-        kstrcat(buffer, mask);
-        kstrcat(buffer, "\n");
+        itoa(mask, kernel_pcb[0].mask);
+        strcat(buffer, mask);
+        strcat(buffer, "\n");
     }
     else if(kernel_pcb[0].status == TASK_EXITED){
-        kstrcat(buffer, "EXITED    MASK: ");
+        strcat(buffer, "EXITED    MASK: ");
         char mask[2];
-        kitoa(mask, kernel_pcb[0].mask);
-        kstrcat(buffer, mask);
-        kstrcat(buffer, "\n");
+        itoa(mask, kernel_pcb[0].mask);
+        strcat(buffer, mask);
+        strcat(buffer, "\n");
     }
     else if(kernel_pcb[0].status == TASK_ZOMBIE){
-        kstrcat(buffer, "ZOMBIE    MASK: ");
+        strcat(buffer, "ZOMBIE    MASK: ");
         char mask[2];
-        kitoa(mask, kernel_pcb[0].mask);
-        kstrcat(buffer, mask);
-        kstrcat(buffer, "\n");
+        itoa(mask, kernel_pcb[0].mask);
+        strcat(buffer, mask);
+        strcat(buffer, "\n");
     }
     
-    kstrcat(buffer, "INIT 1    STATUS: ");
+    strcat(buffer, "INIT 1    STATUS: ");
     if(kernel_pcb[1].status == TASK_BLOCKED){
-        kstrcat(buffer, "BLOCKED\n");
+        strcat(buffer, "BLOCKED\n");
     }
     else if(kernel_pcb[1].status == TASK_RUNNING){
-        kstrcat(buffer, "RUNNING    MASK: ");
+        strcat(buffer, "RUNNING    MASK: ");
         char mask[2];
-        kitoa(mask, kernel_pcb[1].mask);
-        kstrcat(buffer, mask);
-        kstrcat(buffer, "    CORE: ");
+        itoa(mask, kernel_pcb[1].mask);
+        strcat(buffer, mask);
+        strcat(buffer, "    CORE: ");
         char cpu_id[2];
-        kitoa(cpu_id, kernel_pcb[1].cpu_id);
-        kstrcat(buffer, cpu_id);
-        kstrcat(buffer, "\n");
+        itoa(cpu_id, kernel_pcb[1].cpu_id);
+        strcat(buffer, cpu_id);
+        strcat(buffer, "\n");
     }
     else if(kernel_pcb[1].status == TASK_READY){
-        kstrcat(buffer, "READY    MASK: ");
+        strcat(buffer, "READY    MASK: ");
         char mask[2];
-        kitoa(mask, kernel_pcb[1].mask);
-        kstrcat(buffer, mask);
-        kstrcat(buffer, "\n");
+        itoa(mask, kernel_pcb[1].mask);
+        strcat(buffer, mask);
+        strcat(buffer, "\n");
     }
     else if(kernel_pcb[1].status == TASK_EXITED){
-        kstrcat(buffer, "EXITED    MASK: ");
+        strcat(buffer, "EXITED    MASK: ");
         char mask[2];
-        kitoa(mask, kernel_pcb[1].mask);
-        kstrcat(buffer, mask);
-        kstrcat(buffer, "\n");
+        itoa(mask, kernel_pcb[1].mask);
+        strcat(buffer, mask);
+        strcat(buffer, "\n");
     }
     else if(kernel_pcb[1].status == TASK_ZOMBIE){
-        kstrcat(buffer, "ZOMBIE    MASK: ");
+        strcat(buffer, "ZOMBIE    MASK: ");
         char mask[2];
-        kitoa(mask, kernel_pcb[1].mask);
-        kstrcat(buffer, mask);
-        kstrcat(buffer, "\n");
+        itoa(mask, kernel_pcb[1].mask);
+        strcat(buffer, mask);
+        strcat(buffer, "\n");
     }
 
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].pid != -1){
-            kstrcat(buffer, "PID: ");
+            strcat(buffer, "PID: ");
             char pid[10];
-            kitoa(pid, pcb[i].pid);
-            kstrcat(buffer, pid);
-            kstrcat(buffer, "    STATUS: ");
+            itoa(pid, pcb[i].pid);
+            strcat(buffer, pid);
+            strcat(buffer, "    STATUS: ");
             if(pcb[i].status == TASK_BLOCKED){
-                kstrcat(buffer, "BLOCKED    MASK: ");
+                strcat(buffer, "BLOCKED    MASK: ");
                 char mask[2];
-                kitoa(mask, pcb[i].mask);
-                kstrcat(buffer, mask);
-                kstrcat(buffer, "\n");
+                itoa(mask, pcb[i].mask);
+                strcat(buffer, mask);
+                strcat(buffer, "\n");
             }
             else if(pcb[i].status == TASK_RUNNING){
-                kstrcat(buffer, "RUNNING    MASK: ");
+                strcat(buffer, "RUNNING    MASK: ");
                 char mask[2];
-                kitoa(mask, pcb[i].mask);
-                kstrcat(buffer, mask);
-                kstrcat(buffer, "    CORE: ");
+                itoa(mask, pcb[i].mask);
+                strcat(buffer, mask);
+                strcat(buffer, "    CORE: ");
                 char cpu_id[2];
-                kitoa(cpu_id, pcb[i].cpu_id);
-                kstrcat(buffer, cpu_id);
-                kstrcat(buffer, "\n");
+                itoa(cpu_id, pcb[i].cpu_id);
+                strcat(buffer, cpu_id);
+                strcat(buffer, "\n");
             }
             else if(pcb[i].status == TASK_READY){
-                kstrcat(buffer, "READY    MASK: ");
+                strcat(buffer, "READY    MASK: ");
                 char mask[2];
-                kitoa(mask, pcb[i].mask);
-                kstrcat(buffer, mask);
-                kstrcat(buffer, "\n");
+                itoa(mask, pcb[i].mask);
+                strcat(buffer, mask);
+                strcat(buffer, "\n");
             }
             else if(pcb[i].status == TASK_EXITED){
-                kstrcat(buffer, "EXITED    MASK: ");
+                strcat(buffer, "EXITED    MASK: ");
                 char mask[2];
-                kitoa(mask, pcb[i].mask);
-                kstrcat(buffer, mask);
-                kstrcat(buffer, "\n");
+                itoa(mask, pcb[i].mask);
+                strcat(buffer, mask);
+                strcat(buffer, "\n");
             }
             else if(pcb[i].status == TASK_ZOMBIE){
-                kstrcat(buffer, "ZOMBIE    MASK: ");
+                strcat(buffer, "ZOMBIE    MASK: ");
                 char mask[2];
-                kitoa(mask, pcb[i].mask);
-                kstrcat(buffer, mask);
-                kstrcat(buffer, "\n");
+                itoa(mask, pcb[i].mask);
+                strcat(buffer, mask);
+                strcat(buffer, "\n");
             }
         }
     }

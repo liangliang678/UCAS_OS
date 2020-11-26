@@ -1,6 +1,7 @@
-#ifndef CONTEXT_H
-#define CONTEXT_H
-
+//#ifndef CONTEXT_H
+//#define CONTEXT_H
+#ifndef INCLUDE_SCHEDULER_H_
+#define INCLUDE_SCHEDULER_H_
 #include <type.h>
 
 /* used to save register infomation */

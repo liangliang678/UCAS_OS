@@ -2,6 +2,9 @@
 arch/riscv/include/atomic.h
 arch/riscv/include/sbi.h
 include/os/sched.h
+include/os/syscall_number.h
+libs/string.c
+test/test_shell.c
 test/test.h
 tiny_libc/include/stdio.h
 tiny_libc/include/stdlib.h
@@ -9,12 +12,9 @@ tiny_libc/printf.c
 
 未合并的更改：
 arch/riscv/kernel/head.S
-include/os/syscall_number.h
 include/os/mm.h
 kernel/mm/mm.c
 kernel/syscall/syscall.c
-libs/string.c
-test/test_shell.c
 tiny_libc/include/string.h
 tiny_libc/syscall.c
 tiny_libc/string.c
@@ -39,3 +39,10 @@ user_riscv.lds
 
 需要修改的文件：
 Makefile
+
+参考资料：https://osblog.stephenmarz.com/ch3.2.html
+
+Questions:
+1. A位和D位的作用？
+2. ASID的作用？
+3. 进入内核后将临时映射取消？会造成sbi相关函数出错

@@ -36,8 +36,9 @@
 #include <os/smp.h>
 #include <screen.h>
 #include <sbi.h>
+#include <pgtable.h>
 #include <stdio.h>
-#include <test.h>
+//#include <test.h>
 #include <csr.h>
 
 extern void ret_from_exception();
@@ -106,7 +107,7 @@ static void init_pcb()
     pcb[0].priority = 0;
     pcb[0].ready_tick = get_ticks();    
     pcb[0].mask = 3; 
-    init_pcb_stack((ptr_t)pcb[0].kernel_sp, (ptr_t)pcb[0].user_sp, (ptr_t)test_shell, &pcb[0]);
+    //init_pcb_stack((ptr_t)pcb[0].kernel_sp, (ptr_t)pcb[0].user_sp, (ptr_t)test_shell, &pcb[0]);
 
     /* initialize `current_running` */
     current_running[0] = &kernel_pcb[0];
@@ -143,10 +144,16 @@ static void init_syscall(void)
     syscall[SYSCALL_MAILBOX_RECV] = (long(*)())do_mbox_recv;  
 }
 
-// jump from bootloader
+// jump from boot.c
 // The beginning of everything
 int main()
 {
+    // delete temp map
+    /*
+    PTE *pgdir = (PTE*)pa2kva(PGDIR_PA);
+    *(pgdir + 0x001) = 0;
+    */
+   
     // read CPU frequency and calc timer interval
     time_base = sbi_read_fdt(TIMEBASE);
     timer_interval = (uint64_t)(time_base / 100);
@@ -171,6 +178,8 @@ int main()
     init_screen();
     printk("> [INIT] SCREEN initialization succeeded.\n\r");
     
+    while(1);
+    
     spin_lock_init(&kernel_lock);
 
     // wakeup another core
@@ -190,7 +199,7 @@ int main()
             clean_pcb->status = TASK_EXITED;
             clean_pcb->pid = -1;
             // release kernel stack
-            freePage(clean_pcb->kernel_stack_base, 1);
+            freePage(clean_pcb->kernel_stack_base);
             
             clean_node = clean_node->next;
             list_del(clean_node->prev);

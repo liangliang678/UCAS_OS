@@ -104,7 +104,7 @@ static void screen_write_ch(char ch)
 void screen_write(char *buff)
 {
     int i = 0;
-    int l = kstrlen(buff);
+    int l = strlen(buff);
 
     for (i = 0; i < l; i++){
         screen_write_ch(buff[i]);

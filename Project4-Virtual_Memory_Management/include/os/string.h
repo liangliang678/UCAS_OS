@@ -30,14 +30,14 @@
 
 #include <type.h>
 
-void kmemcpy(char *dest, const char *src, uint32_t len);
-void kmemset(void *dest, uint8_t val, uint32_t len);
+void memcpy(uint8_t *dest, const uint8_t *src, uint32_t len);
+void memset(void *dest, uint8_t val, uint32_t len);
 void kbzero(void *dest, uint32_t len);
-int kstrcmp(const char *str1, const char *str2);
-char *kstrcpy(char *dest, const char *src);
-char *kstrcat(char *dest, const char *src);
-int kstrlen(const char *src);
-int katoi(char* src);
-void kitoa(char *dest, int src);
+int strcmp(const char *str1, const char *str2);
+char *strcpy(char *dest, const char *src);
+char *strcat(char *dest, const char *src);
+int strlen(const char *src);
+int atoi(char* src);
+void itoa(char *dest, int src);
 
 #endif

@@ -12,7 +12,7 @@ int message_status[MBOX_NUM] = {0};
 int do_mbox_open(char *name)
 {
     for(int i = 0; i < MBOX_NUM; i++){
-        if(!kstrcmp(name, mailbox[i].name)){
+        if(!strcmp(name, mailbox[i].name)){
             message_t *cur_message = &message[mailbox[i].id];
             (cur_message->opned)++;
             return mailbox[i].id;
@@ -28,7 +28,7 @@ int do_mbox_open(char *name)
         }
     }
     mailbox_t *new_mailbox = &mailbox[free_mailbox++];
-    kstrcpy(new_mailbox->name, name);
+    strcpy(new_mailbox->name, name);
     new_mailbox->id = id;
 
     // init the message
@@ -60,7 +60,7 @@ int do_mbox_send(int mailbox_id, void *msg, int msg_length)
         return 0;
     }
     else{
-        kmemcpy(&(cur_message->msg[cur_message->msg_len]), msg, msg_length);
+        memcpy(&(cur_message->msg[cur_message->msg_len]), msg, msg_length);
         cur_message->msg_len += msg_length;
         while(!list_empty(&cur_message->wait_queue)){
             do_unblock(cur_message->wait_queue.next);
@@ -80,7 +80,7 @@ int do_mbox_recv(int mailbox_id, void *msg, int msg_length)
     }
     else{
         cur_message->msg_len -= msg_length;
-        kmemcpy(msg, &(cur_message->msg[cur_message->msg_len]), msg_length);
+        memcpy(msg, &(cur_message->msg[cur_message->msg_len]), msg_length);
         while(!list_empty(&cur_message->wait_queue)){
             do_unblock(cur_message->wait_queue.next);
         }

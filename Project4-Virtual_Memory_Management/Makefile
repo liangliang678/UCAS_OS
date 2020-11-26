@@ -10,7 +10,7 @@ USER_LDFLAGS = -L./ -ltiny_libc
 DISK = /dev/sdc
 
 BOOTLOADER_ENTRYPOINT = 0x50200000
-START_ENTRYPOINT = 0x50301000
+START_ENTRYPOINT = 0x50201000
 KERNEL_ENTRYPOINT = 0xffffffc050400000
 
 ARCH = riscv
@@ -22,13 +22,13 @@ USER_LDFLAGS += $(ARCH_DIR)/crt0.o
 SRC_BOOT 	= $(ARCH_DIR)/boot/bootblock.S
 SRC_HEAD    = $(ARCH_DIR)/kernel/head.S $(ARCH_DIR)/kernel/boot.c payload.c ./libs/string.c
 SRC_ARCH	= $(ARCH_DIR)/kernel/trap.S $(ARCH_DIR)/kernel/entry.S $(ARCH_DIR)/kernel/start.S $(ARCH_DIR)/sbi/common.c $(ARCH_DIR)/kernel/smp.S
-SRC_DRIVER	= ./drivers/screen.c ./drivers/fdt.c
+SRC_DRIVER	= ./drivers/screen.c
 SRC_INIT 	= ./init/main.c
 SRC_INT		= ./kernel/irq/irq.c
-SRC_LOCK	= ./kernel/locking/lock.c ./kernel/locking/futex.c
+SRC_LOCK	= ./kernel/locking/lock.c ./kernel/locking/futex.c ./kernel/locking/binsem.c
 SRC_SCHED	= ./kernel/sched/sched.c ./kernel/sched/time.c ./kernel/sched/smp.c
 SRC_MM	= ./kernel/mm/mm.c
-SRC_SYSCALL	= ./kernel/syscall/syscall.c
+SRC_SYSCALL	= ./kernel/syscall/syscall.c ./kernel/syscall/mailbox.c
 SRC_LIBS	= ./libs/string.c ./libs/printk.c
 
 SRC_LIBC	= ./tiny_libc/printf.c ./tiny_libc/string.c ./tiny_libc/mthread.c ./tiny_libc/syscall.c ./tiny_libc/invoke_syscall.S \
@@ -36,7 +36,7 @@ SRC_LIBC	= ./tiny_libc/printf.c ./tiny_libc/string.c ./tiny_libc/mthread.c ./tin
 SRC_LIBC_ASM	= $(filter %.S %.s,$(SRC_LIBC))
 SRC_LIBC_C	= $(filter %.c,$(SRC_LIBC))
 
-SRC_USER	= ./test/test_shell.elf ./test/rw.elf ./test/fly.elf ./test/consensus.elf
+SRC_USER	= #./test/test_shell.elf ./test/rw.elf ./test/fly.elf ./test/consensus.elf
 #SRC_TEST2	= ./test/test_project2/test_scheduler1.c ./test/test_project2/test_scheduler2.c ./test/test_project2/test_lock2.c ./test/test_project2/test_sleep.c ./test/test_project2/test_timer.c
 #./test/test_project3/test_wait.c
 #SRC_TEST3	= ./test/test_project3/test_kill.c ./test/test_project3/test_condition.c ./test/test_project3/test_semaphore.c ./test/test_project3/test_barrier.c ./test/test_project3/test_sanguo.c
@@ -81,7 +81,7 @@ $(ARCH_DIR)/crt0.o: $(ARCH_DIR)/crt0.S
 	${CC} ${USER_CFLAGS} $< ${USER_LDFLAGS} -o $@
 
 main: $(SRC_MAIN) user riscv.lds
-	${CC} ${CFLAGS} -o main $(SRC_MAIN)  ./kernel/user_programs.c -Ttext=${KERNEL_ENTRYPOINT}
+	${CC} ${CFLAGS} -o main $(SRC_MAIN) ./kernel/user_programs.c -e main -Ttext=${KERNEL_ENTRYPOINT}
 
 createimage: $(SRC_IMAGE)
 	${HOST_CC} ${SRC_IMAGE} -o createimage -ggdb -Wall
@@ -95,7 +95,7 @@ image: bootblock kernelimage createimage
 	dd if=/dev/zero of=image oflag=append conv=notrunc bs=512 count=65
 
 clean:
-	rm -rf bootblock image kernelimage createimage main payload.c libtiny_libc.a
+	rm -rf bootblock image kernelimage createimage main payload.c libtiny_libc.a kernel.txt
 	rm include/user_programs.h kernel/user_programs.c
 	find . -name "*.o" -exec rm {} \;
 
