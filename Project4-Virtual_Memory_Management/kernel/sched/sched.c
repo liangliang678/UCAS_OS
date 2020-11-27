@@ -457,6 +457,17 @@ int do_taskset(pid_t pid, unsigned long mask)
 pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
 {
     file_name = get_kva_of(file_name, current_running[cpu_id]->pgdir);
+    argv = (char (*)[])get_kva_of(argv, current_running[cpu_id]->pgdir);
+    for(int i = 0; i < argc; i++){
+        argv[i] = get_kva_of(argv[i], current_running[cpu_id]->pgdir);
+    }
+    
+    char *binary;
+    int length;
+    if(!get_elf_file(file_name, &binary, &length)){
+        return 0;
+    }
+
     pcb_t *new_pcb = NULL;
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].pid == -1){
@@ -484,24 +495,31 @@ pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
     new_pcb->ready_tick = get_ticks();
     new_pcb->mask = current_running[cpu_id]->mask;
     new_pcb->pgdir = init_page_table();
-
-    char *binary;
-    int length;
-    if(!get_elf_file(file_name, &binary, &length)){
-        return 0;
-    }
+    
     uintptr_t entry = load_elf(binary, length, new_pcb->pgdir, get_kva_of);
 
     /* initialization registers on kernel stack */
     regs_context_t *pt_regs = (regs_context_t *)(new_pcb->kernel_sp - sizeof(regs_context_t));
     new_pcb->kernel_sp -= sizeof(regs_context_t);
-    pt_regs->regs[1] = (reg_t)entry;        //ra
+    pt_regs->regs[1] = (reg_t)entry;                    //ra
     pt_regs->regs[2] = (reg_t)new_pcb->user_sp;         //sp
     pt_regs->regs[3] = (reg_t)__global_pointer$;        //gp
     pt_regs->sstatus = (reg_t)SR_SPIE;                  //SPP = 0, SPIE = 1
     pt_regs->sepc = (reg_t)entry;                       //sepc = ra
     pt_regs->sscratch = (reg_t)new_pcb;                 //sscratch = tp
 
+    /* pass arg to new process */
+    pt_regs->regs[10] = (reg_t)argc;                     //a0
+    new_pcb->user_sp -= 128;                             //sp = sp - 128
+    pt_regs->regs[2]  = (reg_t)new_pcb->user_sp;         //sp
+    pt_regs->regs[11] = (reg_t)new_pcb->user_sp;         //a1
+    uintptr_t dest = new_pcb->user_sp + 32;
+    for(int i = 0; i < argc; i++){
+        uintptr_t pointer = get_kva_of(new_pcb->user_sp + 8 * i, new_pcb->pgdir);
+        *(uint64_t*)pointer = dest;
+        memcpy(get_kva_of(dest, new_pcb->pgdir), argv[i], strlen(argv[i]) + 1);
+        dest += strlen(argv[i]) + 1;
+    }
     return new_pcb->pid;
 }
 

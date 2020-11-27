@@ -3,6 +3,7 @@
 #include <os/sched.h>
 #include <os/string.h>
 #include <os/stdio.h>
+#include <os/mm.h>
 #include <assert.h>
 #include <sbi.h>
 #include <screen.h>
@@ -33,9 +34,9 @@ void init_exception()
     exc_table[EXCC_LOAD_ACCESS] = (handler_t)handle_other;
     exc_table[EXCC_STORE_ACCESS] = (handler_t)handle_other;
     exc_table[EXCC_SYSCALL] = (handler_t)handle_syscall;
-    exc_table[EXCC_INST_PAGE_FAULT] = (handler_t)handle_other;
-    exc_table[EXCC_LOAD_PAGE_FAULT] = (handler_t)handle_other;
-    exc_table[EXCC_STORE_PAGE_FAULT] = (handler_t)handle_other;
+    exc_table[EXCC_INST_PAGE_FAULT] = (handler_t)handle_page_fault;
+    exc_table[EXCC_LOAD_PAGE_FAULT] = (handler_t)handle_page_fault;
+    exc_table[EXCC_STORE_PAGE_FAULT] = (handler_t)handle_page_fault;
 }
 
 // interrupt handler.
