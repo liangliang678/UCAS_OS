@@ -142,7 +142,7 @@ ENDPROC(disable_interrupt)
 
 ENTRY(ret_from_exception)
   ld tp, current_cpu_running
-  call unlock_kernel
+  //call unlock_kernel
   RESTORE_CONTEXT
 
   csrrw tp, CSR_SSCRATCH, tp
@@ -184,7 +184,7 @@ store_sp_done:
   la gp, __global_pointer$
   .option pop
 
-  call lock_kernel
+  //call lock_kernel
   /* 
    * load ret_from_exception into $ra
    * so that we can return to ret_from_exception

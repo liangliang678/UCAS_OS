@@ -84,37 +84,18 @@ static inline void set_satp(
 #define _PAGE_PFN_SHIFT 10lu
 
 #define VA_MASK ((1lu << 39) - 1)
+#define PFN_MASK ((1lu << 44) - 1)
 
 #define PPN_BITS 9lu
 #define NUM_PTE_ENTRY (1 << PPN_BITS)
 
 typedef uint64_t PTE;
 
-static inline uintptr_t kva2pa(uintptr_t kva)
-{
-    // TODO:
-}
-
-static inline uintptr_t pa2kva(uintptr_t pa)
-{
-    // TODO:
-    return (uintptr_t)(pa + 0xffffffc000000000);
-}
-
-static inline uint64_t get_pa(PTE entry)
-{
-    // TODO:
-}
-
-static inline uintptr_t get_kva_of(uintptr_t va, uintptr_t pgdir_va)
-{
-    // TODO:
-}
-
 /* Get/Set page frame number of the `entry` */
 static inline long get_pfn(PTE entry)
 {
     // TODO:
+    return (entry >> _PAGE_PFN_SHIFT) & PFN_MASK;
 }
 static inline void set_pfn(PTE *entry, uint64_t pfn)
 {
@@ -135,6 +116,38 @@ static inline void clear_pgdir(uintptr_t pgdir_addr)
 {
     // TODO:
     memset(pgdir_addr, 0, 4096);
+}
+
+static inline uintptr_t kva2pa(uintptr_t kva)
+{
+    // TODO:
+    return (uintptr_t)(kva - 0xffffffc000000000);
+}
+
+static inline uintptr_t pa2kva(uintptr_t pa)
+{
+    // TODO:
+    return (uintptr_t)(pa + 0xffffffc000000000);
+}
+
+static inline uint64_t get_pa(PTE entry)
+{
+    // TODO:
+}
+
+static inline uintptr_t get_kva_of(uintptr_t va, uintptr_t pgdir)
+{
+    // TODO:
+    uintptr_t pgdir_va = pa2kva(pgdir);
+    int VPN2 = (va >> 30) & 0x1ff;
+    int VPN1 = (va >> 21) & 0x1ff;
+    int VPN0 = (va >> 12) & 0x1ff;
+    PTE* second_level_pgdir = get_pfn(*((PTE*)pgdir_va + VPN2)) << NORMAL_PAGE_SHIFT;
+    second_level_pgdir = pa2kva(second_level_pgdir);
+    PTE* last_level_pgdir = get_pfn(*((PTE*)second_level_pgdir + VPN1))  << NORMAL_PAGE_SHIFT;
+    last_level_pgdir = pa2kva(last_level_pgdir);
+    uintptr_t pa = (get_pfn(*((PTE*)last_level_pgdir + VPN0)) << NORMAL_PAGE_SHIFT) | (va & 0xfff);
+    return pa2kva(pa);
 }
 
 #endif  // PGTABLE_H

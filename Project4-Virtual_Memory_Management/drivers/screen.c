@@ -1,5 +1,5 @@
 #include <screen.h>
-
+#include <pgtable.h>
 #define SCREEN_WIDTH    80
 #define SCREEN_HEIGHT   50
 
@@ -103,6 +103,7 @@ static void screen_write_ch(char ch)
 
 void screen_write(char *buff)
 {
+    buff = get_kva_of(buff, current_running[cpu_id]->pgdir);
     int i = 0;
     int l = strlen(buff);
 

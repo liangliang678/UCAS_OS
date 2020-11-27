@@ -36,7 +36,7 @@ SRC_LIBC	= ./tiny_libc/printf.c ./tiny_libc/string.c ./tiny_libc/mthread.c ./tin
 SRC_LIBC_ASM	= $(filter %.S %.s,$(SRC_LIBC))
 SRC_LIBC_C	= $(filter %.c,$(SRC_LIBC))
 
-SRC_USER	= #./test/test_shell.elf ./test/rw.elf ./test/fly.elf ./test/consensus.elf
+SRC_USER	= ./test/test_shell.elf ./test/rw.elf ./test/fly.elf ./test/consensus.elf
 #SRC_TEST2	= ./test/test_project2/test_scheduler1.c ./test/test_project2/test_scheduler2.c ./test/test_project2/test_lock2.c ./test/test_project2/test_sleep.c ./test/test_project2/test_timer.c
 #./test/test_project3/test_wait.c
 #SRC_TEST3	= ./test/test_project3/test_kill.c ./test/test_project3/test_condition.c ./test/test_project3/test_semaphore.c ./test/test_project3/test_barrier.c ./test/test_project3/test_sanguo.c
@@ -81,7 +81,7 @@ $(ARCH_DIR)/crt0.o: $(ARCH_DIR)/crt0.S
 	${CC} ${USER_CFLAGS} $< ${USER_LDFLAGS} -o $@
 
 main: $(SRC_MAIN) user riscv.lds
-	${CC} ${CFLAGS} -o main $(SRC_MAIN) ./kernel/user_programs.c -e main -Ttext=${KERNEL_ENTRYPOINT}
+	${CC} ${CFLAGS} -o main $(SRC_MAIN) ./kernel/user_programs.c -Ttext=${KERNEL_ENTRYPOINT}
 
 createimage: $(SRC_IMAGE)
 	${HOST_CC} ${SRC_IMAGE} -o createimage -ggdb -Wall

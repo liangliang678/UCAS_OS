@@ -28,11 +28,12 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * */
 
 #include <type.h>
+#include <pgtable.h>
 
 #define MEM_SIZE 32
 #define PAGE_SIZE 4096 // 4K
-#define INIT_KERNEL_STACK 0xffffffc051000000lu
-#define FREEMEM (INIT_KERNEL_STACK+PAGE_SIZE)
+#define INIT_KERNEL_STACK 0xffffffc050600000lu
+#define FREEMEM (0x50600000 + 2 * PAGE_SIZE)
 #define USER_STACK_ADDR 0xf00010000lu
 
 /* Rounding; only works for n = power of two */
@@ -41,6 +42,7 @@
 
 extern ptr_t memCurr;
 
+extern PTE* init_page_table();
 extern ptr_t allocPage();
 extern void freePage(ptr_t baseAddr);
 extern void* kmalloc(size_t size);

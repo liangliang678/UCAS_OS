@@ -26,7 +26,7 @@ void enable_vm()
     // TODO: write satp to enable paging
     // remember to flush TLB
     set_satp(SATP_MODE_SV39, 0, (PGDIR_PA >> NORMAL_PAGE_SHIFT));
-    flush_tlb_all();
+    local_flush_tlb_all();
 }
 
 /* Sv-39 mode
@@ -36,17 +36,18 @@ void enable_vm()
 void setup_vm()
 {
     // TODO:
-    clear_pgdir(PGDIR_PA);
     // map kernel virtual address(kva) to kernel physical
     // address(kpa) kva = kpa + 0xffff_ffc0_0000_0000 use 2MB page,
     // map all physical memory
     PTE *pgdir = (PTE*)PGDIR_PA;
-    *(pgdir + 0x101) = (((PGDIR_PA + NORMAL_PAGE_SIZE) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_GLOBAL | _PAGE_PRESENT;
-    *(pgdir + 0x001) = (((PGDIR_PA + NORMAL_PAGE_SIZE) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_GLOBAL | _PAGE_PRESENT;
+    clear_pgdir(pgdir);
+    *(pgdir + 0x101) = (((PGDIR_PA + NORMAL_PAGE_SIZE) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT;
+    *(pgdir + 0x001) = (((PGDIR_PA + NORMAL_PAGE_SIZE) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT;
     PTE *last_level_pgdir = (PTE*)(PGDIR_PA + NORMAL_PAGE_SIZE);
+    clear_pgdir(last_level_pgdir);
     for(int i = 0; i < 128; i++){
         *(last_level_pgdir + 0x80 + i) = (((0x50000000 + 2 * i * 1024 * 1024) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) |
-                                         _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_GLOBAL | _PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
+                                         _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
     }
     // enable virtual memory
     enable_vm();

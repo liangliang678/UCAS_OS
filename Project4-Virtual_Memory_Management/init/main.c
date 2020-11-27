@@ -34,12 +34,15 @@
 #include <os/binsem.h>
 #include <os/mailbox.h>
 #include <os/smp.h>
+#include <os/elf.h>
 #include <screen.h>
 #include <sbi.h>
 #include <pgtable.h>
 #include <stdio.h>
 //#include <test.h>
 #include <csr.h>
+
+#include <user_programs.h>
 
 extern void ret_from_exception();
 extern void __global_pointer$();
@@ -72,8 +75,9 @@ static void init_pcb()
     kernel_pcb[0].priority = 0;
     kernel_pcb[0].mask = 1;
     kernel_pcb[0].cpu_id = 0;
+    kernel_pcb[0].pgdir = PGDIR_PA;
     init_list_head(&kernel_pcb[0].wait_list);
-
+/*
     kernel_pcb[1].kernel_sp = (ptr_t)kernel_stack_1;
     kernel_pcb[1].user_sp = (ptr_t)kernel_stack_1;
     kernel_pcb[1].preempt_count = 0;
@@ -86,14 +90,14 @@ static void init_pcb()
     kernel_pcb[1].priority = 0;
     kernel_pcb[1].mask = 2;
     kernel_pcb[1].cpu_id = 1;
-
+*/
     /* initialize all pcb and add test_shell into ready_queue */
     for(int i = 0; i < NUM_MAX_TASK; i++){
         pcb[i].pid = -1;
     }
     
-    pcb[0].kernel_sp = allocPage(2);
-    pcb[0].user_sp = allocPage(2);
+    pcb[0].kernel_sp = pa2kva(allocPage() + PAGE_SIZE);
+    pcb[0].user_sp = USER_STACK_ADDR;
     pcb[0].preempt_count = 0;
     pcb[0].kernel_stack_base = pcb[0].kernel_sp;
     pcb[0].user_stack_base = pcb[0].user_sp;
@@ -107,7 +111,14 @@ static void init_pcb()
     pcb[0].priority = 0;
     pcb[0].ready_tick = get_ticks();    
     pcb[0].mask = 3; 
-    //init_pcb_stack((ptr_t)pcb[0].kernel_sp, (ptr_t)pcb[0].user_sp, (ptr_t)test_shell, &pcb[0]);
+    pcb[0].pgdir = init_page_table();
+
+    char *binary;
+    int length;
+    get_elf_file("shell", &binary, &length);
+    uintptr_t entry = load_elf(binary, length, pcb[0].pgdir, get_kva_of);
+
+    init_pcb_stack((ptr_t)pcb[0].kernel_sp, (ptr_t)pcb[0].user_sp, entry, &pcb[0]);
 
     /* initialize `current_running` */
     current_running[0] = &kernel_pcb[0];
@@ -126,6 +137,8 @@ static void init_syscall(void)
     syscall[SYSCALL_GETPID] = (long(*)())do_getpid;
     syscall[SYSCALL_YIELD] = (long(*)())scheduler;
     syscall[SYSCALL_TASKSET] = (long(*)())do_taskset;
+    syscall[SYSCALL_EXEC] = (long(*)())do_exec;
+    syscall[SYSCALL_SHOW_EXEC] = (long(*)())do_show_exec;
     syscall[SYSCALL_FUTEX_WAIT] = (long(*)())futex_wait;
     syscall[SYSCALL_FUTEX_WAKEUP] = (long(*)())futex_wakeup;
     syscall[SYSCALL_BINSEM_GET] = (long(*)())binsem_get;
@@ -144,16 +157,13 @@ static void init_syscall(void)
     syscall[SYSCALL_MAILBOX_RECV] = (long(*)())do_mbox_recv;  
 }
 
-// jump from boot.c
+// jump from start.S
 // The beginning of everything
 int main()
-{
-    // delete temp map
-    /*
-    PTE *pgdir = (PTE*)pa2kva(PGDIR_PA);
+{   
+    PTE *pgdir = (PTE*)PGDIR_PA;
     *(pgdir + 0x001) = 0;
-    */
-   
+
     // read CPU frequency and calc timer interval
     time_base = sbi_read_fdt(TIMEBASE);
     timer_interval = (uint64_t)(time_base / 100);
@@ -177,13 +187,11 @@ int main()
     // init screen
     init_screen();
     printk("> [INIT] SCREEN initialization succeeded.\n\r");
-    
-    while(1);
-    
+
     spin_lock_init(&kernel_lock);
 
     // wakeup another core
-    wakeup_other_hart();
+    //wakeup_other_hart();
  
     // Setup timer interrupt and enable all interrupt
     enable_interrupt();

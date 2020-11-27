@@ -35,6 +35,7 @@
 #include <os/mm.h>
 #include <os/time.h>
 #include <context.h>
+#include <pgtable.h>
 
 #define NUM_MAX_TASK 16
 
@@ -117,6 +118,9 @@ typedef struct pcb
     unsigned long mask;
     unsigned long cpu_id;
 
+    /* pgdir */
+    PTE *pgdir;
+
     /* cursor position */
     int cursor_x;
     int cursor_y;
@@ -157,14 +161,12 @@ extern int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *r
 extern void do_process_show();
 extern pid_t do_getpid();
 extern int do_taskset(pid_t pid, unsigned long mask);
+extern pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode);
+extern void do_show_exec(char* buffer);
 
 extern void do_block(list_node_t *, list_head *queue);
 extern void do_unblock(list_node_t *);
 
 extern list_node_t* max_priority_node(void);
-
-/* TODO: just add these if you needed, other content is from p3 */
-extern pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode);
-extern void do_show_exec();
 
 #endif

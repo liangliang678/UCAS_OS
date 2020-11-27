@@ -167,27 +167,17 @@ static inline uintptr_t load_elf(
             /* TODO: */
             for (i = 0; i < phdr->p_memsz; i += NORMAL_PAGE_SIZE) {
                 if (i < phdr->p_filesz) {
-                    unsigned char *bytes_of_page =
-                        (unsigned char *)prepare_page_for_va(
-                            (uintptr_t)(phdr->p_vaddr + i), pgdir);
-                    memcpy(
-                        bytes_of_page,
-                        elf_binary + phdr->p_offset + i,
-                        MIN(phdr->p_filesz - i, NORMAL_PAGE_SIZE));
+                    unsigned char *bytes_of_page = (unsigned char *)prepare_page_for_va((uintptr_t)(phdr->p_vaddr + i), pgdir);
+                    memcpy(bytes_of_page, elf_binary + phdr->p_offset + i, MIN(phdr->p_filesz - i, NORMAL_PAGE_SIZE));
                     if (phdr->p_filesz - i < NORMAL_PAGE_SIZE) {
-                        for (int j =
-                                 phdr->p_filesz % NORMAL_PAGE_SIZE;
-                             j < NORMAL_PAGE_SIZE; ++j) {
+                        for (int j = phdr->p_filesz % NORMAL_PAGE_SIZE; j < NORMAL_PAGE_SIZE; ++j) {
                             bytes_of_page[j] = 0;
                         }
                     }
-                } else {
-                    long *bytes_of_page =
-                        (long *)prepare_page_for_va(
-                            (uintptr_t)(phdr->p_vaddr + i), pgdir);
-                    for (int j = 0;
-                         j < NORMAL_PAGE_SIZE / sizeof(long);
-                         ++j) {
+                } 
+                else {
+                    long *bytes_of_page = (long *)prepare_page_for_va((uintptr_t)(phdr->p_vaddr + i), pgdir);
+                    for (int j = 0; j < NORMAL_PAGE_SIZE / sizeof(long); ++j) {
                         bytes_of_page[j] = 0;
                     }
                 }

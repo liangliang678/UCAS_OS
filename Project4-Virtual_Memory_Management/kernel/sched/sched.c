@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <csr.h>
+#include <user_programs.h>
+#include <os/elf.h>
 
 extern void __global_pointer$();
 
@@ -87,6 +89,8 @@ void scheduler(void)
     current_running[cpu_id]->cpu_id = cpu_id;
     current_cpu_running = current_running[cpu_id];
     
+    set_satp(SATP_MODE_SV39, current_cpu_running->pid, (uintptr_t)(current_cpu_running->pgdir) >> NORMAL_PAGE_SHIFT);
+    local_flush_tlb_all();
     // restore the current_running's cursor_x and cursor_y
     vt100_move_cursor(current_running[cpu_id]->cursor_x,
                       current_running[cpu_id]->cursor_y);
@@ -296,6 +300,7 @@ int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
 
 void do_process_show(char* buffer)
 {
+    buffer = get_kva_of(buffer, current_running[cpu_id]->pgdir);
     buffer[0] = '\0';
     strcat(buffer, "[PROCESS TABLE]\n");
     strcat(buffer, "INIT 0    STATUS: ");
@@ -449,6 +454,67 @@ int do_taskset(pid_t pid, unsigned long mask)
     return 1;
 }
 
+pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
+{
+    file_name = get_kva_of(file_name, current_running[cpu_id]->pgdir);
+    pcb_t *new_pcb = NULL;
+    for(int i = 0; i < NUM_MAX_TASK; i++){
+        if(pcb[i].pid == -1){
+            new_pcb = &pcb[i];
+            break;
+        }
+    }
+    if(!new_pcb){
+        return -1;
+    }
+    
+    new_pcb->kernel_sp = pa2kva(allocPage() + PAGE_SIZE); 
+    new_pcb->user_sp = USER_STACK_ADDR;
+    new_pcb->preempt_count = 0;
+    new_pcb->kernel_stack_base = new_pcb->kernel_sp;
+    new_pcb->user_stack_base = new_pcb->user_sp;
+    list_add_tail(&new_pcb->list, &ready_queue);
+    init_list_head(&new_pcb->wait_list);
+    new_pcb->binsem_num = 0;
+    new_pcb->pid = process_id++;
+    new_pcb->type = USER_PROCESS;
+    new_pcb->status = TASK_READY;
+    new_pcb->mode = mode;
+    new_pcb->priority = 0;
+    new_pcb->ready_tick = get_ticks();
+    new_pcb->mask = current_running[cpu_id]->mask;
+    new_pcb->pgdir = init_page_table();
+
+    char *binary;
+    int length;
+    if(!get_elf_file(file_name, &binary, &length)){
+        return 0;
+    }
+    uintptr_t entry = load_elf(binary, length, new_pcb->pgdir, get_kva_of);
+
+    /* initialization registers on kernel stack */
+    regs_context_t *pt_regs = (regs_context_t *)(new_pcb->kernel_sp - sizeof(regs_context_t));
+    new_pcb->kernel_sp -= sizeof(regs_context_t);
+    pt_regs->regs[1] = (reg_t)entry;        //ra
+    pt_regs->regs[2] = (reg_t)new_pcb->user_sp;         //sp
+    pt_regs->regs[3] = (reg_t)__global_pointer$;        //gp
+    pt_regs->sstatus = (reg_t)SR_SPIE;                  //SPP = 0, SPIE = 1
+    pt_regs->sepc = (reg_t)entry;                       //sepc = ra
+    pt_regs->sscratch = (reg_t)new_pcb;                 //sscratch = tp
+
+    return new_pcb->pid;
+}
+
+void do_show_exec(char* buffer)
+{
+    buffer = get_kva_of(buffer, current_running[cpu_id]->pgdir);
+    buffer[0] = '\0';
+    strcat(buffer, "[EXEC LIST]\n");
+    for(int i = 0; i < ELF_FILE_NUM; i++){
+        strcat(buffer, elf_files[i].file_name);
+        strcat(buffer, "\n");
+    }
+}
 // block the pcb task into the block queue
 void do_block(list_node_t *pcb_node, list_head *queue)
 {

@@ -10,6 +10,4 @@ int vprintf(const char *fmt, va_list va);
 int puts(const char *str);
 int putchar(int ch);
 
-char getchar();
-
 #endif

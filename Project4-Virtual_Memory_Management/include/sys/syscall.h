@@ -43,6 +43,8 @@ extern void sys_process_show(char* buffer);
 extern pid_t sys_getpid();
 extern void sys_yield();
 extern int sys_taskset(pid_t pid, unsigned long mask);
+pid_t sys_exec(const char *file_name, int argc, char* argv[], spawn_mode_t mode);
+void sys_show_exec(char* buffer);
 
 extern void sys_futex_wait(volatile uint64_t *val_addr);
 extern void sys_futex_wakeup(volatile uint64_t *val_addr, int num_wakeup);
@@ -51,6 +53,9 @@ extern void sys_futex_wakeup(volatile uint64_t *val_addr, int num_wakeup);
 #define BINSEM_OP_UNLOCK 1
 extern int sys_binsem_get(int key);
 extern void sys_binsem_op(int binsem_id, int op);
+
+void* shmpageget(int key);
+void shmpagedt(void *addr);
 
 extern void sys_write(char *);
 extern void sys_move_cursor(int, int);
