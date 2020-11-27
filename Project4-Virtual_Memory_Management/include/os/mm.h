@@ -41,6 +41,7 @@
 #define ROUNDDOWN(a, n) (((uint64_t)(a)) & ~((n)-1))
 
 extern ptr_t memCurr;
+extern ptr_t pgdirCurr;
 
 extern PTE* init_page_table();
 extern ptr_t allocPage();
@@ -50,5 +51,12 @@ extern void share_pgtable(uintptr_t dest_pgdir, uintptr_t src_pgdir);
 extern uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir);
 uintptr_t shm_page_get(int key);
 void shm_page_dt(uintptr_t addr);
+
+#define SHMPAGE_NUM 100
+typedef struct shmpage{
+    int count;
+    uintptr_t pa;
+}shmpage_t;
+extern shmpage_t shmpage[SHMPAGE_NUM];
 
 #endif /* MM_H */

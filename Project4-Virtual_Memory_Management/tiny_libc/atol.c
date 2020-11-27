@@ -12,9 +12,9 @@ long int atol(const char* str)
             ret = ret * base + (*str - '0');
         } else if (base == 16) {
             if ('a' <= *str && *str <= 'f'){
-                ret = ret * base + (*str - 'a');
+                ret = ret * base + (*str - 'a') + 10;
             } else if ('A' <= *str && *str <= 'F') {
-                ret = ret * base + (*str - 'A');
+                ret = ret * base + (*str - 'A') + 10;
             } else {
                 return 0;
             }

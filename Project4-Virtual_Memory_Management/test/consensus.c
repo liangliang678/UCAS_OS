@@ -1,5 +1,4 @@
 #include <sys/syscall.h>
-#include <sys/shm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -41,20 +40,20 @@ int main(int argc, char* argv[])
         print_location = atol(argv[1]);
     }
 
-    consensus_vars_t *vars = (consensus_vars_t*) shmpageget(SHMP_KEY);
+    consensus_vars_t *vars = (consensus_vars_t*) sys_shmpage_get(SHMP_KEY);
 
     if (vars == NULL) {
         sys_move_cursor(1, print_location);
-        printf("shmpageget failed!\n");
+        printf("sys_shmpage_get failed!\n");
         return -1;
     }
 
-    // test shmpagedt()
-    shmpagedt((void*)vars);
+    // test sys_shmpage_dt()
+    sys_shmpage_dt((void*)vars);
     // touch previous page, OS should insert a page for us
-    // then, shmpageget() should get another virtual address
+    // then, sys_shmpage_get() should get another virtual address
     vars->magic_number = MAGIC;
-    vars = (consensus_vars_t*) shmpageget(SHMP_KEY);
+    vars = (consensus_vars_t*) sys_shmpage_get(SHMP_KEY);
     sys_move_cursor(1, print_location);
 
     if (is_first(vars)) {
@@ -105,16 +104,16 @@ int main(int argc, char* argv[])
             consensus = decide(consensus, mypid, &vars->consensus);
             if (consensus == mypid) {
                 sys_move_cursor(1, print_location);
-                printf("(%d) exit now                \n", consensus);
+                printf("(%d) exit now                           \n", consensus);
                 myround = fetch_add(&vars->round, 1) + 1;
             } else {
                 sys_move_cursor(1, print_location);
-                printf("(%d) we selecte (%d)         \n",
+                printf("(%d) we selecte (%d)                    \n",
                        mypid, consensus);
             }
         } else {
             sys_move_cursor(1, print_location);
-            printf("(%d) I am selected at round %d   \n",
+            printf("(%d) I am selected at round %d              \n",
                    consensus, myround);
         }
         sys_sleep(2);
@@ -124,7 +123,7 @@ int main(int argc, char* argv[])
         }
     }
     mthread_barrier_wait(&vars->barrier);
-    shmpagedt((void*)vars);
+    sys_shmpage_dt((void*)vars);
 
     sys_move_cursor(1, print_location);
     printf("(%d) exited!                            \n", mypid);

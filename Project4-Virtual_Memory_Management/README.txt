@@ -47,5 +47,6 @@ Questions:
 2. 进入内核后要不要切换页表（不需要）
 
 TODO：
-1. 修改waitpid等系统调用以及完成kmalloc
+1. 修改waitpid等系统调用
 2. 回收内存
+3. 完成task4：换页

@@ -1,5 +1,4 @@
 #include <sys/syscall.h>
-#include <sys/shm.h>
 #include <stdint.h>
 
 pid_t sys_spawn(task_info_t * info, void* arg, spawn_mode_t mode)
@@ -77,12 +76,12 @@ void sys_binsem_op(int binsem_id, int op)
     invoke_syscall(SYSCALL_BINSEM_OP, (uintptr_t)binsem_id, (uintptr_t)op, IGNORE, IGNORE);
 }
 
-void* shmpageget(int key)
+void* sys_shmpage_get(int key)
 {
     return invoke_syscall(SYSCALL_SHMPGET, key, IGNORE, IGNORE, IGNORE);
 }
 
-void shmpagedt(void *addr)
+void sys_shmpage_dt(void *addr)
 {
     invoke_syscall(SYSCALL_SHMPDT, (uintptr_t)addr, IGNORE, IGNORE, IGNORE);
 }

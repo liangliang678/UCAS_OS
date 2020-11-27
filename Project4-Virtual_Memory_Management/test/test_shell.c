@@ -269,11 +269,11 @@ int main()
                 continue;
             }
 
-            char *_argv[MAX_ARGC - 2];
-            for(int i = 0; i < MAX_ARGC - 2; i++){
-                _argv[i] = argv[i + 2];
+            char *_argv[MAX_ARGC - 1];
+            for(int i = 0; i < MAX_ARGC - 1; i++){
+                _argv[i] = argv[i + 1];
             } 
-            int ret = sys_exec(argv[1], argc - 2, _argv, AUTO_CLEANUP_ON_EXIT);
+            int ret = sys_exec(argv[1], argc - 1, _argv, AUTO_CLEANUP_ON_EXIT);
             if(ret == -1){
                 if(print_location_y == SHELL_END){
                     print_location_y--;

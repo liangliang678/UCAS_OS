@@ -143,6 +143,8 @@ static void init_syscall(void)
     syscall[SYSCALL_FUTEX_WAKEUP] = (long(*)())futex_wakeup;
     syscall[SYSCALL_BINSEM_GET] = (long(*)())binsem_get;
     syscall[SYSCALL_BINSEM_OP] = (long(*)())binsem_op;
+    syscall[SYSCALL_SHMPGET] = (long(*)())shm_page_get;
+    syscall[SYSCALL_SHMPDT] = (long(*)())shm_page_dt;
     syscall[SYSCALL_WRITE] = (long(*)())screen_write;
     syscall[SYSCALL_CURSOR] = (long(*)())screen_move_cursor;
     syscall[SYSCALL_REFLUSH] = (long(*)())screen_reflush;

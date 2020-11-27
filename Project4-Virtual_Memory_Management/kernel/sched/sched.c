@@ -458,8 +458,9 @@ pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
 {
     file_name = get_kva_of(file_name, current_running[cpu_id]->pgdir);
     argv = (char (*)[])get_kva_of(argv, current_running[cpu_id]->pgdir);
+    char* _argv[9];
     for(int i = 0; i < argc; i++){
-        argv[i] = get_kva_of(argv[i], current_running[cpu_id]->pgdir);
+        _argv[i] = get_kva_of(argv[i], current_running[cpu_id]->pgdir);
     }
     
     char *binary;
@@ -510,15 +511,15 @@ pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
 
     /* pass arg to new process */
     pt_regs->regs[10] = (reg_t)argc;                     //a0
-    new_pcb->user_sp -= 128;                             //sp = sp - 128
+    new_pcb->user_sp -= 256;                             //sp = sp - 256
     pt_regs->regs[2]  = (reg_t)new_pcb->user_sp;         //sp
     pt_regs->regs[11] = (reg_t)new_pcb->user_sp;         //a1
-    uintptr_t dest = new_pcb->user_sp + 32;
+    uintptr_t dest = new_pcb->user_sp + 72;
     for(int i = 0; i < argc; i++){
         uintptr_t pointer = get_kva_of(new_pcb->user_sp + 8 * i, new_pcb->pgdir);
         *(uint64_t*)pointer = dest;
-        memcpy(get_kva_of(dest, new_pcb->pgdir), argv[i], strlen(argv[i]) + 1);
-        dest += strlen(argv[i]) + 1;
+        memcpy(get_kva_of(dest, new_pcb->pgdir), _argv[i], strlen(_argv[i]) + 1);
+        dest += strlen(_argv[i]) + 1;
     }
     return new_pcb->pid;
 }

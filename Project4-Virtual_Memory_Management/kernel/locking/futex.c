@@ -3,6 +3,7 @@
 #include <os/mm.h>
 #include <assert.h>
 #include <os/smp.h>
+#include <pgtable.h>
 
 futex_bucket_t futex_buckets[FUTEX_BUCKETS];
 
@@ -34,7 +35,7 @@ static futex_node_t* get_node(volatile uint64_t *val_addr, int create)
     }
 
     if (create) {
-        futex_node_t *node = (futex_node_t*) kmalloc(sizeof(futex_node_t));
+        futex_node_t *node = (futex_node_t*) pa2kva(kmalloc(sizeof(futex_node_t)));
         node->futex_key = (uint64_t)val_addr;
         init_list_head(&node->block_queue);
         list_add_tail(&node->list, &futex_buckets[key]);
