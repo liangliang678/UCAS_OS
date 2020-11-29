@@ -100,6 +100,8 @@ int main(int argc, char* argv[])
     int myround = 0;
 
     while (1) {
+        //bug
+        mthread_barrier_wait(&vars->barrier);
         if (consensus != mypid) {
             consensus = decide(consensus, mypid, &vars->consensus);
             if (consensus == mypid) {

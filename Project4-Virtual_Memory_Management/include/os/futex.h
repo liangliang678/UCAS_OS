@@ -48,7 +48,7 @@ extern futex_bucket_t futex_buckets[FUTEX_BUCKETS];
 
 extern void init_system_futex();
 /* Block and wait until a futex_wakeup is called. */
-extern void futex_wait(volatile uint64_t *val_addr);
+extern void futex_wait(volatile uint64_t *val_addr, int binsem_id);
 /* Wake up at most `num_wakeup` threads. */
 extern void futex_wakeup(volatile uint64_t *val_addr, int num_wakeup);
 

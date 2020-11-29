@@ -3,6 +3,7 @@
 #include <os/mm.h>
 #include <assert.h>
 #include <os/smp.h>
+#include <os/binsem.h>
 #include <pgtable.h>
 
 futex_bucket_t futex_buckets[FUTEX_BUCKETS];
@@ -45,14 +46,15 @@ static futex_node_t* get_node(volatile uint64_t *val_addr, int create)
     return NULL;
 }
 
-void futex_wait(volatile uint64_t *val_addr)
+void futex_wait(volatile uint64_t *val_addr, int binsem_id)
 {
     disable_preempt();
 
     futex_node_t *node = get_node(val_addr, 1);
     assert(node != NULL);
     do_block(&current_running[cpu_id]->list, &node->block_queue);
-    scheduler();
+    binsem_op(binsem_id, BINSEM_OP_UNLOCK);
+    scheduler(); 
 
     enable_preempt();
 }

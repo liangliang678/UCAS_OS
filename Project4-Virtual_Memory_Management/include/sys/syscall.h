@@ -46,7 +46,7 @@ extern int sys_taskset(pid_t pid, unsigned long mask);
 pid_t sys_exec(const char *file_name, int argc, char* argv[], spawn_mode_t mode);
 void sys_show_exec(char* buffer);
 
-extern void sys_futex_wait(volatile uint64_t *val_addr);
+extern void sys_futex_wait(volatile uint64_t *val_addr, int binsem_id);
 extern void sys_futex_wakeup(volatile uint64_t *val_addr, int num_wakeup);
 
 #define BINSEM_OP_LOCK 0

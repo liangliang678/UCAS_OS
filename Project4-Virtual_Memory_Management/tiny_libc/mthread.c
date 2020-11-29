@@ -7,27 +7,26 @@
 void mthread_barrier_init(mthread_barrier_t * barrier, unsigned count)
 {
     barrier->count = count;
-    atomic_exchange(&barrier->reached, 0);
+    barrier->reached = 0;
     barrier->binsem_id = sys_binsem_get((int)barrier);
 }
 void mthread_barrier_wait(mthread_barrier_t *barrier)
 {
     sys_binsem_op(barrier->binsem_id, BINSEM_OP_LOCK);
-    fetch_add(&barrier->reached, 1);
+    barrier->reached = barrier->reached + 1;
     if((barrier->reached) == (barrier->count)){
-        atomic_exchange(&barrier->reached, 0);
-        sys_binsem_op(barrier->binsem_id, BINSEM_OP_UNLOCK);
-        sys_futex_wakeup((unsigned long*)barrier, barrier->count);                    
+        barrier->reached = 0;
+        sys_futex_wakeup((unsigned long*)barrier, barrier->count);    
+        sys_binsem_op(barrier->binsem_id, BINSEM_OP_UNLOCK);                   
     }
-    else{
-        sys_binsem_op(barrier->binsem_id, BINSEM_OP_UNLOCK);      
-        sys_futex_wait((unsigned long*)barrier);
+    else{ 
+        sys_futex_wait((unsigned long*)barrier, barrier->binsem_id);
     }
 }
 void mthread_barrier_destroy(mthread_barrier_t *barrier)
 {
     barrier->count = -1;
-    barrier->reached = -1;
+    barrier->reached = 0;
 }
 
 int mthread_cond_init(mthread_cond_t *cond)
@@ -44,8 +43,7 @@ int mthread_cond_destroy(mthread_cond_t *cond)
 int mthread_cond_wait(mthread_cond_t *cond, int binsem_id)
 {
     fetch_add(cond, 1);
-    sys_binsem_op(binsem_id, BINSEM_OP_UNLOCK);
-    sys_futex_wait((unsigned long*)cond);
+    sys_futex_wait((unsigned long*)cond, binsem_id);
     sys_binsem_op(binsem_id, BINSEM_OP_LOCK);
     return 1;
 }

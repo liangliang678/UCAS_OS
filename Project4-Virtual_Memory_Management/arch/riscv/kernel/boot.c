@@ -66,10 +66,13 @@ int boot_kernel(unsigned long mhartid, uintptr_t riscv_dtb)
 {
     if (mhartid == 0) {
         setup_vm();
+        sbi_console_putstr("> [INIT] Set Up Kernel Page Table Successfully.\n\r");
         // load kernel
         start_kernel = (kernel_entry_t)load_elf(_elf_main, _length_main, PGDIR_PA, directmap);
+        sbi_console_putstr("> [INIT] Copy Kernel to Memory Successfully.\n\r");
     } else {
         // TODO: what should we do for other cores?
+        enable_vm();
     }
     start_kernel(mhartid, riscv_dtb);
     return 0;

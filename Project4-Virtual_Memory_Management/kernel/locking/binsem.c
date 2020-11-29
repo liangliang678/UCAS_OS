@@ -5,7 +5,6 @@
 #include <assert.h>
 
 binsem_node_t binsem_nodes[BINSEM_NUMBER];
-
 // a simple hash function
 static int binsem_hash(uint64_t x)
 {
@@ -53,8 +52,8 @@ void binsem_op(int binsem_id, int op)
             pcb_t *unblocked_pcb = list_entry(unblocked_pcb_list, pcb_t, list);
             unblocked_pcb->binsem_id[unblocked_pcb->binsem_num] = binsem_id;
             unblocked_pcb->binsem_num++; 
-            do_unblock(unblocked_pcb_list);        
-            scheduler();
+            do_unblock(unblocked_pcb_list); 
+            scheduler();        
         }
     }
 

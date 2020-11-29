@@ -56,9 +56,9 @@ void sys_show_exec(char* buffer)
     invoke_syscall(SYSCALL_SHOW_EXEC, (uintptr_t)buffer, IGNORE, IGNORE, IGNORE);
 }
 
-void sys_futex_wait(volatile uint64_t *val_addr)
+void sys_futex_wait(volatile uint64_t *val_addr, int binsem_id)
 {
-    invoke_syscall(SYSCALL_FUTEX_WAIT, (uintptr_t)val_addr, IGNORE, IGNORE, IGNORE);
+    invoke_syscall(SYSCALL_FUTEX_WAIT, (uintptr_t)val_addr, (uintptr_t)binsem_id, IGNORE, IGNORE);
 }
 
 void sys_futex_wakeup(volatile uint64_t *val_addr, int num_wakeup)

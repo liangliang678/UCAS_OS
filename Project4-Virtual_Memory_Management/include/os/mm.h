@@ -30,18 +30,32 @@
 #include <type.h>
 #include <pgtable.h>
 
-#define MEM_SIZE 32
-#define PAGE_SIZE 4096 // 4K
-#define INIT_KERNEL_STACK 0xffffffc050600000lu
-#define FREEMEM (0x50600000 + 2 * PAGE_SIZE)
-#define USER_STACK_ADDR 0xf00010000lu
+/* * * * * * * * * * * * * * * * * * * * * * * 
+Memory Layout
+0x5000_0000 ~ 0x5020_0000       BBL
+0x5020_0000 ~ 0x5040_0000       Boot
+0x5040_0000 ~ 0x5060_0000       Kernel
+0x5060_0000 ~ 0x5060_2000       Kernel Stack
+0x5060_2000 ~ 0x5100_0000       Kernel Mem
+0x5100_0000 ~ 0x5e00_0000       User Mem
+0x5e00_0000 ~ 0x6000_0000       Page Table
+* * * * * * * * * * * * * * * * * * * * * * */
 
-/* Rounding; only works for n = power of two */
+#define PAGE_SIZE 4096
+#define INIT_KERNEL_STACK   0xffffffc050600000lu    //kva
+#define USER_STACK_ADDR     0xf00010000lu           //va
+#define KERNEL_MEM_BEGIN    0x50602000lu            //pa
+#define KERNEL_MEM_END      0x51000000lu            //pa
+#define USER_MEM_BEGIN      0x51000000lu            //pa
+#define USER_MEM_END        0x5e000000lu            //pa
+
+/* Rounding: only works for n = power of two */
 #define ROUND(a, n)     (((((uint64_t)(a))+(n)-1)) & ~((n)-1))
 #define ROUNDDOWN(a, n) (((uint64_t)(a)) & ~((n)-1))
 
-extern ptr_t memCurr;
-extern ptr_t pgdirCurr;
+extern ptr_t kernel_memCurr;
+extern ptr_t user_memCurr;
+extern ptr_t pgdir_memCurr;
 
 extern PTE* init_page_table();
 extern ptr_t allocPage();
@@ -51,6 +65,12 @@ extern void share_pgtable(uintptr_t dest_pgdir, uintptr_t src_pgdir);
 extern uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir);
 uintptr_t shm_page_get(int key);
 void shm_page_dt(uintptr_t addr);
+
+#define USER_MEM_SIZE (USER_MEM_END - USER_MEM_BEGIN)
+#define USER_PAGE_NUM (USER_MEM_SIZE / PAGE_SIZE)
+typedef struct user_page{
+    uint8_t valid;
+}user_page_t;
 
 #define SHMPAGE_NUM 100
 typedef struct shmpage{

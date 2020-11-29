@@ -3,9 +3,6 @@
 #include <csr.h>
 
 // start address
-.equ kernel, 0x50201000
-
-// start main address
 .equ start, 0x50201000
 
 // os size location
@@ -32,10 +29,10 @@ main:
 	bnez a0, secondary
 
 	// call BIOS read kernel in SD card and jump to kernel start
-	li t0, kernel		// dest mem addr
+	li t0, start		// dest mem addr
 	li t1, os_size_loc	
 	lh t1, 0(t1)		// remain num of blocks
-	li t2, 1			// first block
+	li t2, 1			// dest block num
 	li t3, 64
 	li t4, 32768
 read:
@@ -54,6 +51,9 @@ read_done:
 	mv a2, t2
 	SBI_CALL SBI_SD_READ
 
+	la a0, msg
+	SBI_CALL SBI_CONSOLE_PUTSTR
+
     j start
 
 secondary:
@@ -71,8 +71,7 @@ secondary:
   	csrs CSR_SSTATUS, t0
 	
 wait_for_wakeup:
-	//wfi
 	j wait_for_wakeup
 
 .data
-msg: .string "It's a bootloader...\n\r"
+msg: .string "> [INIT] Copy Start Section to Memory Successfully.\n\r"

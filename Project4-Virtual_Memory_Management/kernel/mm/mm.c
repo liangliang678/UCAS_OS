@@ -7,10 +7,63 @@
 #include <os/irq.h>
 #include <assert.h>
 
-ptr_t memCurr = FREEMEM;
+ptr_t kernel_memCurr = KERNEL_MEM_BEGIN;
+ptr_t user_memCurr = USER_MEM_BEGIN;
 ptr_t pgdirCurr = PGDIR_PA + 2 * PAGE_SIZE;
+
+user_page_t user_page[USER_PAGE_NUM];
 shmpage_t shmpage[100];
-static LIST_HEAD(freePageList);
+
+// allocPage() returns pa
+ptr_t allocPage()
+{
+    // align PAGE_SIZE: no need to ROUND
+    int count = 0;
+    int full_flag = 0;
+
+    while(user_page[pa2num(user_memCurr)].valid == 1){
+        user_memCurr += PAGE_SIZE;
+        count++;
+        if(user_memCurr == USER_MEM_END){
+            user_memCurr = USER_MEM_BEGIN;
+        }
+        if(count == USER_PAGE_NUM){
+            full_flag = 1;
+            break;
+        }
+    }
+
+    ptr_t ret;
+    if(full_flag){
+        assert(0);
+    }
+    else{
+        user_page[pa2num(user_memCurr)].valid = 1;
+        ret = user_memCurr;
+        user_memCurr += PAGE_SIZE;   
+        if(user_memCurr == USER_MEM_END){
+            user_memCurr = USER_MEM_BEGIN;
+        }
+    }
+    return ret;
+}
+
+// baseAddr is pa
+void freePage(ptr_t baseAddr)
+{
+    // TODO:
+    user_page[pa2num(baseAddr)].valid = 0;
+}
+
+// kmalloc() returns pa
+void *kmalloc(size_t size)
+{
+    // TODO(if you need):
+    // align 4
+    ptr_t ret = ROUND(kernel_memCurr, 4);
+    kernel_memCurr = ret + size;
+    return (void*)ret;
+}
 
 PTE* init_page_table()
 {
@@ -47,38 +100,10 @@ PTE* init_page_table()
     *((PTE*)pa2kva(last_level_pgdir_2) + 0x011) = ((allocPage() >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT |
                                     _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_USER | _PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;    
     *((PTE*)pa2kva(last_level_pgdir_2) + 0x012) = ((allocPage() >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT |
-                                    _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_USER | _PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
-    *((PTE*)pa2kva(last_level_pgdir_2) + 0x013) = ((allocPage() >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT |
-                                    _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_USER | _PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT; 
-    *((PTE*)pa2kva(last_level_pgdir_2) + 0x014) = ((allocPage() >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT |
-                                    _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_USER | _PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;  
-    *((PTE*)pa2kva(last_level_pgdir_2) + 0x015) = ((allocPage() >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT |
-                                    _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_USER | _PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;                                                                                               
+                                    _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_USER | _PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;                                                                                            
     share_pgtable(pgdir, PGDIR_PA);
 
     return pgdir;
-}
-
-ptr_t allocPage()
-{
-    // align PAGE_SIZE
-    ptr_t ret = ROUND(memCurr, PAGE_SIZE);
-    memCurr = ret + PAGE_SIZE;
-    return ret;
-}
-
-void freePage(ptr_t baseAddr)
-{
-    // TODO:
-}
-
-void *kmalloc(size_t size)
-{
-    // TODO(if you need):
-    // align 4
-    ptr_t ret = ROUND(memCurr, 4);
-    memCurr = ret + size;
-    return (void*)ret;
 }
 
 uintptr_t shm_page_get(int key)
@@ -174,8 +199,8 @@ void shm_page_dt(uintptr_t addr)
     shmpage[key].count--;
 
     if(shmpage[key].count == 0){
-        shmpage[key].pa =0;
-        freePage(addr);
+        freePage(shmpage[key].pa);
+        shmpage[key].pa =0;    
     }
 }
 
@@ -232,4 +257,9 @@ void handle_page_fault(regs_context_t *regs, uint64_t stval, uint64_t cause)
         *((PTE*)pa2kva(last_level_pgdir) + VPN0) = ((allocPage() >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT |
                                         _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_USER |_PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
     }
+}
+
+int pa2num(uintptr_t pa)
+{
+    return (pa - USER_MEM_BEGIN) / PAGE_SIZE;
 }

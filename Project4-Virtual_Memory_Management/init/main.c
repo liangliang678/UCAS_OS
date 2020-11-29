@@ -77,7 +77,7 @@ static void init_pcb()
     kernel_pcb[0].cpu_id = 0;
     kernel_pcb[0].pgdir = PGDIR_PA;
     init_list_head(&kernel_pcb[0].wait_list);
-/*
+
     kernel_pcb[1].kernel_sp = (ptr_t)kernel_stack_1;
     kernel_pcb[1].user_sp = (ptr_t)kernel_stack_1;
     kernel_pcb[1].preempt_count = 0;
@@ -90,7 +90,8 @@ static void init_pcb()
     kernel_pcb[1].priority = 0;
     kernel_pcb[1].mask = 2;
     kernel_pcb[1].cpu_id = 1;
-*/
+    kernel_pcb[1].pgdir = PGDIR_PA;
+
     /* initialize all pcb and add test_shell into ready_queue */
     for(int i = 0; i < NUM_MAX_TASK; i++){
         pcb[i].pid = -1;
@@ -163,16 +164,13 @@ static void init_syscall(void)
 // The beginning of everything
 int main()
 {   
-    PTE *pgdir = (PTE*)PGDIR_PA;
-    *(pgdir + 0x001) = 0;
-
     // read CPU frequency and calc timer interval
     time_base = sbi_read_fdt(TIMEBASE);
     timer_interval = (uint64_t)(time_base / 100);
 
     // init Process Control Block
     init_pcb();
-    printk("> [INIT] PCB initialization succeeded.\n\r");
+    printk("> [INIT] PCB Initialization Succeeded.\n\r");
 
     // init futex mechanism and binsem mechanism
     init_system_futex();
@@ -180,21 +178,24 @@ int main()
 
     // init interrupt
     init_exception();
-    printk("> [INIT] Interrupt processing initialization succeeded.\n\r");
+    printk("> [INIT] Interrupt Processing Initialization Succeeded.\n\r");
 
     // init system call table
     init_syscall();
-    printk("> [INIT] System call initialized successfully.\n\r");
+    printk("> [INIT] System Call Initialized Successfully.\n\r");
 
     // init screen
     init_screen();
-    printk("> [INIT] SCREEN initialization succeeded.\n\r");
-
-    spin_lock_init(&kernel_lock);
+    printk("> [INIT] Screen Initialization Succeeded.\n\r");
 
     // wakeup another core
-    //wakeup_other_hart();
- 
+    spin_lock_init(&kernel_lock);
+    wakeup_other_hart();
+    while(!smp_init_flag){
+        ;
+    }
+    printk("> [INIT] Start the Second Core Successfully.\n\r");
+    
     // Setup timer interrupt and enable all interrupt
     enable_interrupt();
     setup_exception();
@@ -209,7 +210,7 @@ int main()
             clean_pcb->status = TASK_EXITED;
             clean_pcb->pid = -1;
             // release kernel stack
-            freePage(clean_pcb->kernel_stack_base);
+            freePage(kva2pa(clean_pcb->kernel_stack_base));
             
             clean_node = clean_node->next;
             list_del(clean_node->prev);

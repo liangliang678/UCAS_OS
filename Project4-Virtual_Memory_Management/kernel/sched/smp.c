@@ -6,9 +6,14 @@
 #include <os/irq.h>
 
 struct spin_lock kernel_lock;
+int smp_init_flag = 0;
 
 void smp_init()
 {
+    PTE *pgdir = (PTE*)PGDIR_PA;
+    *(pgdir + 0x001) = 0;
+    smp_init_flag = 1;
+
     enable_interrupt();
     setup_exception();
     sbi_set_timer(get_ticks() + timer_interval);
