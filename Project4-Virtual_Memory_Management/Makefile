@@ -27,7 +27,7 @@ SRC_INIT 	= ./init/main.c
 SRC_INT		= ./kernel/irq/irq.c
 SRC_LOCK	= ./kernel/locking/lock.c ./kernel/locking/futex.c ./kernel/locking/binsem.c
 SRC_SCHED	= ./kernel/sched/sched.c ./kernel/sched/time.c ./kernel/sched/smp.c
-SRC_MM	= ./kernel/mm/mm.c
+SRC_MM	    = ./kernel/mm/mm.c
 SRC_SYSCALL	= ./kernel/syscall/syscall.c ./kernel/syscall/mailbox.c
 SRC_LIBS	= ./libs/string.c ./libs/printk.c
 
@@ -37,9 +37,6 @@ SRC_LIBC_ASM	= $(filter %.S %.s,$(SRC_LIBC))
 SRC_LIBC_C	= $(filter %.c,$(SRC_LIBC))
 
 SRC_USER	= ./test/test_shell.elf ./test/rw.elf ./test/fly.elf ./test/consensus.elf
-#SRC_TEST2	= ./test/test_project2/test_scheduler1.c ./test/test_project2/test_scheduler2.c ./test/test_project2/test_lock2.c ./test/test_project2/test_sleep.c ./test/test_project2/test_timer.c
-#./test/test_project3/test_wait.c
-#SRC_TEST3	= ./test/test_project3/test_kill.c ./test/test_project3/test_condition.c ./test/test_project3/test_semaphore.c ./test/test_project3/test_barrier.c ./test/test_project3/test_sanguo.c
 
 SRC_MAIN	= ${SRC_ARCH} ${SRC_INIT} ${SRC_INT} ${SRC_DRIVER} ${SRC_LOCK} ${SRC_SCHED} ${SRC_MM} ${SRC_SYSCALL} ${SRC_LIBS}
 
@@ -49,7 +46,7 @@ SRC_GENMAP	= ./tools/generateMapping.c
 
 .PHONY:all main bootblock clean
 
-all: elf2char createimage image asm # floppy
+all: elf2char createimage image asm
 
 bootblock: $(SRC_BOOT) riscv.lds
 	${CC} ${CFLAGS} -o bootblock $(SRC_BOOT) -e main -Ttext=${BOOTLOADER_ENTRYPOINT}

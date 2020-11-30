@@ -210,7 +210,7 @@ int main()
             clean_pcb->status = TASK_EXITED;
             clean_pcb->pid = -1;
             // release kernel stack
-            freePage(kva2pa(clean_pcb->kernel_stack_base));
+            freePage(kva2pa(clean_pcb->kernel_stack_base - PAGE_SIZE));
             
             clean_node = clean_node->next;
             list_del(clean_node->prev);

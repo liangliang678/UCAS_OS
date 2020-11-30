@@ -178,6 +178,27 @@ uintptr_t shm_page_get(int key)
     return free_va;
 }
 
+void free_user_page(PTE* pgdir)
+{
+    int VPN2, VPN1, VPN0;
+    for(VPN2 = 0; VPN2 < 0x100; VPN2++){
+        if(*((PTE*)pa2kva(pgdir) + VPN2) & _PAGE_PRESENT){
+            PTE* second_level_pgdir = get_pfn(*((PTE*)pa2kva(pgdir) + VPN2)) << NORMAL_PAGE_SHIFT;
+            for(VPN1 = 0; VPN1 < 512; VPN1++){
+                if(*((PTE*)pa2kva(second_level_pgdir) + VPN1) & _PAGE_PRESENT){
+                    PTE* last_level_pgdir = get_pfn(*((PTE*)pa2kva(second_level_pgdir) + VPN1)) << NORMAL_PAGE_SHIFT;
+                    for(VPN0 = 0; VPN0 < 512; VPN0++){
+                        if(*((PTE*)pa2kva(last_level_pgdir) + VPN0) & _PAGE_PRESENT){
+                            ptr_t pa = get_pfn(*((PTE*)pa2kva(last_level_pgdir) + VPN0)) << NORMAL_PAGE_SHIFT;
+                            freePage(pa);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 void shm_page_dt(uintptr_t addr)
 {
     // TODO(c-core):

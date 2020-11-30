@@ -62,6 +62,7 @@ extern ptr_t allocPage();
 extern void freePage(ptr_t baseAddr);
 extern void* kmalloc(size_t size);
 extern void share_pgtable(uintptr_t dest_pgdir, uintptr_t src_pgdir);
+extern void free_user_page(PTE* pgdir);
 extern uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir);
 uintptr_t shm_page_get(int key);
 void shm_page_dt(uintptr_t addr);

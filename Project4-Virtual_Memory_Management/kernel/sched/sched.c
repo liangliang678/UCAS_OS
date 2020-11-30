@@ -71,8 +71,8 @@ void scheduler(void)
             }
         }
 
-        // release user stack
-        // TODO
+        // release user mem
+        free_user_page(current_running[cpu_id]->pgdir);
 
         // enter ZOMBIE status
         if(current_running[cpu_id]->mode == AUTO_CLEANUP_ON_EXIT){
@@ -163,8 +163,8 @@ void do_exit()
         }
     }
 
-    // release user stack
-    // TODO:
+    // release user mem
+    free_user_page(current_running[cpu_id]->pgdir);
 
     // delete from ready queue or blocked queue
     list_del(&current_running[cpu_id]->list);
@@ -232,8 +232,8 @@ int do_kill(pid_t pid)
         }
     }
 
-    // release user stack
-    // TODO
+    // release user mem
+    free_user_page(killed_pcb->pgdir);
 
     // delete from ready queue or blocked queue
     list_del(&killed_pcb->list);
@@ -284,7 +284,7 @@ int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
         child_pcb->status = TASK_EXITED;
         child_pcb->pid = -1;
         // release kernel stack
-        freePage(kva2pa(child_pcb->kernel_stack_base));
+        freePage(kva2pa(child_pcb->kernel_stack_base - PAGE_SIZE));
 
         return 1;
     }
