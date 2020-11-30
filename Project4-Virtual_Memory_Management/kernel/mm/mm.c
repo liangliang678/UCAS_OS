@@ -54,15 +54,46 @@ ptr_t allocPage(uint8_t pin, ptr_t pgtable)
     return ret;
 }
 
+// NRU
 ptr_t selete_page()
 {
-    int i;
-    for(i = 0; i < USER_PAGE_NUM; i++){
+    int flag = 0;
+    /*
+    * 1: A = 1, D = 1
+    * 2: A = 0, D = 1
+    * 3: A = 1, D = 0
+    * 4: A = 0, D = 0
+    */
+    ptr_t pa;
+    for(int i = 0; i < USER_PAGE_NUM; i++){
         if(user_page[i].pin == 0){
-            break;
+            PTE* pgdir = user_page[i].pgtable;
+            if((*pgdir & _PAGE_ACCESSED) == 0 && (*pgdir & _PAGE_DIRTY) == 0){
+                pa = USER_MEM_BEGIN + PAGE_SIZE * i;
+                flag = 4;
+                break;
+            }
+            else if((*pgdir & _PAGE_ACCESSED) == 1 && (*pgdir & _PAGE_DIRTY) == 0){
+                if(flag < 3){
+                    pa = USER_MEM_BEGIN + PAGE_SIZE * i;
+                    flag = 3;
+                }   
+            }
+            else if((*pgdir & _PAGE_ACCESSED) == 0 && (*pgdir & _PAGE_DIRTY) == 1){
+                if(flag < 2){
+                    pa = USER_MEM_BEGIN + PAGE_SIZE * i;
+                    flag = 2;
+                }   
+            }
+            else if((*pgdir & _PAGE_ACCESSED) == 1 && (*pgdir & _PAGE_DIRTY) == 1){
+                if(flag < 1){
+                    pa = USER_MEM_BEGIN + PAGE_SIZE * i;
+                    flag = 1;
+                }  
+            }
         }   
     }
-    return (USER_MEM_BEGIN + i * PAGE_SIZE);
+    return pa;
 }
 
 unsigned long free_page_num()
@@ -307,11 +338,21 @@ void handle_page_fault(regs_context_t *regs, uint64_t stval, uint64_t cause)
                 sbi_sd_read(pa, 8, block_id);
                 disk_page[(block_id - 2048) / 8].valid = 0;
                 *((PTE*)pa2kva(last_level_pgdir) + VPN0) = ((pa >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT |
-                                                _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_USER |_PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
+                                                _PAGE_USER |_PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
+            }
+            else if((*((PTE*)pa2kva(last_level_pgdir) + VPN0) & _PAGE_PRESENT) == 0){
+                *((PTE*)pa2kva(last_level_pgdir) + VPN0) = ((allocPage(0, ((PTE*)pa2kva(last_level_pgdir) + VPN0)) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT |
+                                                _PAGE_USER |_PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
+            }
+            else if((*((PTE*)pa2kva(last_level_pgdir) + VPN0) & _PAGE_ACCESSED) == 0 ||
+                    (*((PTE*)pa2kva(last_level_pgdir) + VPN0) & _PAGE_DIRTY) == 0 ){
+                *((PTE*)pa2kva(last_level_pgdir) + VPN0) = *((PTE*)pa2kva(last_level_pgdir) + VPN0) | _PAGE_ACCESSED;
+                if(cause == EXCC_STORE_PAGE_FAULT){
+                    *((PTE*)pa2kva(last_level_pgdir) + VPN0) = *((PTE*)pa2kva(last_level_pgdir) + VPN0) | _PAGE_DIRTY;
+                }
             }
             else{
-                *((PTE*)pa2kva(last_level_pgdir) + VPN0) = ((allocPage(0, ((PTE*)pa2kva(last_level_pgdir) + VPN0)) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT |
-                                                _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_USER |_PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
+                local_flush_tlb_all();
             }
         }
         else{
@@ -321,7 +362,7 @@ void handle_page_fault(regs_context_t *regs, uint64_t stval, uint64_t cause)
 
             *((PTE*)pa2kva(second_level_pgdir) + VPN1) = (((uint64_t)last_level_pgdir >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT;
             *((PTE*)pa2kva(last_level_pgdir) + VPN0) = ((allocPage(0, ((PTE*)pa2kva(last_level_pgdir) + VPN0)) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT |
-                                            _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_USER |_PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
+                                            _PAGE_USER |_PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
         }
     }
     else{
@@ -335,7 +376,7 @@ void handle_page_fault(regs_context_t *regs, uint64_t stval, uint64_t cause)
         *((PTE*)pa2kva(pgdir) + VPN2) = (((uint64_t)second_level_pgdir >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT;
         *((PTE*)pa2kva(second_level_pgdir) + VPN1) = (((uint64_t)last_level_pgdir >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT;
         *((PTE*)pa2kva(last_level_pgdir) + VPN0) = ((allocPage(0, ((PTE*)pa2kva(last_level_pgdir) + VPN0)) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT |
-                                        _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_USER |_PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
+                                        _PAGE_USER |_PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
     }
 }
 

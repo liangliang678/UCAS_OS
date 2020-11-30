@@ -47,7 +47,7 @@ Memory Layout
 #define KERNEL_MEM_BEGIN    0x50602000lu            //pa
 #define KERNEL_MEM_END      0x51000000lu            //pa
 #define USER_MEM_BEGIN      0x51000000lu            //pa
-#define USER_MEM_END        0x5e000000lu            //pa
+#define USER_MEM_END        0x51010000lu            //pa
 
 /* Rounding: only works for n = power of two */
 #define ROUND(a, n)     (((((uint64_t)(a))+(n)-1)) & ~((n)-1))
