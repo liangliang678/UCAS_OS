@@ -36,7 +36,7 @@ SRC_LIBC	= ./tiny_libc/printf.c ./tiny_libc/string.c ./tiny_libc/mthread.c ./tin
 SRC_LIBC_ASM	= $(filter %.S %.s,$(SRC_LIBC))
 SRC_LIBC_C	= $(filter %.c,$(SRC_LIBC))
 
-SRC_USER	= ./test/test_shell.elf ./test/rw.elf ./test/fly.elf ./test/consensus.elf
+SRC_USER	= ./test/test_shell.elf ./test/rw.elf ./test/fly.elf ./test/consensus.elf ./test/swap.elf
 
 SRC_MAIN	= ${SRC_ARCH} ${SRC_INIT} ${SRC_INT} ${SRC_DRIVER} ${SRC_LOCK} ${SRC_SCHED} ${SRC_MM} ${SRC_SYSCALL} ${SRC_LIBS}
 
@@ -89,7 +89,7 @@ generateMapping: $(SRC_GENMAP)
 
 image: bootblock kernelimage createimage
 	./createimage --extended bootblock kernelimage
-	dd if=/dev/zero of=image oflag=append conv=notrunc bs=512 count=65
+	dd if=/dev/zero of=image oflag=append conv=notrunc bs=512 count=4096
 
 clean:
 	rm -rf bootblock image kernelimage createimage main payload.c libtiny_libc.a kernel.txt

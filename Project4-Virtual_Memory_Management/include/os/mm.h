@@ -58,19 +58,25 @@ extern ptr_t user_memCurr;
 extern ptr_t pgdir_memCurr;
 
 extern PTE* init_page_table();
-extern ptr_t allocPage();
+extern ptr_t allocPage(uint8_t pin, ptr_t pgtable);
 extern void freePage(ptr_t baseAddr);
 extern void* kmalloc(size_t size);
 extern void share_pgtable(uintptr_t dest_pgdir, uintptr_t src_pgdir);
 extern void free_user_page(PTE* pgdir);
+extern unsigned long free_page_num();
 extern uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir);
 uintptr_t shm_page_get(int key);
-void shm_page_dt(uintptr_t addr);
+extern void shm_page_dt(uintptr_t addr);
+
+extern ptr_t selete_page();
+extern void write_to_sd(ptr_t pa);
 
 #define USER_MEM_SIZE (USER_MEM_END - USER_MEM_BEGIN)
 #define USER_PAGE_NUM (USER_MEM_SIZE / PAGE_SIZE)
 typedef struct user_page{
     uint8_t valid;
+    uint8_t pin;
+    ptr_t pgtable;
 }user_page_t;
 
 #define SHMPAGE_NUM 100
@@ -79,5 +85,11 @@ typedef struct shmpage{
     uintptr_t pa;
 }shmpage_t;
 extern shmpage_t shmpage[SHMPAGE_NUM];
+
+#define DISK_PAGE_NUM 256
+typedef struct disk_page{
+    uint8_t valid;
+}disk_page_t;
+extern disk_page_t disk_page[DISK_PAGE_NUM];
 
 #endif /* MM_H */

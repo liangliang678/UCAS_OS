@@ -97,7 +97,7 @@ static void init_pcb()
         pcb[i].pid = -1;
     }
     
-    pcb[0].kernel_sp = pa2kva(allocPage() + PAGE_SIZE);
+    pcb[0].kernel_sp = pa2kva(allocPage(1, NULL) + PAGE_SIZE);
     pcb[0].user_sp = USER_STACK_ADDR;
     pcb[0].preempt_count = 0;
     pcb[0].kernel_stack_base = pcb[0].kernel_sp;

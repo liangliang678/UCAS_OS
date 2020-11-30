@@ -111,8 +111,8 @@ pid_t do_spawn(task_info_t *task, void* arg, spawn_mode_t mode)
         return -1;
     }
     
-    new_pcb->kernel_sp = allocPage(1); 
-    new_pcb->user_sp = allocPage(1);
+    new_pcb->kernel_sp = allocPage(1, NULL); 
+    new_pcb->user_sp = allocPage(1, NULL);
     new_pcb->preempt_count = 0;
     new_pcb->kernel_stack_base = new_pcb->kernel_sp;
     new_pcb->user_stack_base = new_pcb->user_sp;
@@ -466,9 +466,12 @@ pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
     char *binary;
     int length;
     if(!get_elf_file(file_name, &binary, &length)){
-        return 0;
+        return -1;
     }
 
+    if(free_page_num() < 5){
+        return -2; 
+    }
     pcb_t *new_pcb = NULL;
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].pid == -1){
@@ -477,10 +480,10 @@ pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
         }
     }
     if(!new_pcb){
-        return -1;
+        return 0;
     }
     
-    new_pcb->kernel_sp = pa2kva(allocPage() + PAGE_SIZE); 
+    new_pcb->kernel_sp = pa2kva(allocPage(1, NULL) + PAGE_SIZE); 
     new_pcb->user_sp = USER_STACK_ADDR;
     new_pcb->preempt_count = 0;
     new_pcb->kernel_stack_base = new_pcb->kernel_sp;

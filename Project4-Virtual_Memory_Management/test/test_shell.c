@@ -274,22 +274,31 @@ int main()
                 _argv[i] = argv[i + 1];
             } 
             int ret = sys_exec(argv[1], argc - 1, _argv, AUTO_CLEANUP_ON_EXIT);
-            if(ret == -1){
+            if(ret == 0){
                 if(print_location_y == SHELL_END){
                     print_location_y--;
                     sys_move_cursor(1, print_location_y);
                     sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
                 }
-                printf("Too many tasks! Failed to exec\n");
+                printf("Too many tasks! Failed to exec %s\n", argv[1]);
                 print_location_y++;
             }
-            else if(ret == 0){
+            else if(ret == -1){
                 if(print_location_y == SHELL_END){
                     print_location_y--;
                     sys_move_cursor(1, print_location_y);
                     sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
                 }
-                printf("no process %s\n", argv[1]);
+                printf("Process %s does not exist\n", argv[1]);
+                print_location_y++;
+            }
+            else if(ret == -2){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Memory full! Failed to exec %s\n", argv[1]);
                 print_location_y++;
             }
             else{
