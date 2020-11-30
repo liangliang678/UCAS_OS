@@ -271,6 +271,10 @@ void free_user_page(PTE* pgdir)
                             ptr_t pa = get_pfn(*((PTE*)pa2kva(last_level_pgdir) + VPN0)) << NORMAL_PAGE_SHIFT;
                             freePage(pa);
                         }
+                        else if(*((PTE*)pa2kva(last_level_pgdir) + VPN0) & _PAGE_SOFT){
+                            int block_id = get_pfn(*((PTE*)pa2kva(last_level_pgdir) + VPN0));
+                            disk_page[(block_id - 2048) / 8].valid = 0;
+                        }
                     }
                 }
             }
