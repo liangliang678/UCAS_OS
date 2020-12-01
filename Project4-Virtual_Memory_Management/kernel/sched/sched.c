@@ -72,7 +72,7 @@ void scheduler(void)
         }
 
         // release user mem
-        free_user_page(current_running[cpu_id]->pgdir);
+        free_process_user_page(current_running[cpu_id]->pgdir);
 
         // enter ZOMBIE status
         if(current_running[cpu_id]->mode == AUTO_CLEANUP_ON_EXIT){
@@ -111,8 +111,8 @@ pid_t do_spawn(task_info_t *task, void* arg, spawn_mode_t mode)
         return -1;
     }
     
-    new_pcb->kernel_sp = allocPage(1, NULL); 
-    new_pcb->user_sp = allocPage(1, NULL);
+    new_pcb->kernel_sp = alloc_user_page(1, NULL); 
+    new_pcb->user_sp = alloc_user_page(1, NULL);
     new_pcb->preempt_count = 0;
     new_pcb->kernel_stack_base = new_pcb->kernel_sp;
     new_pcb->user_stack_base = new_pcb->user_sp;
@@ -164,7 +164,7 @@ void do_exit()
     }
 
     // release user mem
-    free_user_page(current_running[cpu_id]->pgdir);
+    free_process_user_page(current_running[cpu_id]->pgdir);
 
     // delete from ready queue or blocked queue
     list_del(&current_running[cpu_id]->list);
@@ -233,7 +233,7 @@ int do_kill(pid_t pid)
     }
 
     // release user mem
-    free_user_page(killed_pcb->pgdir);
+    free_process_user_page(killed_pcb->pgdir);
 
     // delete from ready queue or blocked queue
     list_del(&killed_pcb->list);
@@ -284,7 +284,7 @@ int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
         child_pcb->status = TASK_EXITED;
         child_pcb->pid = -1;
         // release kernel stack
-        freePage(kva2pa(child_pcb->kernel_stack_base - PAGE_SIZE));
+        free_user_page(kva2pa(child_pcb->kernel_stack_base - PAGE_SIZE));
 
         return 1;
     }
@@ -300,7 +300,7 @@ int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
 
 void do_process_show(char* buffer)
 {
-    buffer = get_kva_of(buffer, current_running[cpu_id]->pgdir);
+    buffer = (char*)get_kva_of((uintptr_t)buffer, (uintptr_t)current_running[cpu_id]->pgdir);
     buffer[0] = '\0';
     strcat(buffer, "[PROCESS TABLE]\n");
     strcat(buffer, "INIT 0    STATUS: ");
@@ -456,16 +456,16 @@ int do_taskset(pid_t pid, unsigned long mask)
 
 pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
 {
-    file_name = get_kva_of(file_name, current_running[cpu_id]->pgdir);
-    argv = (char (*)[])get_kva_of(argv, current_running[cpu_id]->pgdir);
+    file_name = (char*)get_kva_of((uintptr_t)file_name, (uintptr_t)current_running[cpu_id]->pgdir);
+    argv = (char**)get_kva_of((uintptr_t)argv, (uintptr_t)current_running[cpu_id]->pgdir);
     char* _argv[9];
     for(int i = 0; i < argc; i++){
-        _argv[i] = get_kva_of(argv[i], current_running[cpu_id]->pgdir);
+        _argv[i] = (char*)get_kva_of((uintptr_t)argv[i], (uintptr_t)current_running[cpu_id]->pgdir);
     }
     
     char *binary;
     int length;
-    if(!get_elf_file(file_name, &binary, &length)){
+    if(!get_elf_file(file_name, (unsigned char**)&binary, &length)){
         return -1;
     }
 
@@ -483,7 +483,7 @@ pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
         return 0;
     }
     
-    new_pcb->kernel_sp = pa2kva(allocPage(1, NULL) + PAGE_SIZE); 
+    new_pcb->kernel_sp = pa2kva(alloc_user_page(1, NULL) + PAGE_SIZE); 
     new_pcb->user_sp = USER_STACK_ADDR;
     new_pcb->preempt_count = 0;
     new_pcb->kernel_stack_base = new_pcb->kernel_sp;
@@ -500,7 +500,7 @@ pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
     new_pcb->mask = current_running[cpu_id]->mask;
     new_pcb->pgdir = init_page_table();
     
-    uintptr_t entry = load_elf(binary, length, new_pcb->pgdir, get_kva_of);
+    uintptr_t entry = load_elf((unsigned char*)binary, length, (uintptr_t)new_pcb->pgdir, get_kva_of);
 
     /* initialization registers on kernel stack */
     regs_context_t *pt_regs = (regs_context_t *)(new_pcb->kernel_sp - sizeof(regs_context_t));
@@ -519,9 +519,9 @@ pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
     pt_regs->regs[11] = (reg_t)new_pcb->user_sp;         //a1
     uintptr_t dest = new_pcb->user_sp + 72;
     for(int i = 0; i < argc; i++){
-        uintptr_t pointer = get_kva_of(new_pcb->user_sp + 8 * i, new_pcb->pgdir);
+        uintptr_t pointer = get_kva_of((uintptr_t)(new_pcb->user_sp + 8 * i), (uintptr_t)(new_pcb->pgdir));
         *(uint64_t*)pointer = dest;
-        memcpy(get_kva_of(dest, new_pcb->pgdir), _argv[i], strlen(_argv[i]) + 1);
+        memcpy((uint8_t*)get_kva_of((uintptr_t)dest, (uintptr_t)(new_pcb->pgdir)), (uint8_t*)_argv[i], strlen(_argv[i]) + 1);
         dest += strlen(_argv[i]) + 1;
     }
     return new_pcb->pid;
@@ -529,7 +529,7 @@ pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
 
 void do_show_exec(char* buffer)
 {
-    buffer = get_kva_of(buffer, current_running[cpu_id]->pgdir);
+    buffer = (char*)get_kva_of((uintptr_t)buffer, (uintptr_t)current_running[cpu_id]->pgdir);
     buffer[0] = '\0';
     strcat(buffer, "[EXEC LIST]\n");
     for(int i = 0; i < ELF_FILE_NUM; i++){

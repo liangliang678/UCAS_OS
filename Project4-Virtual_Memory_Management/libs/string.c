@@ -1,13 +1,5 @@
 #include <os/string.h>
 
-int strlen(const char *src)
-{
-    int i;
-    for (i = 0; src[i] != '\0'; i++) {
-    }
-    return i;
-}
-
 void memcpy(uint8_t *dest, const uint8_t *src, uint32_t len)
 {
     for (; len != 0; len--) {
@@ -25,6 +17,14 @@ void memset(void *dest, uint8_t val, uint32_t len)
 }
 
 void bzero(void *dest, uint32_t len) { memset(dest, 0, len); }
+
+int strlen(const char *src)
+{
+    int i;
+    for (i = 0; src[i] != '\0'; i++) {
+    }
+    return i;
+}
 
 int strcmp(const char *str1, const char *str2)
 {

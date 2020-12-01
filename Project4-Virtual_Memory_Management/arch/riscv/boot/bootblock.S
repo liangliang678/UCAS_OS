@@ -2,10 +2,10 @@
 #include <asm/sbiasm.h>
 #include <csr.h>
 
-// start address
+// start section address
 .equ start, 0x50201000
 
-// os size location
+// start section size location
 .equ os_size_loc, 0x502001fc
 
 .text
@@ -28,13 +28,13 @@ main:
  	move a0, s0
 	bnez a0, secondary
 
-	// call BIOS read kernel in SD card and jump to kernel start
-	li t0, start		// dest mem addr
+	// call BIOS read start section in SD card and jump to start section
+	li t0, start		// dest memeory addr
 	li t1, os_size_loc	
-	lh t1, 0(t1)		// remain num of blocks
-	li t2, 1			// dest block num
-	li t3, 64
-	li t4, 32768
+	lh t1, 0(t1)		// remain number of blocks
+	li t2, 1			// dest block id
+	li t3, 64			// read 64 blocks one time
+	li t4, 32768		// 64 blocks = 32768 bytes
 read:
 	ble t1, t3, read_done
 	mv a0, t0
@@ -50,7 +50,6 @@ read_done:
 	mv a1, t1
 	mv a2, t2
 	SBI_CALL SBI_SD_READ
-
 	la a0, msg
 	SBI_CALL SBI_CONSOLE_PUTSTR
 
@@ -69,7 +68,6 @@ secondary:
 	csrs CSR_SIE, t0
 	li t0, SR_SIE
   	csrs CSR_SSTATUS, t0
-	
 wait_for_wakeup:
 	j wait_for_wakeup
 

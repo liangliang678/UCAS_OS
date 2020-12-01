@@ -75,7 +75,7 @@ static void init_pcb()
     kernel_pcb[0].priority = 0;
     kernel_pcb[0].mask = 1;
     kernel_pcb[0].cpu_id = 0;
-    kernel_pcb[0].pgdir = PGDIR_PA;
+    kernel_pcb[0].pgdir = (PTE*)PGDIR_PA;
     init_list_head(&kernel_pcb[0].wait_list);
 
     kernel_pcb[1].kernel_sp = (ptr_t)kernel_stack_1;
@@ -90,14 +90,14 @@ static void init_pcb()
     kernel_pcb[1].priority = 0;
     kernel_pcb[1].mask = 2;
     kernel_pcb[1].cpu_id = 1;
-    kernel_pcb[1].pgdir = PGDIR_PA;
+    kernel_pcb[1].pgdir = (PTE*)PGDIR_PA;
 
     /* initialize all pcb and add test_shell into ready_queue */
     for(int i = 0; i < NUM_MAX_TASK; i++){
         pcb[i].pid = -1;
     }
     
-    pcb[0].kernel_sp = pa2kva(allocPage(1, NULL) + PAGE_SIZE);
+    pcb[0].kernel_sp = pa2kva(alloc_user_page(1, NULL) + PAGE_SIZE);
     pcb[0].user_sp = USER_STACK_ADDR;
     pcb[0].preempt_count = 0;
     pcb[0].kernel_stack_base = pcb[0].kernel_sp;
@@ -116,8 +116,8 @@ static void init_pcb()
 
     char *binary;
     int length;
-    get_elf_file("shell", &binary, &length);
-    uintptr_t entry = load_elf(binary, length, pcb[0].pgdir, get_kva_of);
+    get_elf_file("shell", (unsigned char**)&binary, &length);
+    uintptr_t entry = load_elf((unsigned char*)binary, length, (uintptr_t)pcb[0].pgdir, get_kva_of);
 
     init_pcb_stack((ptr_t)pcb[0].kernel_sp, (ptr_t)pcb[0].user_sp, entry, &pcb[0]);
 
@@ -210,7 +210,7 @@ int main()
             clean_pcb->status = TASK_EXITED;
             clean_pcb->pid = -1;
             // release kernel stack
-            freePage(kva2pa(clean_pcb->kernel_stack_base - PAGE_SIZE));
+            free_user_page(kva2pa(clean_pcb->kernel_stack_base - PAGE_SIZE));
             
             clean_node = clean_node->next;
             list_del(clean_node->prev);

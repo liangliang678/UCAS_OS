@@ -60,7 +60,7 @@ int do_mbox_send(int mailbox_id, void *msg, int msg_length)
         return 0;
     }
     else{
-        memcpy(&(cur_message->msg[cur_message->msg_len]), msg, msg_length);
+        memcpy((uint8_t*)&(cur_message->msg[cur_message->msg_len]), msg, msg_length);
         cur_message->msg_len += msg_length;
         while(!list_empty(&cur_message->wait_queue)){
             do_unblock(cur_message->wait_queue.next);
@@ -80,7 +80,7 @@ int do_mbox_recv(int mailbox_id, void *msg, int msg_length)
     }
     else{
         cur_message->msg_len -= msg_length;
-        memcpy(msg, &(cur_message->msg[cur_message->msg_len]), msg_length);
+        memcpy(msg, (uint8_t*)&(cur_message->msg[cur_message->msg_len]), msg_length);
         while(!list_empty(&cur_message->wait_queue)){
             do_unblock(cur_message->wait_queue.next);
         }

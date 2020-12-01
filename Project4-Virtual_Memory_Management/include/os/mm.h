@@ -44,10 +44,14 @@ Memory Layout
 #define PAGE_SIZE 4096
 #define INIT_KERNEL_STACK   0xffffffc050600000lu    //kva
 #define USER_STACK_ADDR     0xf00010000lu           //va
+
 #define KERNEL_MEM_BEGIN    0x50602000lu            //pa
 #define KERNEL_MEM_END      0x51000000lu            //pa
 #define USER_MEM_BEGIN      0x51000000lu            //pa
 #define USER_MEM_END        0x51010000lu            //pa
+#define MEM_END             0x60000000lu            //pa
+
+#define SWAP_BEGIN 2048
 
 /* Rounding: only works for n = power of two */
 #define ROUND(a, n)     (((((uint64_t)(a))+(n)-1)) & ~((n)-1))
@@ -57,39 +61,41 @@ extern ptr_t kernel_memCurr;
 extern ptr_t user_memCurr;
 extern ptr_t pgdir_memCurr;
 
-extern PTE* init_page_table();
-extern ptr_t allocPage(uint8_t pin, ptr_t pgtable);
-extern void freePage(ptr_t baseAddr);
-extern void* kmalloc(size_t size);
-extern void share_pgtable(uintptr_t dest_pgdir, uintptr_t src_pgdir);
-extern void free_user_page(PTE* pgdir);
-extern unsigned long free_page_num();
-extern uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir);
-uintptr_t shm_page_get(int key);
-extern void shm_page_dt(uintptr_t addr);
-
-extern ptr_t selete_page();
-extern void write_to_sd(ptr_t pa);
-
 #define USER_MEM_SIZE (USER_MEM_END - USER_MEM_BEGIN)
 #define USER_PAGE_NUM (USER_MEM_SIZE / PAGE_SIZE)
 typedef struct user_page{
     uint8_t valid;
     uint8_t pin;
-    ptr_t pgtable;
+    PTE* pgtable;
 }user_page_t;
+extern user_page_t user_page[USER_PAGE_NUM];
 
-#define SHMPAGE_NUM 100
-typedef struct shmpage{
+#define SHM_PAGE_NUM 100
+typedef struct shm_page{
     int count;
     uintptr_t pa;
-}shmpage_t;
-extern shmpage_t shmpage[SHMPAGE_NUM];
+}shm_page_t;
+extern shm_page_t shm_page[SHM_PAGE_NUM];
 
 #define DISK_PAGE_NUM 256
 typedef struct disk_page{
     uint8_t valid;
 }disk_page_t;
 extern disk_page_t disk_page[DISK_PAGE_NUM];
+
+extern PTE* alloc_pgdir_page();
+extern ptr_t alloc_user_page(uint8_t pin, PTE* pgtable);
+extern void free_user_page(ptr_t baseAddr);
+extern void* kmalloc(size_t size);
+
+extern ptr_t selete_page();
+extern void write_to_sd(ptr_t pa);
+extern unsigned long free_page_num();
+
+extern PTE* init_page_table();
+extern void free_process_user_page(PTE* pgdir);
+
+uintptr_t shm_page_get(int key);
+extern void shm_page_dt(uintptr_t addr);
 
 #endif /* MM_H */

@@ -1,30 +1,51 @@
 /* RISC-V kernel boot stage */
-#include <context.h>
 #include <os/elf.h>
 #include <pgtable.h>
 #include <sbi.h>
 
-typedef void (*kernel_entry_t)(unsigned long, uintptr_t);
+typedef void (*kernel_entry_t)(unsigned long);
 
 extern unsigned char _elf_main[];
 extern unsigned _length_main;
 
-/********* setup memory mapping ***********/
-uintptr_t alloc_page()
+/*
+ * using 2MB large page
+ * kva = kpa + 0xffff_ffc0_0000_0000 use 2MB page
+ * map all physical memory
+ */
+void map_kernel_page(PTE *pgdir)
 {
-    // TODO: alloc pages for page table entries
-}
-
-// using 2MB large page
-void map_page(uint64_t va, uint64_t pa, PTE *pgdir)
-{
-    // TODO: map va to pa
+    clear_pgdir(pgdir);
+    /*
+     * first level:
+     * 0xffff_ffc0_5000_0000: VPN2 = 0x101
+     * 0x0000_0000_5000_0000: VPN2 = 0x001
+     */
+    set_pfn(pgdir + 0x101, (PGDIR_PA + NORMAL_PAGE_SIZE) >> NORMAL_PAGE_SHIFT);
+    set_attribute(pgdir + 0x101, _PAGE_PRESENT);
+    set_pfn(pgdir + 0x001, (PGDIR_PA + NORMAL_PAGE_SIZE) >> NORMAL_PAGE_SHIFT);
+    set_attribute(pgdir + 0x001, _PAGE_PRESENT);
+    /*
+     * last level:
+     * 0x5000_0000: VPN1 = 0x80
+     * 256MB = 2MB * 128
+     */
+    PTE *last_level_pgdir = (PTE*)(PGDIR_PA + NORMAL_PAGE_SIZE);
+    clear_pgdir(last_level_pgdir);
+    for(int i = 0; i < 128; i++){
+        PTE* pgtable = last_level_pgdir + 0x80 + i;
+        set_pfn(pgtable, (0x50000000 + 2 * 1024 * 1024* i ) >> NORMAL_PAGE_SHIFT);
+        set_attribute(pgtable, _PAGE_PRESENT);
+        set_attribute(pgtable, _PAGE_READ);
+        set_attribute(pgtable, _PAGE_WRITE);
+        set_attribute(pgtable, _PAGE_EXEC);
+        set_attribute(pgtable, _PAGE_ACCESSED);
+        set_attribute(pgtable, _PAGE_DIRTY);
+    }
 }
 
 void enable_vm()
 {
-    // TODO: write satp to enable paging
-    // remember to flush TLB
     set_satp(SATP_MODE_SV39, 0, (PGDIR_PA >> NORMAL_PAGE_SHIFT));
     local_flush_tlb_all();
 }
@@ -35,45 +56,32 @@ void enable_vm()
  */
 void setup_vm()
 {
-    // TODO:
     // map kernel virtual address(kva) to kernel physical
-    // address(kpa) kva = kpa + 0xffff_ffc0_0000_0000 use 2MB page,
-    // map all physical memory
-    PTE *pgdir = (PTE*)PGDIR_PA;
-    clear_pgdir(pgdir);
-    *(pgdir + 0x101) = (((PGDIR_PA + NORMAL_PAGE_SIZE) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT;
-    *(pgdir + 0x001) = (((PGDIR_PA + NORMAL_PAGE_SIZE) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) | _PAGE_PRESENT;
-    PTE *last_level_pgdir = (PTE*)(PGDIR_PA + NORMAL_PAGE_SIZE);
-    clear_pgdir(last_level_pgdir);
-    for(int i = 0; i < 128; i++){
-        *(last_level_pgdir + 0x80 + i) = (((0x50000000 + 2 * i * 1024 * 1024) >> NORMAL_PAGE_SHIFT) << _PAGE_PFN_SHIFT) |
-                                         _PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_EXEC | _PAGE_WRITE | _PAGE_READ | _PAGE_PRESENT;
-    }
+    map_kernel_page((PTE *)PGDIR_PA);
     // enable virtual memory
     enable_vm();
 }
 
 uintptr_t directmap(uintptr_t kva, uintptr_t pgdir)
 {
-    // ignore pgdir
     return kva;
 }
 
 kernel_entry_t start_kernel = NULL;
 
-/*********** start here **************/
-int boot_kernel(unsigned long mhartid, uintptr_t riscv_dtb)
+/* start here */
+int boot_kernel(unsigned long mhartid)
 {
-    if (mhartid == 0) {
+    if(mhartid == 0) {
+        // setup memory mapping
         setup_vm();
         sbi_console_putstr("> [INIT] Set Up Kernel Page Table Successfully.\n\r");
         // load kernel
         start_kernel = (kernel_entry_t)load_elf(_elf_main, _length_main, PGDIR_PA, directmap);
         sbi_console_putstr("> [INIT] Copy Kernel to Memory Successfully.\n\r");
-    } else {
-        // TODO: what should we do for other cores?
+    }else {
         enable_vm();
     }
-    start_kernel(mhartid, riscv_dtb);
+    start_kernel(mhartid);
     return 0;
 }

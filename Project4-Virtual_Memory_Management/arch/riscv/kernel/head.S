@@ -16,5 +16,4 @@ ENTRY(_start)
   /* this should never return */
   csrr a0, CSR_MHARTID
   call boot_kernel
-
 END(_start)

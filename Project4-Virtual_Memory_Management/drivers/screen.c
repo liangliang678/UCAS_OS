@@ -103,7 +103,7 @@ static void screen_write_ch(char ch)
 
 void screen_write(char *buff)
 {
-    buff = get_kva_of(buff, current_running[cpu_id]->pgdir);
+    buff = (char*)get_kva_of((uintptr_t)buff, (uintptr_t)(current_running[cpu_id]->pgdir));
     int i = 0;
     int l = strlen(buff);
 
