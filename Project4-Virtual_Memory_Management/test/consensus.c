@@ -14,7 +14,7 @@ typedef struct consensus_vars {
     atomic_long magic_number;
     atomic_long consensus;
     mthread_barrier_t barrier;
-    atomic_int round;
+    atomic_uint round;
 } consensus_vars_t;
 
 int is_first(consensus_vars_t *vars)
@@ -34,7 +34,6 @@ pid_t decide(pid_t prev, pid_t mypid, atomic_long* consensus)
 
 int main(int argc, char* argv[])
 {
-    char *prog_name = argv[0];
     int print_location = 1;
     if (argc > 1) {
         print_location = atol(argv[1]);

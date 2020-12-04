@@ -5,7 +5,7 @@
 int main()
 {
     int flag = 1;
-    unsigned long *array = 0x20000000;
+    unsigned long *array = (unsigned long *)0x20000000;
     for(int i = 0; i < LENGTH; i++){
         *(array + i) = i;
     }

@@ -59,7 +59,13 @@ Memory Layout
 
 extern ptr_t kernel_memCurr;
 extern ptr_t user_memCurr;
-extern ptr_t pgdir_memCurr;
+
+#define FREE_PGDIR_ADDR (PGDIR_PA + 2 * PAGE_SIZE)
+#define PGDIR_PAGE_NUM ((MEM_END - FREE_PGDIR_ADDR) / PAGE_SIZE)
+typedef struct pgdir_page{
+    uint8_t valid;
+}pgdir_page_t;
+extern pgdir_page_t pgdir_page[PGDIR_PAGE_NUM];
 
 #define USER_MEM_SIZE (USER_MEM_END - USER_MEM_BEGIN)
 #define USER_PAGE_NUM (USER_MEM_SIZE / PAGE_SIZE)
@@ -84,6 +90,7 @@ typedef struct disk_page{
 extern disk_page_t disk_page[DISK_PAGE_NUM];
 
 extern PTE* alloc_pgdir_page();
+extern void free_pgdir_page(uintptr_t addr);
 extern ptr_t alloc_user_page(uint8_t pin, PTE* pgtable);
 extern void free_user_page(ptr_t baseAddr);
 extern void* kmalloc(size_t size);

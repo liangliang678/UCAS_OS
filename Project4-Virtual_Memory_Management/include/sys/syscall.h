@@ -50,7 +50,7 @@ extern void sys_futex_wakeup(volatile uint64_t *val_addr, int num_wakeup);
 
 #define BINSEM_OP_LOCK 0
 #define BINSEM_OP_UNLOCK 1
-extern int sys_binsem_get(int key);
+extern int sys_binsem_get(long key);
 extern void sys_binsem_op(int binsem_id, int op);
 
 void* sys_shmpage_get(int key);

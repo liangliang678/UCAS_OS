@@ -101,6 +101,7 @@ void scheduler(void)
 pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
 {    
     enable_sum();
+    
     char *binary;
     int length;
     if(!get_elf_file(file_name, (unsigned char**)&binary, &length)){
@@ -292,7 +293,7 @@ int do_kill(pid_t pid)
     return 1;
 }
 
-int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, regs_context_t *regs)
+int do_waitpid(pid_t pid, reg_t ignore1, reg_t ignore2, reg_t ignore3, regs_context_t *regs)
 {
     pcb_t *child_pcb = NULL;
     for(int i = 0; i < NUM_MAX_TASK; i++){

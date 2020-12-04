@@ -8,7 +8,7 @@ void mthread_barrier_init(mthread_barrier_t * barrier, unsigned count)
 {
     barrier->count = count;
     barrier->reached = 0;
-    barrier->binsem_id = sys_binsem_get((int)barrier);
+    barrier->binsem_id = sys_binsem_get((long)barrier);
 }
 void mthread_barrier_wait(mthread_barrier_t *barrier)
 {

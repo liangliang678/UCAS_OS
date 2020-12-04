@@ -31,7 +31,7 @@ static inline uint64_t atomic_load_d(volatile uint64_t* obj)
     uint64_t ret;
     __asm__ __volatile__ (
                           "amoand.w.aqrl %0, %2, %1\n"
-                          : "=r"(ret), "+A" (*(void*)obj)
+                          : "=r"(ret), "+A" (*(uint64_t*)obj)
                           : "r"(arg)
                           : "memory");
     return ret;
@@ -76,7 +76,7 @@ static inline long atomic_exchange_d(volatile void* obj, long desired)
     uint64_t ret;
     __asm__ __volatile__ (
                           "amoswap.d.aqrl %0, %2, %1\n"
-                          : "=r"(ret), "+A" (*(void*)obj)
+                          : "=r"(ret), "+A" (*(uint64_t*)obj)
                           : "r"(desired)
                           : "memory");
     return ret;
@@ -113,7 +113,7 @@ static inline long atomic_compare_exchange_d(volatile void* obj, long expected, 
           "	bnez %1, 0b\n"
           "	fence rw, rw\n"
           "1:\n"
-          : "=&r" (ret), "=&r" (__rc), "+A" (*(void*)obj)
+          : "=&r" (ret), "=&r" (__rc), "+A" (*(uint64_t*)obj)
           : "rJ" (expected), "rJ" (desired)
           : "memory");
 

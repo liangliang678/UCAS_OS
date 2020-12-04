@@ -11,6 +11,8 @@ int message_status[MBOX_NUM] = {0};
 
 int do_mbox_open(char *name)
 {
+    enable_sum();
+
     for(int i = 0; i < MBOX_NUM; i++){
         if(!strcmp(name, mailbox[i].name)){
             message_t *cur_message = &message[mailbox[i].id];
@@ -39,6 +41,7 @@ int do_mbox_open(char *name)
     new_message->msg[0] = '\0';
     new_message->msg_len = 0;
 
+    disable_sum();
     return new_mailbox->id;
 }
 
@@ -53,10 +56,13 @@ void do_mbox_close(int mailbox_id)
 
 int do_mbox_send(int mailbox_id, void *msg, int msg_length)
 {
+    enable_sum();
+
     message_t *cur_message = &message[mailbox_id];
     if(cur_message->msg_len + msg_length >= MAX_MBOX_LENGTH){
         do_block(&current_running[cpu_id]->list, &cur_message->wait_queue);
         scheduler();
+        disable_sum();
         return 0;
     }
     else{
@@ -66,16 +72,19 @@ int do_mbox_send(int mailbox_id, void *msg, int msg_length)
             do_unblock(cur_message->wait_queue.next);
         }
         scheduler();
+        disable_sum();
         return 1;
     }
 }
 
 int do_mbox_recv(int mailbox_id, void *msg, int msg_length)
 {
+    enable_sum();
     message_t *cur_message = &message[mailbox_id];
     if(msg_length > cur_message->msg_len){
         do_block(&current_running[cpu_id]->list, &cur_message->wait_queue);
         scheduler();
+        disable_sum();
         return 0;
     }
     else{
@@ -85,6 +94,7 @@ int do_mbox_recv(int mailbox_id, void *msg, int msg_length)
             do_unblock(cur_message->wait_queue.next);
         }
         scheduler();
+        disable_sum();
         return 1;
     }
 }

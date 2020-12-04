@@ -9,20 +9,32 @@
 
 ptr_t kernel_memCurr = KERNEL_MEM_BEGIN;
 ptr_t user_memCurr = USER_MEM_BEGIN;
-ptr_t pgdir_memCurr = PGDIR_PA + 2 * PAGE_SIZE;
 
 user_page_t user_page[USER_PAGE_NUM];
 shm_page_t shm_page[SHM_PAGE_NUM];
 disk_page_t disk_page[DISK_PAGE_NUM];
+pgdir_page_t pgdir_page[PGDIR_PAGE_NUM];
 
 // returns pa
 PTE* alloc_pgdir_page()
 {
-    PTE *ret = (PTE*)pgdir_memCurr;
-    clear_pgdir((PTE*)pa2kva((uintptr_t)(uintptr_t)ret));
-    pgdir_memCurr += PAGE_SIZE;
-    assert(pgdir_memCurr < MEM_END);
+    int i;
+    for(i = 0; i < PGDIR_PAGE_NUM; i++){
+        if(pgdir_page[i].valid == 0){
+            break;
+        }
+    }
+    assert(i != PGDIR_PAGE_NUM);
+    pgdir_page[i].valid = 1;
+    PTE *ret = (PTE*)(FREE_PGDIR_ADDR + i * PAGE_SIZE);
+    clear_pgdir((PTE*)pa2kva((uintptr_t)ret));
     return ret;
+}
+
+void free_pgdir_page(uintptr_t addr)
+{
+    int i = (addr - FREE_PGDIR_ADDR) / PAGE_SIZE;
+    pgdir_page[i].valid = 0;
 }
 
 int pa2num(uintptr_t pa)
@@ -241,12 +253,15 @@ PTE* init_page_table()
 void free_process_user_page(PTE* pgdir)
 {
     int VPN2, VPN1, VPN0;
+    free_pgdir_page((uintptr_t)pgdir);
     for(VPN2 = 0; VPN2 < 0x100; VPN2++){
         if(get_attribute(*((PTE*)pa2kva((uintptr_t)pgdir) + VPN2), _PAGE_PRESENT)){
             PTE* second_level_pgdir = (PTE*)get_pa(*((PTE*)pa2kva((uintptr_t)pgdir) + VPN2));
+            free_pgdir_page((uintptr_t)second_level_pgdir);
             for(VPN1 = 0; VPN1 < NUM_PTE_ENTRY; VPN1++){
                 if(get_attribute(*((PTE*)pa2kva((uintptr_t)second_level_pgdir) + VPN1), _PAGE_PRESENT)){
                     PTE* last_level_pgdir = (PTE*)get_pa(*((PTE*)pa2kva((uintptr_t)second_level_pgdir) + VPN1));
+                    free_pgdir_page((uintptr_t)last_level_pgdir);
                     for(VPN0 = 0; VPN0 < NUM_PTE_ENTRY; VPN0++){
                         if(get_attribute(*((PTE*)pa2kva((uintptr_t)last_level_pgdir) + VPN0), _PAGE_PRESENT)){
                             ptr_t pa = get_pa(*((PTE*)pa2kva((uintptr_t)last_level_pgdir) + VPN0));
