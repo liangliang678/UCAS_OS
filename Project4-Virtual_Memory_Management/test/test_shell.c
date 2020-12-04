@@ -362,10 +362,18 @@ int main()
                 print_location_y++;
             }
         }
-        /*
         else if(taskset_command){
-            int spawn = strcmp(argv[1], "-p");
-            if((spawn && argc >= 4) || (!spawn && argc >= 5)){
+            if(strcmp(argv[1], "-p")){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("usage: taskset -p mask pid\n");
+                print_location_y++;
+                continue;
+            }
+            if(argc >= 5){
                 if(print_location_y == SHELL_END){
                     print_location_y--;
                     sys_move_cursor(1, print_location_y);
@@ -375,7 +383,7 @@ int main()
                 print_location_y++;
                 continue;
             }
-            else if((spawn && argc <=2) || (!spawn && argc <=3)){
+            else if(argc <=3){
                 if(print_location_y == SHELL_END){
                     print_location_y--;
                     sys_move_cursor(1, print_location_y);
@@ -386,56 +394,18 @@ int main()
                 continue;
             }
 
-            if(spawn){
-                unsigned long mask = atoi(argv[1]);
-                int task_num = atoi(argv[2]); 
-                if(task_num >= num_test_tasks || task_num < 0){
-                    if(print_location_y == SHELL_END){
-                        print_location_y--;
-                        sys_move_cursor(1, print_location_y);
-                        sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
-                    }
-                    printf("No such test tasks!\n");
-                    print_location_y++;
-                    continue;
+            unsigned long mask = atoi(argv[2]);
+            int pid = atoi(argv[3]);
+            if(!sys_taskset(pid, mask)){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
                 }
-                
-                int spawn_pid;
-                if((spawn_pid = sys_spawn(test_tasks[task_num], NULL, AUTO_CLEANUP_ON_EXIT)) == -1){
-                    if(print_location_y == SHELL_END){
-                        print_location_y--;
-                        sys_move_cursor(1, print_location_y);
-                        sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
-                    }
-                    printf("Too many tasks! Failed to exec process[%d]\n", task_num);
-                    print_location_y++;
-                }
-                else{
-                    sys_taskset(spawn_pid, mask);
-                    if(print_location_y == SHELL_END){
-                        print_location_y--;
-                        sys_move_cursor(1, print_location_y);
-                        sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
-                    }
-                    printf("exec process[%d] and set mask 0x%x\n", task_num, mask);
-                    print_location_y++;
-                }
-            }
-            else{
-                unsigned long mask = atoi(argv[2]);
-                int pid = atoi(argv[3]);
-                if(!sys_taskset(pid, mask)){
-                    if(print_location_y == SHELL_END){
-                        print_location_y--;
-                        sys_move_cursor(1, print_location_y);
-                        sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
-                    }
-                    printf("Cannot set mask of task(pid=%d): Task Does Not Exist!\n", pid);
-                    print_location_y++;
-                }
+                printf("Cannot set mask of task(pid=%d): Task Does Not Exist!\n", pid);
+                print_location_y++;
             }
         }
-        */
         else{
             if(print_location_y == SHELL_END){
                 print_location_y--;

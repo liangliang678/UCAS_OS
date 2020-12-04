@@ -103,13 +103,14 @@ static void screen_write_ch(char ch)
 
 void screen_write(char *buff)
 {
-    buff = (char*)get_kva_of((uintptr_t)buff, (uintptr_t)(current_running[cpu_id]->pgdir));
+    enable_sum();
     int i = 0;
     int l = strlen(buff);
 
     for (i = 0; i < l; i++){
         screen_write_ch(buff[i]);
     }
+    disable_sum();
 }
 
 /*

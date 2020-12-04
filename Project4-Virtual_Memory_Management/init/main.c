@@ -129,7 +129,7 @@ static void init_pcb()
 static void init_syscall(void)
 {
     // initialize system call table.
-    syscall[SYSCALL_SPAWN] = (long(*)())do_spawn;
+    syscall[SYSCALL_EXEC] = (long(*)())do_exec;
     syscall[SYSCALL_EXIT] = (long(*)())do_exit;
     syscall[SYSCALL_SLEEP] = (long(*)())do_sleep;
     syscall[SYSCALL_KILL] = (long(*)())do_kill;
@@ -138,7 +138,6 @@ static void init_syscall(void)
     syscall[SYSCALL_GETPID] = (long(*)())do_getpid;
     syscall[SYSCALL_YIELD] = (long(*)())scheduler;
     syscall[SYSCALL_TASKSET] = (long(*)())do_taskset;
-    syscall[SYSCALL_EXEC] = (long(*)())do_exec;
     syscall[SYSCALL_SHOW_EXEC] = (long(*)())do_show_exec;
     syscall[SYSCALL_FUTEX_WAIT] = (long(*)())futex_wait;
     syscall[SYSCALL_FUTEX_WAKEUP] = (long(*)())futex_wakeup;

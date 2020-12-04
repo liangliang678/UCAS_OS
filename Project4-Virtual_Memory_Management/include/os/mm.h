@@ -48,7 +48,7 @@ Memory Layout
 #define KERNEL_MEM_BEGIN    0x50602000lu            //pa
 #define KERNEL_MEM_END      0x51000000lu            //pa
 #define USER_MEM_BEGIN      0x51000000lu            //pa
-#define USER_MEM_END        0x51010000lu            //pa
+#define USER_MEM_END        0x5e000000lu            //pa
 #define MEM_END             0x60000000lu            //pa
 
 #define SWAP_BEGIN 2048
@@ -97,5 +97,8 @@ extern void free_process_user_page(PTE* pgdir);
 
 uintptr_t shm_page_get(int key);
 extern void shm_page_dt(uintptr_t addr);
+
+extern void enable_sum();
+extern void disable_sum();
 
 #endif /* MM_H */

@@ -1,9 +1,9 @@
 #include <sys/syscall.h>
 #include <stdint.h>
 
-pid_t sys_spawn(task_info_t * info, void* arg, spawn_mode_t mode)
+pid_t sys_exec(const char *file_name, int argc, char* argv[], spawn_mode_t mode)
 {
-    return invoke_syscall(SYSCALL_SPAWN, (uintptr_t)info, (uintptr_t) arg, mode, IGNORE);
+    return invoke_syscall(SYSCALL_EXEC, (uintptr_t)file_name, argc, (uintptr_t)argv, mode);
 }
 
 void sys_exit(void)
@@ -44,11 +44,6 @@ void sys_yield()
 int sys_taskset(pid_t pid, unsigned long mask)
 {
     return invoke_syscall(SYSCALL_TASKSET, (uintptr_t)pid, (uintptr_t)mask, IGNORE, IGNORE);
-}
-
-pid_t sys_exec(const char *file_name, int argc, char* argv[], spawn_mode_t mode)
-{
-    return invoke_syscall(SYSCALL_EXEC, (uintptr_t)file_name, argc, (uintptr_t)argv, mode);
 }
 
 void sys_show_exec(char* buffer)

@@ -92,7 +92,7 @@ image: bootblock kernelimage createimage
 	dd if=/dev/zero of=image oflag=append conv=notrunc bs=512 count=4096
 
 clean:
-	rm -rf bootblock image kernelimage createimage main payload.c libtiny_libc.a bootblock.txt kernelimage.txt kernel.txt
+	rm -rf bootblock image kernelimage main payload.c libtiny_libc.a bootblock.txt kernelimage.txt kernel.txt
 	rm include/user_programs.h kernel/user_programs.c
 	find . -name "*.o" -exec rm {} \;
 

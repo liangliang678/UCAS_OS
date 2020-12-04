@@ -34,7 +34,6 @@
 
 extern long invoke_syscall(long, long, long, long, long);
 
-extern pid_t sys_spawn(task_info_t *info, void* arg, spawn_mode_t mode);
 extern void sys_exit(void);
 extern void sys_sleep(uint32_t time);
 extern int sys_kill(pid_t pid);

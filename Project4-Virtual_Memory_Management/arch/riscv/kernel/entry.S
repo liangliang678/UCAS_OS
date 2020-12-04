@@ -140,6 +140,18 @@ ENTRY(disable_interrupt)
   jr ra
 ENDPROC(disable_interrupt)
 
+ENTRY(enable_sum)
+  li t0, SR_SUM
+  csrs CSR_SSTATUS, t0
+  jr ra
+ENDPROC(enable_sum)
+
+ENTRY(disable_sum)
+  li t0, SR_SUM
+  csrc CSR_SSTATUS, t0
+  jr ra
+ENDPROC(disable_sum)
+
 ENTRY(ret_from_exception)
   ld tp, current_cpu_running
   call unlock_kernel
