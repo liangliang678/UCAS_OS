@@ -71,6 +71,7 @@ extern void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t caus
 extern void exception_handler_entry(void);
 extern void init_exception();
 extern void setup_exception();
+extern uint64_t read_sip();
 
 extern void reset_irq_timer();
 extern void handle_int(regs_context_t *regs, uint64_t stval, uint64_t cause);
@@ -84,7 +85,6 @@ extern void disable_interrupt(void);
 extern void enable_preempt(void);
 extern void disable_preempt(void);
 
-extern uintptr_t riscv_dtb;
 extern int cpu_id;
 
 #endif

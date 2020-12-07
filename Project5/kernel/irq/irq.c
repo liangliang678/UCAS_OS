@@ -3,10 +3,11 @@
 #include <os/sched.h>
 #include <os/string.h>
 #include <os/stdio.h>
-#include <os/smp.h>
+#include <os/mm.h>
 #include <assert.h>
 #include <sbi.h>
 #include <screen.h>
+#include <csr.h>
 
 #include <os/mm.h>
 #include <emacps/xemacps_example.h>
@@ -14,43 +15,59 @@
 
 handler_t irq_table[IRQC_COUNT];
 handler_t exc_table[EXCC_COUNT];
-uintptr_t riscv_dtb;
+int cpu_id;
 
-void reset_irq_timer()
+/* initialize irq_table and exc_table */
+void init_exception()
 {
-    // TODO clock interrupt handler.
-    // scheduler, time counter in here to do, emmmmmm maybe.
+    irq_table[IRQC_U_SOFT] = (handler_t)handle_other;
+    irq_table[IRQC_S_SOFT] = (handler_t)clear_ipi;
+    irq_table[IRQC_M_SOFT] = (handler_t)handle_other;
+    irq_table[IRQC_U_TIMER] = (handler_t)handle_other;
+    irq_table[IRQC_S_TIMER] = (handler_t)handle_int;
+    irq_table[IRQC_M_TIMER] = (handler_t)handle_other;
+    irq_table[IRQC_U_EXT] = (handler_t)handle_other;
+    irq_table[IRQC_S_EXT] = (handler_t)handle_other;
+    irq_table[IRQC_M_EXT] = (handler_t)handle_other;
+
+    exc_table[EXCC_INST_MISALIGNED] = (handler_t)handle_other;
+    exc_table[EXCC_INST_ACCESS] = (handler_t)handle_other;
+    exc_table[EXCC_INST_ILLEGAL] = (handler_t)handle_other;
+    exc_table[EXCC_BREAKPOINT] = (handler_t)handle_other;
+    exc_table[EXCC_LOAD_ACCESS] = (handler_t)handle_other;
+    exc_table[EXCC_STORE_ACCESS] = (handler_t)handle_other;
+    exc_table[EXCC_SYSCALL] = (handler_t)handle_syscall;
+    exc_table[EXCC_INST_PAGE_FAULT] = (handler_t)handle_page_fault;
+    exc_table[EXCC_LOAD_PAGE_FAULT] = (handler_t)handle_page_fault;
+    exc_table[EXCC_STORE_PAGE_FAULT] = (handler_t)handle_page_fault;
 }
 
+// interrupt handler.
 void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t cause)
 {
-    // TODO interrupt handler.
-    // Leve3 exception Handler.
-    // read CP0 register to analyze the type of interrupt.
+    // call corresponding handler by the value of `cause`
+    cpu_id = get_current_cpu_id();
+    current_cpu_running = current_running[cpu_id];
+    if(cause & SCAUSE_IRQ_FLAG){
+        cause = cause & ~SCAUSE_IRQ_FLAG;
+        (*irq_table[cause])(regs, stval, cause);
+    }
+    else{
+        (*exc_table[cause])(regs, stval, cause);
+    }
 }
 
-void handle_int(regs_context_t *regs, uint64_t interrupt, uint64_t cause)
+void handle_int(regs_context_t *regs, uint64_t stval, uint64_t cause)
 {
     reset_irq_timer();
 }
 
 // !!! NEW: handle_irq
-extern uint64_t read_sip();
 void handle_irq(regs_context_t *regs, int irq)
 {
     // TODO: 
     // handle external irq from network device
     // let PLIC know that handle_irq has been finished
-}
-
-void init_exception()
-{
-    // TODO:
-}
-
-void handle_pagefault(regs_context_t *regs, uint64_t stval, uint64_t cause)
-{
-     // TODO:
 }
 
 void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause)
@@ -72,12 +89,12 @@ void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause)
         printk("\n\r");
     }
     printk("sstatus: 0x%lx sbadaddr: 0x%lx scause: %lu\n\r",
-           regs->sstatus, regs->sbadaddr, regs->scause);
+           regs->sstatus, regs->stval, regs->scause);
     printk("sepc: 0x%lx pid: %d mhartid: %d\n\r", 
            regs->sepc, current_running[mhartid]->pid, mhartid);
 
-    // if (regs->sbadaddr != 0) {
-    //     PTE* pte = va2pte(regs->sbadaddr, current_running->pgdir);
+    // if (regs->stval != 0) {
+    //     PTE* pte = va2pte(regs->stval, current_running->pgdir);
     //     if (pte != NULL) {
     //         printk("PTE : %lx %lx\n\r", (uintptr_t) pte, *pte);
     //         uintptr_t baseAddr = ((uintptr_t) pte) >> 12 << 12;
@@ -100,4 +117,14 @@ void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause)
         fp = prev_fp;
     }
     assert(0);
+}
+
+//clock interrupt handler.
+void reset_irq_timer()
+{
+    screen_reflush();
+    timer_check();
+    // use sbi_set_timer and reschedule
+    scheduler();
+    sbi_set_timer(get_ticks() + timer_interval); 
 }

@@ -44,6 +44,7 @@
 #include <screen.h>
 #include <stdarg.h>
 #include <os/sched.h>
+#include <os/smp.h>
 #include <os/irq.h>
 
 static unsigned int mini_strlen(const char *s)

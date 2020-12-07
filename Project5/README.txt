@@ -1,4 +1,4 @@
-未合并的更改：
+已合并的更改：
 arch/riscv/include/pgtable.h
 arch/riscv/kernel/trap.S
 include/type.h
@@ -18,10 +18,7 @@ drivers/plic.c
 drivers/plic.h
 include/os/ioremap.h
 kernel/mm/ioremap.c
-pktRxTx
 test/echo.c
 test/recv.c
-test/recv-s.c
 test/send.c
-test/send-s.c
-
+（drivers文件夹中的新增文件尚未添加至Makefile中）
