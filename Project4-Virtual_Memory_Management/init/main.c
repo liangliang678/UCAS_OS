@@ -39,7 +39,6 @@
 #include <sbi.h>
 #include <pgtable.h>
 #include <stdio.h>
-//#include <test.h>
 #include <csr.h>
 
 #include <user_programs.h>

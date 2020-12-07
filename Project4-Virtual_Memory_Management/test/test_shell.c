@@ -25,7 +25,6 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * */
 
-#include <test.h>
 #include <string.h>
 #include <os.h>
 #include <sys/syscall.h>

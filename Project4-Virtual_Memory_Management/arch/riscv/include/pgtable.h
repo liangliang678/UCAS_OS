@@ -67,7 +67,7 @@ static inline void set_satp(
 #define NORMAL_PAGE_SHIFT 12lu
 #define NORMAL_PAGE_SIZE (1lu << NORMAL_PAGE_SHIFT)
 #define LARGE_PAGE_SHIFT 21lu
-#define LARGE_PAGE_SIZE (1lu << NORMAL_PAGE_SHIFT)
+#define LARGE_PAGE_SIZE (1lu << LARGE_PAGE_SHIFT)
 
 #define _PAGE_PRESENT (1 << 0)
 #define _PAGE_READ (1 << 1)     /* Readable */

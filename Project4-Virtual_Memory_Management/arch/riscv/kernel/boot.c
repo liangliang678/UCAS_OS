@@ -34,7 +34,7 @@ void map_kernel_page(PTE *pgdir)
     clear_pgdir(last_level_pgdir);
     for(int i = 0; i < 128; i++){
         PTE* pgtable = last_level_pgdir + 0x80 + i;
-        set_pfn(pgtable, (0x50000000 + 2 * 1024 * 1024* i ) >> NORMAL_PAGE_SHIFT);
+        set_pfn(pgtable, (0x50000000 + LARGE_PAGE_SIZE * i ) >> NORMAL_PAGE_SHIFT);
         set_attribute(pgtable, _PAGE_PRESENT);
         set_attribute(pgtable, _PAGE_READ);
         set_attribute(pgtable, _PAGE_WRITE);
