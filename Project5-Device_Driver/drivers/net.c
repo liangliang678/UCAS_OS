@@ -21,7 +21,7 @@ long do_net_recv(uintptr_t addr, size_t length, int num_packet, size_t* frLength
     // receive packet by calling network driver's function
     // wait until you receive enough packets(`num_packet`).
     // maybe you need to call drivers' receive function multiple times ?
-    return ret;
+    return 0;//ret;
 }
 
 void do_net_send(uintptr_t addr, size_t length)
@@ -35,4 +35,5 @@ void do_net_irq_mode(int mode)
 {
     // TODO:
     // turn on/off network driver's interrupt mode
+    net_poll_mode = mode;
 }

@@ -144,3 +144,18 @@ int sys_mbox_recv(int mailbox, void *msg, int msg_length)
 {
     return invoke_syscall(SYSCALL_MAILBOX_RECV, (long)mailbox, (long)msg, (long)msg_length, IGNORE);
 }
+
+long sys_net_recv(uintptr_t addr, size_t length, int num_packet, size_t* frLength)
+{
+    return invoke_syscall(SYSCALL_NET_RECV, (long)addr, (long)length, (long)num_packet, (long)frLength);
+}
+
+void sys_net_send(uintptr_t addr, size_t length)
+{
+    invoke_syscall(SYSCALL_NET_SEND, (long)addr, (long)length, IGNORE, IGNORE);
+}
+
+void sys_net_irq_mode(int mode)
+{
+    invoke_syscall(SYSCALL_NET_RECV, (long)mode, IGNORE, IGNORE, IGNORE);
+}

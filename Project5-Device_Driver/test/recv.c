@@ -11,21 +11,6 @@ size_t recv_length[MAX_RECV_CNT];
 
 int main(int argc, char *argv[])
 {
-    // printf("%lx \n\r", (uintptr_t) argv);
-    // printf("%lx \n\r", (uintptr_t) argv[0]);
-    // printf("%lx \n\r", (uintptr_t) argv[1]);
-    // printf("%lx \n\r", (uintptr_t) argv[2]);
-    //uintptr_t baseAddr = ((uintptr_t) argv) >> 12 << 12;
-    //char* tmpAddr = (char*) baseAddr;
-    /*for (int i = 100; i < 128; ++i) {
-        printf("0x%lx : ", &tmpAddr[i*32]);
-        for (int j = 0; j < 32; ++j) {
-            printf("%02x ", (uint32_t) tmpAddr[i*32 + j]);
-        }
-        printf("\n");
-    }
-    printf("\n");*/
-    // for(;;);
     int mode = 0;
     int size = 1;
     if(argc > 1) {
@@ -37,7 +22,6 @@ int main(int argc, char *argv[])
             mode = 1;
         }
     }
-
     sys_net_irq_mode(mode);
 
     sys_move_cursor(1, 1);

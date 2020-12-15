@@ -22,7 +22,9 @@ USER_LDFLAGS += $(ARCH_DIR)/crt0.o
 SRC_BOOT 	= $(ARCH_DIR)/boot/bootblock.S
 SRC_HEAD    = $(ARCH_DIR)/kernel/head.S $(ARCH_DIR)/kernel/boot.c payload.c ./libs/string.c
 SRC_ARCH	= $(ARCH_DIR)/kernel/trap.S $(ARCH_DIR)/kernel/entry.S $(ARCH_DIR)/kernel/start.S $(ARCH_DIR)/sbi/common.c $(ARCH_DIR)/kernel/smp.S
-SRC_DRIVER	= ./drivers/screen.c
+SRC_DRIVER	= ./drivers/screen.c ./drivers/net.c ./drivers/plic.c \
+			  ./drivers/emacps/xemacps_bdring.c ./drivers/emacps/xemacps_control.c ./drivers/emacps/xemacps_example_util.c  ./drivers/emacps/xemacps_g.c \
+			  ./drivers/emacps/xemacps_hw.c ./drivers/emacps/xemacps_intr.c ./drivers/emacps/xemacps_main.c ./drivers/emacps/xemacps.c			  
 SRC_INIT 	= ./init/main.c
 SRC_INT		= ./kernel/irq/irq.c
 SRC_LOCK	= ./kernel/locking/lock.c ./kernel/locking/futex.c ./kernel/locking/binsem.c

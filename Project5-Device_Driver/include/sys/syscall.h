@@ -54,8 +54,8 @@ extern void sys_futex_wakeup(volatile uint64_t *val_addr, int num_wakeup);
 extern int sys_binsem_get(long key);
 extern void sys_binsem_op(int binsem_id, int op);
 
-void* sys_shmpage_get(int key);
-void sys_shmpage_dt(void *addr);
+extern void* sys_shmpage_get(int key);
+extern void sys_shmpage_dt(void *addr);
 
 extern void sys_write(char *);
 extern void sys_move_cursor(int, int);

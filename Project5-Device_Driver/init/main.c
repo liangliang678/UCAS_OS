@@ -41,7 +41,6 @@
 #include <stdio.h>
 #include <csr.h>
 
-#include <fdt.h>
 #include <os/ioremap.h>
 #include <os/stdio.h>
 #include <assert.h>
@@ -164,86 +163,10 @@ static void init_syscall(void)
     syscall[SYSCALL_MAILBOX_CLOSE] = (long(*)())do_mbox_close; 
     syscall[SYSCALL_MAILBOX_SEND] = (long(*)())do_mbox_send;  
     syscall[SYSCALL_MAILBOX_RECV] = (long(*)())do_mbox_recv;  
+    syscall[SYSCALL_NET_IRQ_MODE] = (long(*)())do_net_irq_mode;
+    syscall[SYSCALL_NET_SEND] = (long(*)())do_net_send;
+    syscall[SYSCALL_NET_RECV] = (long(*)())do_net_recv;
 }
-
-/*
-void boot_first_core(uint64_t mhartid, uintptr_t _dtb)
-{
-    // init Process Control Block (-_-!)
-    init_pcb();
-    printk("> [INIT] PCB initialization succeeded.\n\r");
-
-    // setup timebase
-    // fdt_print(_dtb);
-    // get_prop_u32(_dtb, "/cpus/cpu/timebase-frequency", &time_base);
-    time_base = sbi_read_fdt(TIMEBASE);
-    uint32_t slcr_bade_addr = 0, ethernet_addr = 0;
-
-    // get_prop_u32(_dtb, "/soc/slcr/reg", &slcr_bade_addr);
-    slcr_bade_addr = sbi_read_fdt(SLCR_BADE_ADDR);
-    printk("[slcr] phy: 0x%x\n\r", slcr_bade_addr);
-
-    // get_prop_u32(_dtb, "/soc/ethernet/reg", &ethernet_addr);
-    ethernet_addr = sbi_read_fdt(ETHERNET_ADDR);
-    printk("[ethernet] phy: 0x%x\n\r", ethernet_addr);
-
-    uint32_t plic_addr = 0;
-    // get_prop_u32(_dtb, "/soc/interrupt-controller/reg", &plic_addr);
-    plic_addr = sbi_read_fdt(PLIC_ADDR);
-    printk("[plic] plic: 0x%x\n\r", plic_addr);
-
-    uint32_t nr_irqs = sbi_read_fdt(NR_IRQS);
-    // get_prop_u32(_dtb, "/soc/interrupt-controller/riscv,ndev", &nr_irqs);
-    printk("[plic] nr_irqs: 0x%x\n\r", nr_irqs);
-
-    XPS_SYS_CTRL_BASEADDR =
-        (uintptr_t)ioremap((uint64_t)slcr_bade_addr, NORMAL_PAGE_SIZE);
-    xemacps_config.BaseAddress =
-        (uintptr_t)ioremap((uint64_t)ethernet_addr, NORMAL_PAGE_SIZE);
-    uintptr_t _plic_addr =
-        (uintptr_t)ioremap((uint64_t)plic_addr, 0x4000*NORMAL_PAGE_SIZE);
-    // XPS_SYS_CTRL_BASEADDR = slcr_bade_addr;
-    // xemacps_config.BaseAddress = ethernet_addr;
-    xemacps_config.DeviceId        = 0;
-    xemacps_config.IsCacheCoherent = 0;
-
-    printk(
-        "[slcr_bade_addr] phy:%x virt:%lx\n\r", slcr_bade_addr,
-        XPS_SYS_CTRL_BASEADDR);
-    printk(
-        "[ethernet_addr] phy:%x virt:%lx\n\r", ethernet_addr,
-        xemacps_config.BaseAddress);
-    printk("[plic_addr] phy:%x virt:%lx\n\r", plic_addr, _plic_addr);
-    plic_init(_plic_addr, nr_irqs);
-    
-    long status = EmacPsInit(&EmacPsInstance);
-    if (status != XST_SUCCESS) {
-        printk("Error: initialize ethernet driver failed!\n\r");
-        assert(0);
-    }
-
-    // init futex mechanism
-    init_system_futex();
-
-    // init interrupt (^_^)
-    init_exception();
-    printk(
-        "> [INIT] Interrupt processing initialization "
-        "succeeded.\n\r");
-
-    // init system call table (0_0)
-    init_syscall();
-    printk("> [INIT] System call initialized successfully.\n\r");
-
-    // enable_interrupt();
-    net_poll_mode = 1;
-    // xemacps_example_main();
-
-    // init screen (QAQ)
-    init_screen();
-    printk("> [INIT] SCREEN initialization succeeded.\n\r");
-    // screen_clear(0, SCREEN_HEIGHT - 1);
-}*/
 
 // jump from start.S
 // The beginning of everything
@@ -252,6 +175,45 @@ int main()
     // read CPU frequency and calc timer interval
     time_base = sbi_read_fdt(TIMEBASE);
     timer_interval = (uint64_t)(time_base / 100);
+
+    // init ethernet driver
+    uint32_t slcr_bade_addr = 0, ethernet_addr = 0, plic_addr = 0, nr_irqs = 0;
+
+    slcr_bade_addr = sbi_read_fdt(SLCR_BADE_ADDR);
+    printk("[slcr] phy: 0x%x\n\r", slcr_bade_addr);
+
+    ethernet_addr = sbi_read_fdt(ETHERNET_ADDR);
+    printk("[ethernet] phy: 0x%x\n\r", ethernet_addr);
+
+    plic_addr = sbi_read_fdt(PLIC_ADDR);
+    printk("[plic] plic: 0x%x\n\r", plic_addr);
+
+    nr_irqs = sbi_read_fdt(NR_IRQS);
+    printk("[plic] nr_irqs: 0x%x\n\r", nr_irqs);
+
+    XPS_SYS_CTRL_BASEADDR = (uintptr_t)ioremap((uint64_t)slcr_bade_addr, NORMAL_PAGE_SIZE);
+    xemacps_config.BaseAddress = (uintptr_t)ioremap((uint64_t)ethernet_addr, NORMAL_PAGE_SIZE);
+    //xemacps_config.BaseAddress = (uintptr_t)ioremap((uint64_t)ethernet_addr, 9 * NORMAL_PAGE_SIZE);
+    //xemacps_config.BaseAddress += 0x8000;
+    uintptr_t _plic_addr = (uintptr_t)ioremap((uint64_t)plic_addr, 0x4000 * NORMAL_PAGE_SIZE);
+
+    xemacps_config.DeviceId        = 0;
+    xemacps_config.IsCacheCoherent = 0;
+
+    printk("[slcr_bade_addr] phy:%x virt:%lx\n\r", slcr_bade_addr, XPS_SYS_CTRL_BASEADDR);
+    printk("[ethernet_addr] phy:%x virt:%lx\n\r", ethernet_addr, xemacps_config.BaseAddress);
+    printk("[plic_addr] phy:%x virt:%lx\n\r", plic_addr, _plic_addr);
+    
+    plic_init(_plic_addr, nr_irqs);
+    
+    long status = EmacPsInit(&EmacPsInstance);
+    if (status != XST_SUCCESS) {
+        printk("> [INIT] Error: initialize ethernet driver failed!\n\r");
+        assert(0);
+    }
+    else{
+        printk("> [INIT] Initialize Ethernet Driver Successfully.\n\r");
+    }
 
     // init Process Control Block
     init_pcb();
@@ -268,7 +230,7 @@ int main()
     // init system call table
     init_syscall();
     printk("> [INIT] System Call Initialized Successfully.\n\r");
-
+    
     // init screen
     init_screen();
     printk("> [INIT] Screen Initialization Succeeded.\n\r");

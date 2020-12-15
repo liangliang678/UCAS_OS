@@ -42,9 +42,6 @@ clear_bss_done:
   ld sp, kernel_stack_0
   csrw CSR_SSCRATCH, zero
 
-  la a0, riscv_dtb
-  sd a1, (a0)
-
   call main
 
 secondary:
@@ -52,9 +49,6 @@ secondary:
   ld tp, core1_tp
   ld sp, kernel_stack_1
   csrw CSR_SSCRATCH, zero
-
-  la a0, riscv_dtb
-  sd a1, (a0)
 
   call smp_init
 

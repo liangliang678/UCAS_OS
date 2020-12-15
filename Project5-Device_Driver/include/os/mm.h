@@ -42,10 +42,10 @@ Memory Layout
 * * * * * * * * * * * * * * * * * * * * * * */
 
 #define PAGE_SIZE 4096
-#define INIT_KERNEL_STACK   0xffffffc050600000lu    //kva
+#define INIT_KERNEL_STACK   0xffffffc050800000lu    //kva
 #define USER_STACK_ADDR     0xf00010000lu           //va
 
-#define KERNEL_MEM_BEGIN    0x50602000lu            //pa
+#define KERNEL_MEM_BEGIN    0x50802000lu            //pa
 #define KERNEL_MEM_END      0x51000000lu            //pa
 #define USER_MEM_BEGIN      0x51000000lu            //pa
 #define USER_MEM_END        0x5e000000lu            //pa

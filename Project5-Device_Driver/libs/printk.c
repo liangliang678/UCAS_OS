@@ -264,7 +264,7 @@ static void port_write_wrapper(char* str)
 
 int vprintk(const char *fmt, va_list _va)
 {
-    return _vprint(fmt, _va, port_write_wrapper);
+    return _vprint(fmt, _va, port_write);
 }
 
 int printk(const char *fmt, ...)

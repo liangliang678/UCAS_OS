@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/shm.h>
 #include <sys/syscall.h>
 #include <mthread.h>
 
@@ -68,7 +67,7 @@ int main(int argc, char *argv[])
         }
     }
     
-    echo_shm_vars_t *vars = (echo_shm_vars_t*) shmpageget(SHMP_KEY);
+    echo_shm_vars_t *vars = (echo_shm_vars_t*) sys_shmpage_get(SHMP_KEY);
     if (vars == NULL) {
         sys_move_cursor(1, 1);
         printf("shmpageget failed!\n");
@@ -114,7 +113,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    shmpagedt((void*)vars);
+    sys_shmpage_dt((void*)vars);
 
     return 0;
 }
