@@ -218,31 +218,6 @@ PTE* init_page_table()
     set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_1) + 0x00f, _PAGE_WRITE);
     set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_1) + 0x00f, _PAGE_READ);
 
-    set_pfn((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x010, code_pfn_1);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x010, _PAGE_PRESENT);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x010, _PAGE_DIRTY);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x010, _PAGE_ACCESSED);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x010, _PAGE_USER);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x010, _PAGE_EXEC);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x010, _PAGE_WRITE);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x010, _PAGE_READ);
-    set_pfn((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x011, code_pfn_2);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x011, _PAGE_PRESENT);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x011, _PAGE_DIRTY);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x011, _PAGE_ACCESSED);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x011, _PAGE_USER);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x011, _PAGE_EXEC);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x011, _PAGE_WRITE);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x011, _PAGE_READ);
-    set_pfn((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x012, code_pfn_3);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x012, _PAGE_PRESENT);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x012, _PAGE_DIRTY);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x012, _PAGE_ACCESSED);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x012, _PAGE_USER);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x012, _PAGE_EXEC);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x012, _PAGE_WRITE);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x012, _PAGE_READ);
-
     // kernel
     set_pfn((PTE*)pa2kva((uintptr_t)pgdir) + 0x101, (PGDIR_PA + NORMAL_PAGE_SIZE) >> NORMAL_PAGE_SHIFT);
     set_attribute((PTE*)pa2kva((uintptr_t)pgdir) + 0x101, _PAGE_PRESENT);
@@ -276,6 +251,44 @@ void free_process_user_page(PTE* pgdir)
             }
         }
     }
+}
+
+// pgdir is pa. if va is not mapped, then mapped it
+uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir)
+{
+    int VPN2 = (va >> VPN2_SHIFT) & VPN_MASK;
+    int VPN1 = (va >> VPN1_SHIFT) & VPN_MASK;
+    int VPN0 = (va >> VPN0_SHIFT) & VPN_MASK;
+
+    pgdir = pa2kva((uintptr_t)pgdir);
+    if(!get_attribute(*((PTE*)pgdir + VPN2), _PAGE_PRESENT)){
+        PTE *second_level_pgdir = alloc_pgdir_page();
+        set_pfn((PTE*)pgdir + VPN2, (uint64_t)second_level_pgdir >> NORMAL_PAGE_SHIFT);
+        set_attribute(pgdir + VPN2, _PAGE_PRESENT);
+    }
+
+    PTE* second_level_pgdir = (PTE*)get_pa(*((PTE*)pgdir + VPN2));
+    second_level_pgdir = (PTE*)pa2kva((uintptr_t)second_level_pgdir);
+    if(!get_attribute(*(second_level_pgdir + VPN1), _PAGE_PRESENT)){
+        PTE *last_level_pgdir = alloc_pgdir_page();
+        set_pfn(second_level_pgdir + VPN1, (uint64_t)last_level_pgdir >> NORMAL_PAGE_SHIFT);
+        set_attribute(second_level_pgdir + VPN1, _PAGE_PRESENT);
+    }
+
+    PTE* last_level_pgdir = (PTE*)get_pa(*(second_level_pgdir + VPN1));
+    last_level_pgdir = (PTE*)pa2kva((uintptr_t)last_level_pgdir);
+    uintptr_t pa = alloc_user_page(1, kva2pa(last_level_pgdir));
+    if(!get_attribute(*(last_level_pgdir + VPN0), _PAGE_PRESENT)){
+        set_pfn(last_level_pgdir + VPN0,  pa >> NORMAL_PAGE_SHIFT);
+        set_attribute(last_level_pgdir + VPN0, _PAGE_PRESENT);
+        set_attribute(last_level_pgdir + VPN0, _PAGE_ACCESSED);
+        set_attribute(last_level_pgdir + VPN0, _PAGE_DIRTY);
+        set_attribute(last_level_pgdir + VPN0, _PAGE_EXEC);
+        set_attribute(last_level_pgdir + VPN0, _PAGE_WRITE);
+        set_attribute(last_level_pgdir + VPN0, _PAGE_READ);
+        set_attribute(last_level_pgdir + VPN0, _PAGE_USER);
+    }
+    return pa2kva(pa);
 }
 
 uintptr_t shm_page_get(int key)

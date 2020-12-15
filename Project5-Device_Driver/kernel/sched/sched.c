@@ -139,7 +139,7 @@ pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode)
     new_pcb->mask = current_running[cpu_id]->mask;
     new_pcb->pgdir = init_page_table();
     
-    uintptr_t entry = load_elf((unsigned char*)binary, length, (uintptr_t)new_pcb->pgdir, get_kva_of);
+    uintptr_t entry = load_elf((unsigned char*)binary, length, (uintptr_t)new_pcb->pgdir, alloc_page_helper);
 
     /* initialization registers on kernel stack */
     regs_context_t *pt_regs = (regs_context_t *)(new_pcb->kernel_sp - sizeof(regs_context_t));

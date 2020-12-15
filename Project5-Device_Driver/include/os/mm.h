@@ -34,9 +34,9 @@
 Memory Layout
 0x5000_0000 ~ 0x5020_0000       BBL
 0x5020_0000 ~ 0x5040_0000       Boot
-0x5040_0000 ~ 0x5060_0000       Kernel
-0x5060_0000 ~ 0x5060_2000       Kernel Stack
-0x5060_2000 ~ 0x5100_0000       Kernel Mem
+0x5040_0000 ~ 0x5080_0000       Kernel
+0x5080_0000 ~ 0x5080_2000       Kernel Stack
+0x5080_2000 ~ 0x5100_0000       Kernel Mem
 0x5100_0000 ~ 0x5e00_0000       User Mem
 0x5e00_0000 ~ 0x6000_0000       Page Table
 * * * * * * * * * * * * * * * * * * * * * * */
@@ -101,6 +101,8 @@ extern unsigned long free_page_num();
 
 extern PTE* init_page_table();
 extern void free_process_user_page(PTE* pgdir);
+
+extern uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir);
 
 uintptr_t shm_page_get(int key);
 extern void shm_page_dt(uintptr_t addr);

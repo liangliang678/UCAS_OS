@@ -40,7 +40,6 @@
 #include <pgtable.h>
 #include <stdio.h>
 #include <csr.h>
-
 #include <os/ioremap.h>
 #include <os/stdio.h>
 #include <assert.h>
@@ -123,7 +122,7 @@ static void init_pcb()
     char *binary;
     int length;
     get_elf_file("shell", (unsigned char**)&binary, &length);
-    uintptr_t entry = load_elf((unsigned char*)binary, length, (uintptr_t)pcb[0].pgdir, get_kva_of);
+    uintptr_t entry = load_elf((unsigned char*)binary, length, (uintptr_t)pcb[0].pgdir, alloc_page_helper);
 
     init_pcb_stack((ptr_t)pcb[0].kernel_sp, (ptr_t)pcb[0].user_sp, entry, &pcb[0]);
 
@@ -172,29 +171,22 @@ static void init_syscall(void)
 // The beginning of everything
 int main()
 {   
-    // read CPU frequency and calc timer interval
-    time_base = sbi_read_fdt(TIMEBASE);
-    timer_interval = (uint64_t)(time_base / 100);
-
+    printk("> [INIT] Start Ethernet Driver Initialization.\n\r");
     // init ethernet driver
     uint32_t slcr_bade_addr = 0, ethernet_addr = 0, plic_addr = 0, nr_irqs = 0;
-
     slcr_bade_addr = sbi_read_fdt(SLCR_BADE_ADDR);
-    printk("[slcr] phy: 0x%x\n\r", slcr_bade_addr);
-
     ethernet_addr = sbi_read_fdt(ETHERNET_ADDR);
-    printk("[ethernet] phy: 0x%x\n\r", ethernet_addr);
-
     plic_addr = sbi_read_fdt(PLIC_ADDR);
-    printk("[plic] plic: 0x%x\n\r", plic_addr);
-
     nr_irqs = sbi_read_fdt(NR_IRQS);
+    printk("[slcr] phy: 0x%x\n\r", slcr_bade_addr);
+    printk("[ethernet] phy: 0x%x\n\r", ethernet_addr);
+    printk("[plic] plic: 0x%x\n\r", plic_addr);
     printk("[plic] nr_irqs: 0x%x\n\r", nr_irqs);
 
     XPS_SYS_CTRL_BASEADDR = (uintptr_t)ioremap((uint64_t)slcr_bade_addr, NORMAL_PAGE_SIZE);
-    xemacps_config.BaseAddress = (uintptr_t)ioremap((uint64_t)ethernet_addr, NORMAL_PAGE_SIZE);
-    //xemacps_config.BaseAddress = (uintptr_t)ioremap((uint64_t)ethernet_addr, 9 * NORMAL_PAGE_SIZE);
-    //xemacps_config.BaseAddress += 0x8000;
+    //xemacps_config.BaseAddress = (uintptr_t)ioremap((uint64_t)ethernet_addr, NORMAL_PAGE_SIZE);
+    xemacps_config.BaseAddress = (uintptr_t)ioremap((uint64_t)ethernet_addr, 9 * NORMAL_PAGE_SIZE);
+    xemacps_config.BaseAddress += 0x8000;
     uintptr_t _plic_addr = (uintptr_t)ioremap((uint64_t)plic_addr, 0x4000 * NORMAL_PAGE_SIZE);
 
     xemacps_config.DeviceId        = 0;
@@ -212,8 +204,13 @@ int main()
         assert(0);
     }
     else{
-        printk("> [INIT] Initialize Ethernet Driver Successfully.\n\r");
+        printk("> [INIT] Ethernet Driver Initialization Succeeded.\n\r");
     }
+
+    // read CPU frequency and calc timer interval
+    time_base = sbi_read_fdt(TIMEBASE);
+    timer_interval = (uint64_t)(time_base / 100);
+    printk("> [INIT] Set Timer Interval Successfully.\n\r");
 
     // init Process Control Block
     init_pcb();
@@ -236,13 +233,15 @@ int main()
     printk("> [INIT] Screen Initialization Succeeded.\n\r");
 
     // wakeup another core
+    /*
     spin_lock_init(&kernel_lock);
     wakeup_other_hart();
     while(!smp_init_flag){
         ;
     }
-    printk("> [INIT] Start the Second Core Successfully.\n\r");
-    
+    printk("> [INIT] Start the Second Core Successfully.\n\r"); 
+    */
+
     // Setup timer interrupt and enable all interrupt
     enable_interrupt();
     setup_exception();

@@ -21,3 +21,7 @@ kernel/mm/ioremap.c √
 test/echo.c
 test/recv.c √
 test/send.c √
+
+TODO：
+1. 新增的printk保存屏幕指针，但这会出错，所以暂时退回上个版本
+2. qemu无法运行
