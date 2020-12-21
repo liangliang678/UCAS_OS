@@ -34,20 +34,20 @@
 Memory Layout
 0x5000_0000 ~ 0x5020_0000       BBL
 0x5020_0000 ~ 0x5040_0000       Boot
-0x5040_0000 ~ 0x5080_0000       Kernel
-0x5080_0000 ~ 0x5080_2000       Kernel Stack
-0x5080_2000 ~ 0x5100_0000       Kernel Mem
-0x5100_0000 ~ 0x5e00_0000       User Mem
+0x5040_0000 ~ 0x5140_0000       Kernel
+0x5140_0000 ~ 0x5140_2000       Kernel Stack
+0x5140_2000 ~ 0x5200_0000       Kernel Mem
+0x5200_0000 ~ 0x5e00_0000       User Mem
 0x5e00_0000 ~ 0x6000_0000       Page Table
 * * * * * * * * * * * * * * * * * * * * * * */
 
 #define PAGE_SIZE 4096
-#define INIT_KERNEL_STACK   0xffffffc050800000lu    //kva
+#define INIT_KERNEL_STACK   0xffffffc051400000lu    //kva
 #define USER_STACK_ADDR     0xf00010000lu           //va
 
-#define KERNEL_MEM_BEGIN    0x50802000lu            //pa
-#define KERNEL_MEM_END      0x51000000lu            //pa
-#define USER_MEM_BEGIN      0x51000000lu            //pa
+#define KERNEL_MEM_BEGIN    0x51402000lu            //pa
+#define KERNEL_MEM_END      0x52000000lu            //pa
+#define USER_MEM_BEGIN      0x52000000lu            //pa
 #define USER_MEM_END        0x5e000000lu            //pa
 #define MEM_END             0x60000000lu            //pa
 
@@ -60,7 +60,7 @@ Memory Layout
 extern ptr_t kernel_memCurr;
 extern ptr_t user_memCurr;
 
-#define FREE_PGDIR_ADDR (PGDIR_PA + 2 * PAGE_SIZE)
+#define FREE_PGDIR_ADDR (PGDIR_PA + 3 * PAGE_SIZE)
 #define PGDIR_PAGE_NUM ((MEM_END - FREE_PGDIR_ADDR) / PAGE_SIZE)
 typedef struct pgdir_page{
     uint8_t valid;

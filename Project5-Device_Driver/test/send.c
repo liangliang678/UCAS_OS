@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     addr[2] = buffer2;
     addr[3] = buffer3;
 
-    sys_move_cursor(1, 2);
+    sys_move_cursor(1, 1);
     printf("> [SEND TASK] start send package.               \n");
   
     for(i = 0; i < 4; i++) {

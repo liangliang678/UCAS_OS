@@ -157,5 +157,5 @@ void sys_net_send(uintptr_t addr, size_t length)
 
 void sys_net_irq_mode(int mode)
 {
-    invoke_syscall(SYSCALL_NET_RECV, (long)mode, IGNORE, IGNORE, IGNORE);
+    invoke_syscall(SYSCALL_NET_IRQ_MODE, (long)mode, IGNORE, IGNORE, IGNORE);
 }

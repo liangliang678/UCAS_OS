@@ -17,7 +17,7 @@ void *ioremap(unsigned long phys_addr, unsigned long size)
         int VPN0 = (io_base >> VPN0_SHIFT) & VPN_MASK;
 
         if(!get_attribute(*(pgdir + VPN2), _PAGE_PRESENT)){
-            PTE *second_level_pgdir = alloc_pgdir_page();
+            PTE *second_level_pgdir = PGDIR_PA + 2 * NORMAL_PAGE_SIZE;
             set_pfn(pgdir + VPN2, (uint64_t)second_level_pgdir >> NORMAL_PAGE_SHIFT);
             set_attribute(pgdir + VPN2, _PAGE_PRESENT);
         }

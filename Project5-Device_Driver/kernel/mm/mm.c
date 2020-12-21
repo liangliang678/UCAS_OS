@@ -6,6 +6,7 @@
 #include <os/sched.h>
 #include <os/irq.h>
 #include <assert.h>
+#include <os/ioremap.h>
 
 ptr_t kernel_memCurr = KERNEL_MEM_BEGIN;
 ptr_t user_memCurr = USER_MEM_BEGIN;
@@ -186,41 +187,33 @@ unsigned long free_page_num()
 PTE* init_page_table()
 {
     PTE *pgdir = alloc_pgdir_page();
-    PTE *second_level_pgdir_1 = alloc_pgdir_page();
-    PTE *second_level_pgdir_2 = alloc_pgdir_page();
-    PTE *last_level_pgdir_1 = alloc_pgdir_page();
-    PTE *last_level_pgdir_2 = alloc_pgdir_page();
+    PTE *second_level_pgdir = alloc_pgdir_page();
+    PTE *last_level_pgdir = alloc_pgdir_page();
 
     // first level
-    set_pfn((PTE*)pa2kva((uintptr_t)pgdir) + 0x03c, (uint64_t)second_level_pgdir_1 >> NORMAL_PAGE_SHIFT);
+    set_pfn((PTE*)pa2kva((uintptr_t)pgdir) + 0x03c, (uint64_t)second_level_pgdir >> NORMAL_PAGE_SHIFT);
     set_attribute((PTE*)pa2kva((uintptr_t)pgdir) + 0x03c, _PAGE_PRESENT);
-    set_pfn((PTE*)pa2kva((uintptr_t)pgdir) + 0x000, (uint64_t)second_level_pgdir_2 >> NORMAL_PAGE_SHIFT);
-    set_attribute((PTE*)pa2kva((uintptr_t)pgdir) + 0x000, _PAGE_PRESENT);
 
     // second level
-    set_pfn((PTE*)pa2kva((uintptr_t)second_level_pgdir_1) + 0x000, (uint64_t)last_level_pgdir_1 >> NORMAL_PAGE_SHIFT);
-    set_attribute((PTE*)pa2kva((uintptr_t)second_level_pgdir_1) + 0x000, _PAGE_PRESENT);
-    set_pfn((PTE*)pa2kva((uintptr_t)second_level_pgdir_2) + 0x000, (uint64_t)last_level_pgdir_2 >> NORMAL_PAGE_SHIFT);
-    set_attribute((PTE*)pa2kva((uintptr_t)second_level_pgdir_2) + 0x000, _PAGE_PRESENT);
+    set_pfn((PTE*)pa2kva((uintptr_t)second_level_pgdir) + 0x000, (uint64_t)last_level_pgdir >> NORMAL_PAGE_SHIFT);
+    set_attribute((PTE*)pa2kva((uintptr_t)second_level_pgdir) + 0x000, _PAGE_PRESENT);
 
     // last level
-    ptr_t stack_pfn = alloc_user_page(1, ((PTE*)pa2kva((uintptr_t)last_level_pgdir_1) + 0x00f)) >> NORMAL_PAGE_SHIFT;
-    ptr_t code_pfn_1 = alloc_user_page(1, ((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x010)) >> NORMAL_PAGE_SHIFT;
-    ptr_t code_pfn_2 = alloc_user_page(1, ((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x011)) >> NORMAL_PAGE_SHIFT;
-    ptr_t code_pfn_3 = alloc_user_page(1, ((PTE*)pa2kva((uintptr_t)last_level_pgdir_2) + 0x012)) >> NORMAL_PAGE_SHIFT;
-
-    set_pfn((PTE*)pa2kva((uintptr_t)last_level_pgdir_1) + 0x00f, stack_pfn);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_1) + 0x00f, _PAGE_PRESENT);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_1) + 0x00f, _PAGE_DIRTY);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_1) + 0x00f, _PAGE_ACCESSED);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_1) + 0x00f, _PAGE_USER);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_1) + 0x00f, _PAGE_EXEC);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_1) + 0x00f, _PAGE_WRITE);
-    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir_1) + 0x00f, _PAGE_READ);
+    ptr_t stack_pfn = alloc_user_page(1, ((PTE*)pa2kva((uintptr_t)last_level_pgdir) + 0x00f)) >> NORMAL_PAGE_SHIFT;
+    set_pfn((PTE*)pa2kva((uintptr_t)last_level_pgdir) + 0x00f, stack_pfn);
+    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir) + 0x00f, _PAGE_PRESENT);
+    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir) + 0x00f, _PAGE_DIRTY);
+    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir) + 0x00f, _PAGE_ACCESSED);
+    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir) + 0x00f, _PAGE_USER);
+    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir) + 0x00f, _PAGE_EXEC);
+    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir) + 0x00f, _PAGE_WRITE);
+    set_attribute((PTE*)pa2kva((uintptr_t)last_level_pgdir) + 0x00f, _PAGE_READ);
 
     // kernel
     set_pfn((PTE*)pa2kva((uintptr_t)pgdir) + 0x101, (PGDIR_PA + NORMAL_PAGE_SIZE) >> NORMAL_PAGE_SHIFT);
     set_attribute((PTE*)pa2kva((uintptr_t)pgdir) + 0x101, _PAGE_PRESENT);
+    set_pfn((PTE*)pa2kva((uintptr_t)pgdir) + 0x180, (PGDIR_PA + 2 * NORMAL_PAGE_SIZE) >> NORMAL_PAGE_SHIFT);
+    set_attribute((PTE*)pa2kva((uintptr_t)pgdir) + 0x180, _PAGE_PRESENT);
 
     return pgdir;
 }

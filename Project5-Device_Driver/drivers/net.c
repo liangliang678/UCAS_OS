@@ -21,7 +21,13 @@ long do_net_recv(uintptr_t addr, size_t length, int num_packet, size_t* frLength
     // receive packet by calling network driver's function
     // wait until you receive enough packets(`num_packet`).
     // maybe you need to call drivers' receive function multiple times ?
-    return 0;//ret;
+    enable_sum();
+    addr = get_kva_of(addr, current_running[cpu_id]->pgdir);
+    addr = kva2pa(addr);
+    EmacPsRecv(&EmacPsInstance, addr, num_packet);
+    EmacPsWaitRecv(&EmacPsInstance, num_packet, frLength);
+    disable_sum();
+    return 0;
 }
 
 void do_net_send(uintptr_t addr, size_t length)
@@ -29,6 +35,11 @@ void do_net_send(uintptr_t addr, size_t length)
     // TODO:
     // send all packet
     // maybe you need to call drivers' send function multiple times ?
+    enable_sum();
+    memcpy(&tx_buffer, addr, length);
+    EmacPsSend(&EmacPsInstance, kva2pa(&tx_buffer), length);
+    EmacPsWaitSend(&EmacPsInstance);
+    disable_sum();
 }
 
 void do_net_irq_mode(int mode)

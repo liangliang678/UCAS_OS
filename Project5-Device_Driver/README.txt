@@ -6,7 +6,7 @@ include/os/syscall_number.h √
 include/sys/syscall.h √
 init/main.c 
 kernel/irq/irq.c
-libs/printk.c √
+libs/printk.c
 tiny_libc/include/os.h
 
 新增的文件：
@@ -23,5 +23,4 @@ test/recv.c √
 test/send.c √
 
 TODO：
-1. 新增的printk保存屏幕指针，但这会出错，所以暂时退回上个版本
-2. qemu无法运行
+1. 框架提供的printk新增了保存屏幕指针的功能，但这会出错，所以暂时使用旧版本

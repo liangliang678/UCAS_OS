@@ -677,6 +677,11 @@ u32 XEmacPs_BdRingFromHwTx(XEmacPs_BdRing * RingPtr, u32 BdLimit,
             if (CurBdPtr != NULL) {
                 BdStr = XEmacPs_BdRead(CurBdPtr, XEMACPS_BD_STAT_OFFSET);
             }
+			
+			while ((BdStr & XEMACPS_TXBUF_USED_MASK) == 0x00000000U) {
+				Xil_DCacheFlushRange(0, 64);
+                BdStr = XEmacPs_BdRead(CurBdPtr, XEMACPS_BD_STAT_OFFSET);
+            }
 
             if ((Sop == 0x00000000U) &&
                 ((BdStr & XEMACPS_TXBUF_USED_MASK) != 0x00000000U)) {

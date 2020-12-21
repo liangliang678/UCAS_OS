@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     sys_net_irq_mode(mode);
 
     sys_move_cursor(1, 1);
-    printf("[RECV TASK] start recv(%d):                    ", size);
+    printf("[RECV TASK] start recv(%d): ", size);
 
     int ret = sys_net_recv(recv_buffer, size * sizeof(EthernetFrame), size, recv_length);
     printf("%d\n", ret);
