@@ -22,20 +22,24 @@ long do_net_recv(uintptr_t addr, size_t length, int num_packet, size_t* frLength
     // wait until you receive enough packets(`num_packet`).
     // maybe you need to call drivers' receive function multiple times ?
     enable_sum();
-    addr = get_kva_of(addr, current_running[cpu_id]->pgdir);
-    addr = kva2pa(addr);
-    EmacPsRecv(&EmacPsInstance, addr, num_packet);
-    EmacPsWaitRecv(&EmacPsInstance, num_packet, frLength);
+    memset(addr, 0, length);
+    uintptr_t curr = addr;
+    for(int i = 0; i < num_packet; i++){
+        memset(&rx_buffers[0], 0, sizeof(EthernetFrame));
+        EmacPsRecv(&EmacPsInstance, kva2pa(&rx_buffers[0]), 1);
+        EmacPsWaitRecv(&EmacPsInstance, 1, frLength);
+        //memcpy(curr, &rx_buffers[0], *(frLength+ i));
+        //curr += frLength[i];
+    }
     disable_sum();
     return 0;
 }
 
 void do_net_send(uintptr_t addr, size_t length)
 {
-    // TODO:
     // send all packet
-    // maybe you need to call drivers' send function multiple times ?
     enable_sum();
+    //memset(&tx_buffer, 0, sizeof(EthernetFrame));
     memcpy(&tx_buffer, addr, length);
     EmacPsSend(&EmacPsInstance, kva2pa(&tx_buffer), length);
     EmacPsWaitSend(&EmacPsInstance);

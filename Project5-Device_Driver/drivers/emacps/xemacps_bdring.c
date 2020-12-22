@@ -678,6 +678,7 @@ u32 XEmacPs_BdRingFromHwTx(XEmacPs_BdRing * RingPtr, u32 BdLimit,
                 BdStr = XEmacPs_BdRead(CurBdPtr, XEMACPS_BD_STAT_OFFSET);
             }
 			
+			// NOTE: XEMACPS_TXSR_TXCOMPL_MASK is not enough!
 			while ((BdStr & XEMACPS_TXBUF_USED_MASK) == 0x00000000U) {
 				Xil_DCacheFlushRange(0, 64);
                 BdStr = XEmacPs_BdRead(CurBdPtr, XEMACPS_BD_STAT_OFFSET);
@@ -826,10 +827,13 @@ u32 XEmacPs_BdRingFromHwRx(XEmacPs_BdRing * RingPtr, u32 BdLimit,
         if (CurBdPtr != NULL) {
             BdStr = XEmacPs_BdRead(CurBdPtr, XEMACPS_BD_STAT_OFFSET);
         }
+		while ((!(XEmacPs_BdIsRxNew(CurBdPtr))) == TRUE) {
+            BdStr = XEmacPs_BdRead(CurBdPtr, XEMACPS_BD_STAT_OFFSET);
+        }
         if ((!(XEmacPs_BdIsRxNew(CurBdPtr))) == TRUE) {
             break;
         }
-
+		BdStr = XEmacPs_BdRead(CurBdPtr, XEMACPS_BD_STAT_OFFSET);
         BdCount++;
 
         /* hardware has processed this BD so check the "last" bit. If

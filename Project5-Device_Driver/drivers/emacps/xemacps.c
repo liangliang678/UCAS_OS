@@ -451,10 +451,11 @@ void XEmacPs_SetQueuePtr(XEmacPs *InstancePtr, UINTPTR QPtr, u8 QueueNum,
 	Xil_AssertVoid(InstancePtr->IsReady == (u32)XIL_COMPONENT_IS_READY);
 
     /* If already started, then there is nothing to do */
+	
     if (InstancePtr->IsStarted == (u32)XIL_COMPONENT_IS_STARTED) {
         return;
     }
-    // xil_printf("queue base: 0x%x 0x%lx\n\r", (u32)(QPtr & ULONG64_LO_MASK), QPtr);
+    
 	
 	QPtr = kva2pa(QPtr);
 
