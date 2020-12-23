@@ -17,38 +17,44 @@ volatile int rx_curr = 0, rx_tail = 0;
 
 long do_net_recv(uintptr_t addr, size_t length, int num_packet, size_t* frLength)
 {
-    // TODO: 
     // receive packet by calling network driver's function
     // wait until you receive enough packets(`num_packet`).
-    // maybe you need to call drivers' receive function multiple times ?
+    if(num_packet > RXBD_CNT){
+        return -1;
+    }
+
     enable_sum();
-    memset(addr, 0, length);
-    uintptr_t curr = addr;
     for(int i = 0; i < num_packet; i++){
-        memset(&rx_buffers[0], 0, sizeof(EthernetFrame));
-        EmacPsRecv(&EmacPsInstance, kva2pa(&rx_buffers[0]), 1);
-        EmacPsWaitRecv(&EmacPsInstance, 1, frLength);
-        //memcpy(curr, &rx_buffers[0], *(frLength+ i));
-        //curr += frLength[i];
+        memset(&rx_buffers[i], 0, sizeof(EthernetFrame));
+        rx_len[i] = 0;
+    }
+    EmacPsRecv(&EmacPsInstance, 0, num_packet);
+    EmacPsWaitRecv(&EmacPsInstance, num_packet, rx_len);
+    rx_curr = addr;
+    rx_tail = 0;
+    for(int i = 0; i < num_packet; i++){
+        memcpy(rx_curr, &rx_buffers[i], rx_len[i]);
+        *(frLength + i) = rx_len[i];
+        rx_curr += rx_len[i];
+        rx_tail += rx_len[i];
     }
     disable_sum();
-    return 0;
+    return rx_tail;
 }
 
 void do_net_send(uintptr_t addr, size_t length)
 {
     // send all packet
     enable_sum();
-    //memset(&tx_buffer, 0, sizeof(EthernetFrame));
+    memset(&tx_buffer, 0, sizeof(EthernetFrame));
     memcpy(&tx_buffer, addr, length);
-    EmacPsSend(&EmacPsInstance, kva2pa(&tx_buffer), length);
+    EmacPsSend(&EmacPsInstance, 0, length);
     EmacPsWaitSend(&EmacPsInstance);
     disable_sum();
 }
 
 void do_net_irq_mode(int mode)
 {
-    // TODO:
     // turn on/off network driver's interrupt mode
     net_poll_mode = mode;
 }

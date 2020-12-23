@@ -448,17 +448,17 @@ void XEmacPs_SetQueuePtr(XEmacPs *InstancePtr, UINTPTR QPtr, u8 QueueNum,
 {
 	/* Assert bad arguments and conditions */
 	Xil_AssertVoid(InstancePtr != NULL);
-	Xil_AssertVoid(InstancePtr->IsReady == (u32)XIL_COMPONENT_IS_READY);
+	//Xil_AssertVoid(InstancePtr->IsReady == (u32)XIL_COMPONENT_IS_READY);
 
     /* If already started, then there is nothing to do */
-	
+	/*
     if (InstancePtr->IsStarted == (u32)XIL_COMPONENT_IS_STARTED) {
         return;
-    }
+    }*/
     
 	
 	QPtr = kva2pa(QPtr);
-
+	
     if (Direction == XEMACPS_SEND) {
         XEmacPs_WriteReg(
             InstancePtr->Config.BaseAddress, XEMACPS_TXQBASE_OFFSET,

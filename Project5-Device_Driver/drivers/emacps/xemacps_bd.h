@@ -494,6 +494,11 @@ extern void XEmacPs_BdSetRxWrap(UINTPTR BdPtr);
     ~XEMACPS_RXBUF_NEW_MASK))
 
 
+#define XEmacPs_BdSetRxNew(BdPtr)                                \
+    (XEmacPs_BdWrite((BdPtr), XEMACPS_BD_ADDR_OFFSET,             \
+    XEmacPs_BdRead((BdPtr), XEMACPS_BD_ADDR_OFFSET) |             \
+    XEMACPS_RXBUF_NEW_MASK))
+
 /*****************************************************************************/
 /**
  * Determine the new bit of the receive BD.

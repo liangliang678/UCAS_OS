@@ -259,11 +259,11 @@ int xemacps_example_main(void)
 }
 
 XEmacPs_Bd* BdTxPtr;
+XEmacPs_Bd* BdRxPtr;
 
 LONG EmacPsSetupBD(XEmacPs *EmacPsInstancePtr)
 {
     LONG Status;
-    XEmacPs_Bd BdTemplate;
 
     /* Allocate Rx and Tx BD space each */
     // TODO:
@@ -271,53 +271,26 @@ LONG EmacPsSetupBD(XEmacPs *EmacPsInstancePtr)
 	TxBdSpacePtr = &(bd_space[0x10000]);
 
     /*
-     * Setup RxBD space.
-     *
-     * We have already defined a properly aligned area of memory to
-     * store RxBDs at the beginning of this source code file so
-     * just pass its address into the function. No MMU is being
-     * used so the physical and virtual addresses are the same.
-     *
-     * Setup a BD template for the Rx channel. This template will
-     * be copied to every RxBD. We will not have to explicitly set
-     * these again.
+     * Setup RxBD space And Create the RxBD ring
      */
-    // TODO: 
-    XEmacPs_BdClear(BdTemplate);
-
-    /*
-     * Create the RxBD ring
-     */
-    // TODO:
-    Status = XEmacPs_BdRingCreate(&(XEmacPs_GetRxRing(EmacPsInstancePtr)),
-				       (UINTPTR) kva2pa(RxBdSpacePtr),
-				       (UINTPTR) RxBdSpacePtr,
-				       XEMACPS_BD_ALIGNMENT,
-				       RXBD_CNT,
-                       &(XEmacPs_GetTxRing(EmacPsInstancePtr)));
-	if (Status != XST_SUCCESS) {
-		EmacPsUtilErrorTrap
-			("Error setting up RxBD space, BdRingCreate");
-		return XST_FAILURE;
-	}
-
-	Status = XEmacPs_BdRingClone(&(XEmacPs_GetRxRing(EmacPsInstancePtr)),
-				      &BdTemplate, XEMACPS_RECV);
-	if (Status != XST_SUCCESS) {
-		EmacPsUtilErrorTrap
-			("Error setting up RxBD space, BdRingClone");
-		return XST_FAILURE;
-	}
+    BdRxPtr = (XEmacPs_Bd*)RxBdSpacePtr;
+    XEmacPs_Bd* CurPtr = BdRxPtr;
+    for(int i = 0; i < RXBD_CNT; i++){
+        XEmacPs_BdSetRxNew(CurPtr);
+        XEmacPs_BdSetAddressRx(CurPtr, kva2pa(&rx_buffers[i]));
+        CurPtr++;
+    }
 
     /*
      * Setup TxBD space And Create the TxBD ring
      */
-    BdTxPtr =  (XEmacPs_Bd*)TxBdSpacePtr;
+    BdTxPtr = (XEmacPs_Bd*)TxBdSpacePtr;
     XEmacPs_BdSetStatus(BdTxPtr, XEMACPS_TXBUF_USED_MASK);
     XEmacPs_BdSetAddressTx(BdTxPtr, kva2pa(&tx_buffer));
     XEmacPs_BdSetLast(BdTxPtr);
     // At least 2 BDs is needed
-    XEmacPs_BdSetStatus(BdTxPtr + sizeof(XEmacPs_Bd), XEMACPS_TXBUF_USED_MASK);
+    XEmacPs_BdSetStatus(BdTxPtr + 1, XEMACPS_TXBUF_USED_MASK);
+
     return XST_SUCCESS;
 }
 
@@ -479,9 +452,8 @@ LONG EmacPsSend(XEmacPs *EmacPsInstancePtr, EthernetFrame *TxFrame, size_t lengt
 {
     LONG Status = XST_SUCCESS;
 
-    // Setup first TxBD
-    // set address, length, clear tx used bit
-    // set `last` bit if needed
+    // Setup TxBD
+    // set length, clear tx used bit
     XEmacPs_BdSetLength(BdTxPtr, length);
     XEmacPs_BdClearTxUsed(BdTxPtr);
 
@@ -519,7 +491,6 @@ LONG EmacPsWaitSend(XEmacPs *EmacPsInstancePtr)
 LONG EmacPsRecv(XEmacPs *EmacPsInstancePtr, EthernetFrame *RxFrame, int num_packet)
 {
     LONG Status = XST_SUCCESS;
-    XEmacPs_Bd *BdRxPtr;
 
     /* disable receiver */
 	if ((EmacPsInstancePtr->Options & XEMACPS_RECEIVER_ENABLE_OPTION) != 0x00000000U) {
@@ -533,33 +504,24 @@ LONG EmacPsRecv(XEmacPs *EmacPsInstancePtr, EthernetFrame *RxFrame, int num_pack
 					   XEMACPS_RXSR_OFFSET, 0xf);
 		}
 	}
-
+    
     /*
      * Setup buffer address to associated BD.
      * Remember to set wrap bit and clear owner bit.
      */
-    // TODO:
-    Status = XEmacPs_BdRingAlloc(&(XEmacPs_GetRxRing(EmacPsInstancePtr)), 1, &BdRxPtr);
-	if (Status != XST_SUCCESS) {
-		EmacPsUtilErrorTrap("Error allocating RxBD");
-		return XST_FAILURE;
-	}
-    XEmacPs_BdClear(BdRxPtr);
-    XEmacPs_BdSetAddressRx(BdRxPtr, (UINTPTR)RxFrame);
-    XEmacPs_BdClearRxNew(BdRxPtr);
-    XEmacPs_BdSetRxWrap(BdRxPtr);
-
-    printk("%lx: %x  %x\n\r",kva2pa(BdRxPtr), 
-    XEmacPs_BdRead((BdRxPtr), XEMACPS_BD_ADDR_OFFSET), XEmacPs_BdRead((BdRxPtr), XEMACPS_BD_STAT_OFFSET));
-
-    Status = XEmacPs_BdRingToHw(&(XEmacPs_GetRxRing(EmacPsInstancePtr)), 1, BdRxPtr);
-	if (Status != XST_SUCCESS) {
-		EmacPsUtilErrorTrap("Error committing RxBD to HW");
-		return XST_FAILURE;
-	}
-
+    XEmacPs_Bd* CurPtr = BdRxPtr;
+    for(int i = 0; i < num_packet; i++){
+        XEmacPs_BdWrite(CurPtr, XEMACPS_BD_STAT_OFFSET, 0);
+        XEmacPs_BdClearRxNew(CurPtr);
+        XEmacPs_BdClearRxWrap(CurPtr);
+        CurPtr++;
+    }
+    CurPtr--;
+    XEmacPs_BdSetRxWrap(CurPtr);
+    
     // flush again!
     Xil_DCacheFlushRange(0, 64);
+
     /*
      * Set the Queue pointers
      */
@@ -582,53 +544,19 @@ LONG EmacPsRecv(XEmacPs *EmacPsInstancePtr, EthernetFrame *RxFrame, int num_pack
 
 LONG EmacPsWaitRecv(XEmacPs *EmacPsInstancePtr, int num_packet, u32* RxFrLen)
 {
-    LONG Status = XST_SUCCESS;
-    u32 NumRxBuf    = 0;
-    XEmacPs_Bd *BdRxPtr;
-
     /*
      * Wait for Rx indication
      */
-    /*
-    while (!FramesRx) {
-        // TODO:
-        ;
+    XEmacPs_Bd* CurPtr = BdRxPtr;
+    for(int i = 0; i < num_packet; i++){
+        while(!XEmacPs_BdIsRxNew(CurPtr)) {
+            Xil_DCacheFlushRange(0, 64);
+        }
+        *(RxFrLen + i) = XEmacPs_BdGetLength(CurPtr);
+        CurPtr++;
     }
-    FramesRx = 0;
-    */
 
-    u32 RegSR = XEmacPs_ReadReg(EmacPsInstancePtr->Config.BaseAddress, XEMACPS_RXSR_OFFSET);
-    while(RegSR & XEMACPS_RXSR_BUFFNA_MASK == 0){
-        RegSR = XEmacPs_ReadReg(EmacPsInstancePtr->Config.BaseAddress, XEMACPS_RXSR_OFFSET);
-    }
-    // remember to flush dcache
-    Xil_DCacheFlushRange(0, 64);
-    /*
-     * Now that the frame has been received, post process our RxBD.
-     * Since we have submitted to hardware.
-     */
-
-    NumRxBuf = XEmacPs_BdRingFromHwRx(&(XEmacPs_GetRxRing(EmacPsInstancePtr)), 1, &BdRxPtr);
-	if (NumRxBuf == 0) {
-		EmacPsUtilErrorTrap("RxBD was not ready for post processing");
-		return XST_FAILURE;
-	}
-    
-    printk("%lx: %x  %x\n\r",kva2pa(BdRxPtr), 
-    XEmacPs_BdRead((BdRxPtr), XEMACPS_BD_ADDR_OFFSET), XEmacPs_BdRead((BdRxPtr), XEMACPS_BD_STAT_OFFSET));
-
-    // TODO:
-    // NOTE: you can get length from BD
-    *RxFrLen = XEmacPs_BdGetLength(BdRxPtr);
-    printk("%d\n\r", *RxFrLen);
-
-    Status = XEmacPs_BdRingFree(&(XEmacPs_GetRxRing(EmacPsInstancePtr)), NumRxBuf, BdRxPtr);
-	if (Status != XST_SUCCESS) {
-		EmacPsUtilErrorTrap("Error freeing up RxBDs");
-		return XST_FAILURE;
-	}
-
-    return Status;
+    return XST_SUCCESS;
 }
 
 /****************************************************************************/
