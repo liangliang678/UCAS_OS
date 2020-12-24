@@ -76,19 +76,20 @@ int main(int argc, char *argv[])
     
     if (is_first(vars)) {
         sys_move_cursor(1, 1);
-        printf("[ECHO SEND SIDE]\n");
+        printf("[ECHO RECV SIDE]\n");
         sys_net_irq_mode(mode);
 
         atomic_exchange_d(&vars->available, 0);
         sys_exec(argv[0], argc, argv, AUTO_CLEANUP_ON_EXIT);
-        sys_move_cursor(1, 1);
-        printf("[ECHO TASK] start recv(%d):                    \n", size);
+        sys_move_cursor(1, 2);
+        printf("[ECHO TASK] start recv(%d): ", size);
 
         int ret = sys_net_recv(recv_buffer, size * sizeof(EthernetFrame), size, recv_length);
+        printf("%d\n", ret);
         shm_write(vars->fifo_buffer, &vars->available, recv_buffer, size * sizeof(EthernetFrame));
         shm_write(vars->fifo_buffer, &vars->available, recv_length, size * sizeof(size_t));
     } else {
-        int print_location = 10;
+        int print_location = 3;
         sys_move_cursor(1, print_location);
         printf("[ECHO SEND SIDE]\n");
         shm_read(vars->fifo_buffer, &vars->available, recv_buffer, size * sizeof(EthernetFrame));
@@ -101,13 +102,13 @@ int main(int argc, char *argv[])
 
         for (int i = 0; i < size; ++i)
         {
-            sys_move_cursor(1, print_location);
+            sys_move_cursor(1, print_location + 1);
             printf("No.%d packet, recv_length[i] = %ld ...\n", i, recv_length[i]);
             memcpy(cur + HDR_OFFSET, response, resp_len);
 
             sys_net_send(cur, recv_length[i]);
             send_num += 1;
-            sys_move_cursor(1, print_location + 1);
+            sys_move_cursor(1, print_location + 2);
             printf("[ECHO TASK] Echo no.%d packets ...\n", i);
             cur += recv_length[i];
         }

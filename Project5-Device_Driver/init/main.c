@@ -183,21 +183,18 @@ int main()
     printk("[ethernet] phy: 0x%x\n\r", ethernet_addr);
     printk("[plic] plic:    0x%x\n\r", plic_addr);
     printk("[plic] nr_irqs: 0x%x\n\r", nr_irqs);
-
     
+    XPS_SYS_CTRL_BASEADDR = (uintptr_t)ioremap((uint64_t)slcr_bade_addr, NORMAL_PAGE_SIZE);
     xemacps_config.BaseAddress = (uintptr_t)ioremap((uint64_t)ethernet_addr, NORMAL_PAGE_SIZE);
     //xemacps_config.BaseAddress = (uintptr_t)ioremap((uint64_t)ethernet_addr, 9 * NORMAL_PAGE_SIZE);
     //xemacps_config.BaseAddress += 0x8000;
     xemacps_config.DeviceId        = 0;
     xemacps_config.IsCacheCoherent = 0;
-    
-    XPS_SYS_CTRL_BASEADDR = (uintptr_t)ioremap((uint64_t)slcr_bade_addr, NORMAL_PAGE_SIZE);
-    uintptr_t _plic_addr = (uintptr_t)ioremap((uint64_t)plic_addr, 0x4000 * NORMAL_PAGE_SIZE);
-
     printk("[slcr_bade_addr] phy:%x virt:%lx\n\r", slcr_bade_addr, XPS_SYS_CTRL_BASEADDR);
     printk("[ethernet_addr]  phy:%x virt:%lx\n\r", ethernet_addr, xemacps_config.BaseAddress);
+
+    uintptr_t _plic_addr = (uintptr_t)ioremap((uint64_t)plic_addr, 0x4000 * NORMAL_PAGE_SIZE);
     printk("[plic_addr]      phy:%x virt:%lx\n\r", plic_addr, _plic_addr);
-    
     plic_init(_plic_addr, nr_irqs);
     
     long status = EmacPsInit(&EmacPsInstance);

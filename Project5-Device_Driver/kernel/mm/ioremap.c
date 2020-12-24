@@ -46,6 +46,7 @@ void *ioremap(unsigned long phys_addr, unsigned long size)
         phys_addr += NORMAL_PAGE_SIZE;
         io_base += NORMAL_PAGE_SIZE;
     }
+    local_flush_tlb_all();
     return ret;
 }
 

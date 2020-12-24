@@ -121,14 +121,12 @@
 #include <net.h>
 
 #include <os/sched.h>
+#include <assert.h>
 
 /*************************** Constant Definitions
  * ***************************/
 
 #define RXBD_CNT 32 /* Number of RxBDs to use */
-
-LIST_HEAD(net_recv_queue);
-LIST_HEAD(net_send_queue);
 
 /*
  * SLCR setting
@@ -443,8 +441,7 @@ LONG EmacPsInit(XEmacPs *EmacPsInstancePtr)
      *          (XEMACPS_IXR_TX_ERR_MASK | XEMACPS_IXR_RX_ERR_MASK |
      *          (u32)XEMACPS_IXR_FRAMERX_MASK | (u32)XEMACPS_IXR_TXCOMPL_MASK)
      */
-    //XEmacPs_IntEnable(EmacPsInstancePtr, (XEMACPS_IXR_TX_ERR_MASK | XEMACPS_IXR_RX_ERR_MASK |
-      //         (u32)XEMACPS_IXR_FRAMERX_MASK | (u32)XEMACPS_IXR_TXCOMPL_MASK));
+    
     return status;
 }
 
@@ -843,6 +840,29 @@ static LONG EmacPsResetDevice(XEmacPs *EmacPsInstancePtr)
     return XST_SUCCESS;
 }
 
+void handle_xemacps_irq()
+{
+    int send_flag = 0, recv_flag = 0;
+    Xil_DCacheFlushRange(0, 64);
+    u32 reg;
+    reg = XEmacPs_ReadReg(EmacPsInstance.Config.BaseAddress, XEMACPS_TXSR_OFFSET);
+    if(reg & XEMACPS_TXSR_TXCOMPL_MASK) {
+		send_flag = 1;
+    }
+    reg = XEmacPs_ReadReg(EmacPsInstance.Config.BaseAddress, XEMACPS_RXSR_OFFSET);
+    if(reg & XEMACPS_RXSR_FRAMERX_MASK) {
+		recv_flag = 1;
+    }
+    assert(send_flag || recv_flag);
+
+    if(send_flag && send_transaction){
+        XEmacPsSendHandler((void*)&EmacPsInstance);
+    }
+    else if(recv_flag && recv_transaction){
+        XEmacPsRecvHandler((void*)&EmacPsInstance);
+    }
+}
+
 /****************************************************************************/
 /**
  *
@@ -862,7 +882,6 @@ static void XEmacPsSendHandler(void *Callback)
 {
     // TODO: you finish sending packet now
     XEmacPs *EmacPsInstancePtr = (XEmacPs *)Callback;
-
     /*
      * Disable the transmit related interrupts
      */
@@ -874,13 +893,11 @@ static void XEmacPsSendHandler(void *Callback)
      * Increment the counter so that main thread knows something
      * happened.
      */
-    FramesTx++;
-
-    /*if (!net_poll_mode) {
-        if (!list_empty(&net_send_queue)) {
-            do_unblock(net_send_queue.next);
-        }
-    }*/
+    do_unblock(net_send_queue.next);
+    u32 Reg = XEmacPs_ReadReg(EmacPsInstancePtr->Config.BaseAddress, XEMACPS_ISR_OFFSET);
+    Reg = Reg | XEMACPS_IXR_TXCOMPL_MASK;
+	XEmacPs_WriteReg(EmacPsInstancePtr->Config.BaseAddress, XEMACPS_ISR_OFFSET, Reg);
+    send_transaction = 0;
 }
 
 /****************************************************************************/
@@ -914,16 +931,28 @@ static void XEmacPsRecvHandler(void *Callback)
      * Increment the counter so that main thread knows something
      * happened.
      */
-    FramesRx++;
     
-    /*if (!net_poll_mode) {
-        if (!list_empty(&net_recv_queue)) {
-            do_unblock(net_recv_queue.next);
+    XEmacPs_Bd* CurPtr = BdRxPtr;
+    for(int i = 0; i < _num_packet; i++){
+        while(!XEmacPs_BdIsRxNew(CurPtr)) {
+            Xil_DCacheFlushRange(0, 64);
         }
-    }*/
-
-    Xil_DCacheInvalidateRange((UINTPTR)&RxFrame, sizeof(EthernetFrame));
+        rx_len[i] = XEmacPs_BdGetLength(CurPtr);
+        CurPtr++;
+    }
+    uintptr_t rx_curr = _addr;
+    for(int i = 0; i < _num_packet; i++){
+        memcpy(rx_curr, &rx_buffers[i], rx_len[i]);
+        *(_frLength + i) = rx_len[i];
+        rx_curr += rx_len[i];
+    }
+    do_unblock(net_recv_queue.next);
+    u32 Reg = XEmacPs_ReadReg(EmacPsInstancePtr->Config.BaseAddress, XEMACPS_ISR_OFFSET);
+    Reg = Reg | XEMACPS_IXR_FRAMERX_MASK;
+	XEmacPs_WriteReg(EmacPsInstancePtr->Config.BaseAddress, XEMACPS_ISR_OFFSET, Reg);
+    recv_transaction = 0;
 }
+
 
 /****************************************************************************/
 /**

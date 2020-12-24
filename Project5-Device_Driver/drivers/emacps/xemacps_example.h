@@ -119,6 +119,7 @@ LONG EmacPsSend(XEmacPs *EmacPsInstancePtr, EthernetFrame *TxFrame, size_t lengt
 LONG EmacPsWaitSend(XEmacPs *EmacPsInstancePtr);
 LONG EmacPsRecv(XEmacPs *EmacPsInstancePtr, EthernetFrame *RxFrame, int num_packet);
 LONG EmacPsWaitRecv(XEmacPs *EmacPsInstancePtr, int num_packet, u32* RxFrLen);
+void handle_xemacps_irq();
 
 /************************** Variable Definitions ****************************/
 

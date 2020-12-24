@@ -11,6 +11,7 @@
 
 #include <os/mm.h>
 #include <emacps/xemacps_example.h>
+#include <emacps/xemacps_hw.h>
 #include <plic.h>
 
 handler_t irq_table[IRQC_COUNT];
@@ -27,7 +28,7 @@ void init_exception()
     irq_table[IRQC_S_TIMER] = (handler_t)handle_int;
     irq_table[IRQC_M_TIMER] = (handler_t)handle_other;
     irq_table[IRQC_U_EXT] = (handler_t)handle_other;
-    irq_table[IRQC_S_EXT] = (handler_t)handle_other;
+    irq_table[IRQC_S_EXT] = (handler_t)plic_handle_irq;
     irq_table[IRQC_M_EXT] = (handler_t)handle_other;
 
     exc_table[EXCC_INST_MISALIGNED] = (handler_t)handle_other;
@@ -62,12 +63,13 @@ void handle_int(regs_context_t *regs, uint64_t stval, uint64_t cause)
     reset_irq_timer();
 }
 
-// !!! NEW: handle_irq
 void handle_irq(regs_context_t *regs, int irq)
 {
     // TODO: 
     // handle external irq from network device
     // let PLIC know that handle_irq has been finished
+    handle_xemacps_irq();
+    plic_irq_eoi(irq);
 }
 
 void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause)
