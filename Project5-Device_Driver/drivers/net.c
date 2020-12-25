@@ -43,7 +43,7 @@ long do_net_recv(uintptr_t addr, size_t length, int num_packet, size_t* frLength
         rx_curr = addr;
         rx_tail = 0;
         for(int i = 0; i < num_packet; i++){
-            memcpy(rx_curr, &rx_buffers[i], rx_len[i]);
+            memcpy((uint8_t*)rx_curr, (uint8_t*)&rx_buffers[i], rx_len[i]);
             *(frLength + i) = rx_len[i];
             rx_curr += rx_len[i];
             rx_tail += rx_len[i];
@@ -53,12 +53,15 @@ long do_net_recv(uintptr_t addr, size_t length, int num_packet, size_t* frLength
         return rx_tail;
     }
     else if(net_poll_mode == 1){
-        _addr = get_kva_of(addr, current_running[cpu_id]->pgdir);
+        _addr = get_kva_of(addr, (uintptr_t)current_running[cpu_id]->pgdir);
         _num_packet = num_packet;
-        _frLength = get_kva_of(frLength, current_running[cpu_id]->pgdir);
+        _frLength = (size_t*)get_kva_of((uintptr_t)frLength, (uintptr_t)current_running[cpu_id]->pgdir);
         do_block(&current_running[cpu_id]->list, &net_recv_queue);
         disable_sum();
         return 0;
+    }
+    else{
+        return -1;
     }
 }
 
@@ -68,7 +71,7 @@ void do_net_send(uintptr_t addr, size_t length)
     send_transaction = 1;
     enable_sum();
     memset(&tx_buffer, 0, sizeof(EthernetFrame));
-    memcpy(&tx_buffer, addr, length);
+    memcpy((uint8_t*)&tx_buffer, (uint8_t*)addr, length);
     EmacPsSend(&EmacPsInstance, 0, length);
     if(net_poll_mode == 0){        
         EmacPsWaitSend(&EmacPsInstance);

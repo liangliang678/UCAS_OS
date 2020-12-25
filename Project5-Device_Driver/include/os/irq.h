@@ -79,6 +79,7 @@ extern void handle_other(regs_context_t *regs, uint64_t stval, uint64_t cause);
 extern void handle_syscall(regs_context_t *regs, uint64_t stval, uint64_t cause);
 extern void handle_page_fault(regs_context_t *regs, uint64_t stval, uint64_t cause);
 extern void clear_ipi(regs_context_t *regs, uint64_t stval, uint64_t cause);
+extern void handle_irq(regs_context_t *regs, int irq);
 
 extern void enable_interrupt(void);
 extern void disable_interrupt(void);

@@ -19,7 +19,7 @@
 #include <io.h>
 #include <csr.h>
 #include <os/irq.h>
-
+#include <stdio.h>
 #include <plic.h>
 
 #define MAX_DEVICES			1024
@@ -78,6 +78,7 @@ static void plic_irq_unmask(int hwirq)
     if (handler->present) plic_toggle(handler, hwirq, enable);
 }
 
+/*
 static void plic_irq_mask(int hwirq)
 {
 	int enable = 0;
@@ -86,6 +87,7 @@ static void plic_irq_mask(int hwirq)
 
     if (handler->present) plic_toggle(handler, hwirq, enable);
 }
+*/
 
 void plic_irq_eoi(int hwirq)
 {

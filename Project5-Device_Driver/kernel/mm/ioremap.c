@@ -4,7 +4,7 @@
 #include <type.h>
 
 static uintptr_t io_base = IO_ADDR_START;
-static PTE *pgdir = PGDIR_PA;
+static PTE *pgdir = (PTE*)PGDIR_PA;
 
 void *ioremap(unsigned long phys_addr, unsigned long size)
 {
@@ -17,7 +17,7 @@ void *ioremap(unsigned long phys_addr, unsigned long size)
         int VPN0 = (io_base >> VPN0_SHIFT) & VPN_MASK;
 
         if(!get_attribute(*(pgdir + VPN2), _PAGE_PRESENT)){
-            PTE *second_level_pgdir = PGDIR_PA + 2 * NORMAL_PAGE_SIZE;
+            PTE *second_level_pgdir = (PTE*)(PGDIR_PA + 2 * NORMAL_PAGE_SIZE);
             set_pfn(pgdir + VPN2, (uint64_t)second_level_pgdir >> NORMAL_PAGE_SHIFT);
             set_attribute(pgdir + VPN2, _PAGE_PRESENT);
         }
@@ -47,7 +47,7 @@ void *ioremap(unsigned long phys_addr, unsigned long size)
         io_base += NORMAL_PAGE_SIZE;
     }
     local_flush_tlb_all();
-    return ret;
+    return (void *)ret;
 }
 
 void iounmap(void *io_addr)

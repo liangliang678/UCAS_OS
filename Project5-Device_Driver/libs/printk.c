@@ -245,6 +245,7 @@ static int _vprint(const char* fmt, va_list _va,
     return ret;
 }
 
+/*
 static void port_write_wrapper(char* str)
 {
     disable_preempt();
@@ -261,6 +262,7 @@ static void port_write_wrapper(char* str)
     }
     enable_preempt();
 }
+*/
 
 int vprintk(const char *fmt, va_list _va)
 {

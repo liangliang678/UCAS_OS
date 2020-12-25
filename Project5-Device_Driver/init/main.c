@@ -186,8 +186,6 @@ int main()
     
     XPS_SYS_CTRL_BASEADDR = (uintptr_t)ioremap((uint64_t)slcr_bade_addr, NORMAL_PAGE_SIZE);
     xemacps_config.BaseAddress = (uintptr_t)ioremap((uint64_t)ethernet_addr, NORMAL_PAGE_SIZE);
-    //xemacps_config.BaseAddress = (uintptr_t)ioremap((uint64_t)ethernet_addr, 9 * NORMAL_PAGE_SIZE);
-    //xemacps_config.BaseAddress += 0x8000;
     xemacps_config.DeviceId        = 0;
     xemacps_config.IsCacheCoherent = 0;
     printk("[slcr_bade_addr] phy:%x virt:%lx\n\r", slcr_bade_addr, XPS_SYS_CTRL_BASEADDR);

@@ -349,6 +349,7 @@ extern "C" {
 #include "xemacps_bd.h"
 #include "xemacps_bdring.h"
 #include "xil_utils.h"
+#include <stdio.h>
 
 /************************** Constant Definitions ****************************/
 

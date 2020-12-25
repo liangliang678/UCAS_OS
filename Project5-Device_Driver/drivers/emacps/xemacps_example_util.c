@@ -201,11 +201,9 @@ void EmacPsUtilFrameSetPayloadData(EthernetFrame * FramePtr, u32 PayloadSize)
 LONG EmacPsUtilFrameVerify(EthernetFrame * CheckFrame,
 			   EthernetFrame * ActualFrame)
 {
-	char *CheckPtr = (char *) CheckFrame;
 	char *ActualPtr = (char *) ActualFrame;
 	u16 BytesLeft;
 	u16 Counter;
-	u32 Index;
 
 	/*
 	 * Compare the headers

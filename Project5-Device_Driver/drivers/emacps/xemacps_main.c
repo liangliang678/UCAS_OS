@@ -261,8 +261,6 @@ XEmacPs_Bd* BdRxPtr;
 
 LONG EmacPsSetupBD(XEmacPs *EmacPsInstancePtr)
 {
-    LONG Status;
-
     /* Allocate Rx and Tx BD space each */
     // TODO:
     RxBdSpacePtr = &(bd_space[0]);
@@ -275,7 +273,7 @@ LONG EmacPsSetupBD(XEmacPs *EmacPsInstancePtr)
     XEmacPs_Bd* CurPtr = BdRxPtr;
     for(int i = 0; i < RXBD_CNT; i++){
         XEmacPs_BdSetRxNew(CurPtr);
-        XEmacPs_BdSetAddressRx(CurPtr, kva2pa(&rx_buffers[i]));
+        XEmacPs_BdSetAddressRx(CurPtr, kva2pa((uintptr_t)&rx_buffers[i]));
         CurPtr++;
     }
 
@@ -284,7 +282,7 @@ LONG EmacPsSetupBD(XEmacPs *EmacPsInstancePtr)
      */
     BdTxPtr = (XEmacPs_Bd*)TxBdSpacePtr;
     XEmacPs_BdSetStatus(BdTxPtr, XEMACPS_TXBUF_USED_MASK);
-    XEmacPs_BdSetAddressTx(BdTxPtr, kva2pa(&tx_buffer));
+    XEmacPs_BdSetAddressTx(BdTxPtr, kva2pa((uintptr_t)&tx_buffer));
     XEmacPs_BdSetLast(BdTxPtr);
     // At least 2 BDs is needed
     XEmacPs_BdSetStatus(BdTxPtr + 1, XEMACPS_TXBUF_USED_MASK);
@@ -458,7 +456,7 @@ LONG EmacPsSend(XEmacPs *EmacPsInstancePtr, EthernetFrame *TxFrame, size_t lengt
     Xil_DCacheFlushRange(0, 64);
 
     // set tx queue base
-    XEmacPs_SetQueuePtr(EmacPsInstancePtr, BdTxPtr, 0, XEMACPS_SEND);
+    XEmacPs_SetQueuePtr(EmacPsInstancePtr, (UINTPTR)BdTxPtr, 0, XEMACPS_SEND);
 
     /* Enable transmitter if not already enabled */
 	if ((EmacPsInstancePtr->Options & (u32)XEMACPS_TRANSMITTER_ENABLE_OPTION)!=0x00000000U) {
@@ -493,7 +491,7 @@ LONG EmacPsRecv(XEmacPs *EmacPsInstancePtr, EthernetFrame *RxFrame, int num_pack
 	if ((EmacPsInstancePtr->Options & XEMACPS_RECEIVER_ENABLE_OPTION) != 0x00000000U) {
 		u32 Reg = XEmacPs_ReadReg(EmacPsInstancePtr->Config.BaseAddress,
 					XEMACPS_NWCTRL_OFFSET);
-		if ((Reg & XEMACPS_NWCTRL_RXEN_MASK)==TRUE) {
+		if ((Reg & XEMACPS_NWCTRL_RXEN_MASK)) {
 			XEmacPs_WriteReg(EmacPsInstancePtr->Config.BaseAddress,
 					   XEMACPS_NWCTRL_OFFSET,
 				   Reg & (~(u32)XEMACPS_NWCTRL_RXEN_MASK));
@@ -514,7 +512,7 @@ LONG EmacPsRecv(XEmacPs *EmacPsInstancePtr, EthernetFrame *RxFrame, int num_pack
         CurPtr++;
     }
     CurPtr--;
-    XEmacPs_BdSetRxWrap(CurPtr);
+    XEmacPs_BdSetRxWrap((UINTPTR)CurPtr);
     
     // flush again!
     Xil_DCacheFlushRange(0, 64);
@@ -523,7 +521,7 @@ LONG EmacPsRecv(XEmacPs *EmacPsInstancePtr, EthernetFrame *RxFrame, int num_pack
      * Set the Queue pointers
      */
     // TODO: set rx queue base
-    XEmacPs_SetQueuePtr(EmacPsInstancePtr, BdRxPtr, 0, XEMACPS_RECV);
+    XEmacPs_SetQueuePtr(EmacPsInstancePtr, (UINTPTR)BdRxPtr, 0, XEMACPS_RECV);
 
 	/* Enable receiver if not already enabled */
 	if ((EmacPsInstancePtr->Options & XEMACPS_RECEIVER_ENABLE_OPTION) != 0x00000000U) {
@@ -621,7 +619,6 @@ LONG EmacPsDmaIntrExample(
  *****************************************************************************/
 LONG EmacPsDmaSingleFrameIntrExample(XEmacPs *EmacPsInstancePtr)
 {
-    LONG Status;
     u32 PayloadSize = 1000;
 
     /*
@@ -942,7 +939,7 @@ static void XEmacPsRecvHandler(void *Callback)
     }
     uintptr_t rx_curr = _addr;
     for(int i = 0; i < _num_packet; i++){
-        memcpy(rx_curr, &rx_buffers[i], rx_len[i]);
+        memcpy((uint8_t*)rx_curr, (uint8_t*)&rx_buffers[i], rx_len[i]);
         *(_frLength + i) = rx_len[i];
         rx_curr += rx_len[i];
     }

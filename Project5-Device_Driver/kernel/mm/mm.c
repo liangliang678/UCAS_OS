@@ -257,7 +257,7 @@ uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir)
     if(!get_attribute(*((PTE*)pgdir + VPN2), _PAGE_PRESENT)){
         PTE *second_level_pgdir = alloc_pgdir_page();
         set_pfn((PTE*)pgdir + VPN2, (uint64_t)second_level_pgdir >> NORMAL_PAGE_SHIFT);
-        set_attribute(pgdir + VPN2, _PAGE_PRESENT);
+        set_attribute((PTE*)(pgdir + VPN2), _PAGE_PRESENT);
     }
 
     PTE* second_level_pgdir = (PTE*)get_pa(*((PTE*)pgdir + VPN2));
@@ -270,7 +270,7 @@ uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir)
 
     PTE* last_level_pgdir = (PTE*)get_pa(*(second_level_pgdir + VPN1));
     last_level_pgdir = (PTE*)pa2kva((uintptr_t)last_level_pgdir);
-    uintptr_t pa = alloc_user_page(1, kva2pa(last_level_pgdir));
+    uintptr_t pa = alloc_user_page(1, (PTE*)kva2pa((uintptr_t)last_level_pgdir));
     if(!get_attribute(*(last_level_pgdir + VPN0), _PAGE_PRESENT)){
         set_pfn(last_level_pgdir + VPN0,  pa >> NORMAL_PAGE_SHIFT);
         set_attribute(last_level_pgdir + VPN0, _PAGE_PRESENT);

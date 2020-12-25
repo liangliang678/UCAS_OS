@@ -103,6 +103,7 @@ typedef char EthernetFrame[ROUND(XEMACPS_MAX_FRAME_SIZE,64)] __attribute__ ((ali
  * Utility functions implemented in xemacps_example_util.c
  */
 void EmacPsUtilSetupUart(void);
+u32 XEmacPsDetectPHY(XEmacPs * EmacPsInstancePtr);
 void EmacPsUtilFrameHdrFormatMAC(EthernetFrame * FramePtr, char *DestAddr);
 void EmacPsUtilFrameHdrFormatType(EthernetFrame * FramePtr, u16 FrameType);
 void EmacPsUtilFrameSetPayloadData(EthernetFrame * FramePtr, u32 PayloadSize);
