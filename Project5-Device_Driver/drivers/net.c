@@ -90,9 +90,11 @@ void do_net_irq_mode(int mode)
         if(net_poll_mode == 1){
             XEmacPs_IntEnable(&EmacPsInstance, (XEMACPS_IXR_TX_ERR_MASK | XEMACPS_IXR_RX_ERR_MASK |
                             (u32)XEMACPS_IXR_FRAMERX_MASK | (u32)XEMACPS_IXR_TXCOMPL_MASK));
+            XEmacPs_WriteReg(EmacPsInstance.Config.BaseAddress, XEMACPS_IDR_OFFSET, 0);
         }
         else if(net_poll_mode == 0){
-            XEmacPs_WriteReg(EmacPsInstance.Config.BaseAddress, XEMACPS_IER_OFFSET, 0);
+            XEmacPs_IntDisable(&EmacPsInstance, (XEMACPS_IXR_TX_ERR_MASK | XEMACPS_IXR_RX_ERR_MASK |
+                            (u32)XEMACPS_IXR_FRAMERX_MASK | (u32)XEMACPS_IXR_TXCOMPL_MASK));
         }
     }
 }
