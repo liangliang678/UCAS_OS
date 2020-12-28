@@ -30,6 +30,7 @@ SRC_INT		= ./kernel/irq/irq.c
 SRC_LOCK	= ./kernel/locking/lock.c ./kernel/locking/futex.c ./kernel/locking/binsem.c
 SRC_SCHED	= ./kernel/sched/sched.c ./kernel/sched/time.c ./kernel/sched/smp.c
 SRC_MM	    = ./kernel/mm/mm.c ./kernel/mm/ioremap.c
+SRC_FS		= ./kernel/fs/fs.c ./kernel/fs/disk.c
 SRC_SYSCALL	= ./kernel/syscall/syscall.c ./kernel/syscall/mailbox.c
 SRC_LIBS	= ./libs/string.c ./libs/printk.c
 
@@ -38,9 +39,9 @@ SRC_LIBC	= ./tiny_libc/printf.c ./tiny_libc/string.c ./tiny_libc/mthread.c ./tin
 SRC_LIBC_ASM	= $(filter %.S %.s,$(SRC_LIBC))
 SRC_LIBC_C	= $(filter %.c,$(SRC_LIBC))
 
-SRC_USER	= ./test/test_shell.elf ./test/echo.elf ./test/recv.elf ./test/send.elf
+SRC_USER	= ./test/test_shell.elf
 
-SRC_MAIN	= ${SRC_ARCH} ${SRC_INIT} ${SRC_INT} ${SRC_DRIVER} ${SRC_LOCK} ${SRC_SCHED} ${SRC_MM} ${SRC_SYSCALL} ${SRC_LIBS}
+SRC_MAIN	= ${SRC_ARCH} ${SRC_INIT} ${SRC_INT} ${SRC_DRIVER} ${SRC_LOCK} ${SRC_SCHED} ${SRC_MM} ${SRC_SYSCALL} ${SRC_LIBS} ${SRC_FS}
 
 SRC_IMAGE	= ./tools/createimage.c
 SRC_ELF2CHAR	= ./tools/elf2char.c

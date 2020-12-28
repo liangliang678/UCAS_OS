@@ -46,6 +46,8 @@
 #include <plic.h>
 #include <emacps/xemacps_example.h>
 #include <net.h>
+#include <os/disk.h>
+#include <os/fs.h>
 
 #include <user_programs.h>
 
@@ -172,6 +174,7 @@ static void init_syscall(void)
 int main()
 {   
     // init ethernet driver
+    /*
     printk("> [INIT] Start Ethernet Driver Initialization.\n\r");
 
     uint32_t slcr_bade_addr = 0, ethernet_addr = 0, plic_addr = 0, nr_irqs = 0;
@@ -203,7 +206,7 @@ int main()
     else{
         printk("> [INIT] Ethernet Driver Initialization Succeeded.\n\r");
     }
-
+*/
     // read CPU frequency and calc timer interval
     time_base = sbi_read_fdt(TIMEBASE);
     timer_interval = (uint64_t)(time_base / 100);
@@ -224,7 +227,15 @@ int main()
     // init system call table
     init_syscall();
     printk("> [INIT] System Call Initialized Successfully.\n\r");
-    
+
+    // init fs
+    if(mkfs()){
+        printk("> [INIT] File System Initialized Successfully.\n\r");
+    }
+    else{
+        printk("> [INIT] No Need to Initialize File System.\n\r");
+    }
+
     // init screen
     init_screen();
     printk("> [INIT] Screen Initialization Succeeded.\n\r");

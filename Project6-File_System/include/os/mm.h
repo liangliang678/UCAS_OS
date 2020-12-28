@@ -38,7 +38,8 @@ Memory Layout
 0x5140_0000 ~ 0x5140_2000       Kernel Stack
 0x5140_2000 ~ 0x5200_0000       Kernel Mem
 0x5200_0000 ~ 0x5e00_0000       User Mem
-0x5e00_0000 ~ 0x6000_0000       Page Table
+0x5e00_0000 ~ 0x5f00_0000       Page Table
+0x5f00_0000 ~ 0x6000_0000       FS Cache
 * * * * * * * * * * * * * * * * * * * * * * */
 
 #define PAGE_SIZE 4096
@@ -49,6 +50,7 @@ Memory Layout
 #define KERNEL_MEM_END      0x52000000lu            //pa
 #define USER_MEM_BEGIN      0x52000000lu            //pa
 #define USER_MEM_END        0x5e000000lu            //pa
+#define PGDIR_END           0x5f000000lu            //pa
 #define MEM_END             0x60000000lu            //pa
 
 #define SWAP_BEGIN 2048
@@ -61,7 +63,7 @@ extern ptr_t kernel_memCurr;
 extern ptr_t user_memCurr;
 
 #define FREE_PGDIR_ADDR (PGDIR_PA + 3 * PAGE_SIZE)
-#define PGDIR_PAGE_NUM ((MEM_END - FREE_PGDIR_ADDR) / PAGE_SIZE)
+#define PGDIR_PAGE_NUM ((PGDIR_END - FREE_PGDIR_ADDR) / PAGE_SIZE)
 typedef struct pgdir_page{
     uint8_t valid;
 }pgdir_page_t;
