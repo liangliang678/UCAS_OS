@@ -76,4 +76,11 @@ extern long sys_net_recv(uintptr_t addr, size_t length, int num_packet, size_t* 
 extern void sys_net_send(uintptr_t addr, size_t length);
 extern void sys_net_irq_mode(int mode);
 
+extern int sys_mkfs(int mode);
+extern void sys_statfs(char* buffer);
+extern int sys_mkdir(char* dirname);
+extern int sys_rmdir(char* dirname);
+extern void sys_ls(char* buffer);
+extern int sys_cd(char* dirname);
+
 #endif

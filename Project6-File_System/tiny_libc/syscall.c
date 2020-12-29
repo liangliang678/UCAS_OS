@@ -159,3 +159,28 @@ void sys_net_irq_mode(int mode)
 {
     invoke_syscall(SYSCALL_NET_IRQ_MODE, (long)mode, IGNORE, IGNORE, IGNORE);
 }
+
+int sys_mkfs(int mode)
+{
+    return invoke_syscall(SYSCALL_MKFS, (long)mode, IGNORE, IGNORE, IGNORE);
+}
+void sys_statfs(char* buffer)
+{
+    invoke_syscall(SYSCALL_STATFS, (long)buffer, IGNORE, IGNORE, IGNORE);
+}
+int sys_mkdir(char* dirname)
+{
+    return invoke_syscall(SYSCALL_MKDIR, (long)dirname, IGNORE, IGNORE, IGNORE);
+}
+int sys_rmdir(char* dirname)
+{
+    return invoke_syscall(SYSCALL_RMDIR, (long)dirname, IGNORE, IGNORE, IGNORE);
+}
+void sys_ls(char* buffer)
+{
+    invoke_syscall(SYSCALL_LS, (long)buffer, IGNORE, IGNORE, IGNORE);
+}
+int sys_cd(char* dirname)
+{
+    return invoke_syscall(SYSCALL_CD, (long)dirname, IGNORE, IGNORE, IGNORE);
+}

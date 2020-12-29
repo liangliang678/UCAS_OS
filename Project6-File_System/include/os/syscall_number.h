@@ -73,4 +73,12 @@
 #define SYSCALL_NET_SEND 45
 #define SYSCALL_NET_IRQ_MODE 46
 
+#define SYSCALL_MKFS 50
+#define SYSCALL_STATFS 51
+#define SYSCALL_MKDIR 52
+#define SYSCALL_RMDIR 53
+#define SYSCALL_LS 54
+#define SYSCALL_CD 55
+
+
 #endif

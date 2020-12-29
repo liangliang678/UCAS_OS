@@ -167,6 +167,12 @@ static void init_syscall(void)
     syscall[SYSCALL_NET_IRQ_MODE] = (long(*)())do_net_irq_mode;
     syscall[SYSCALL_NET_SEND] = (long(*)())do_net_send;
     syscall[SYSCALL_NET_RECV] = (long(*)())do_net_recv;
+    syscall[SYSCALL_MKFS] = (long(*)())do_mkfs;
+    syscall[SYSCALL_STATFS] = (long(*)())do_statfs;
+    syscall[SYSCALL_MKDIR] = (long(*)())do_mkdir;
+    syscall[SYSCALL_RMDIR] = (long(*)())do_rmdir;
+    syscall[SYSCALL_LS] = (long(*)())do_ls;
+    syscall[SYSCALL_CD] = (long(*)())do_cd;
 }
 
 // jump from start.S
@@ -206,7 +212,7 @@ int main()
     else{
         printk("> [INIT] Ethernet Driver Initialization Succeeded.\n\r");
     }
-*/
+    */
     // read CPU frequency and calc timer interval
     time_base = sbi_read_fdt(TIMEBASE);
     timer_interval = (uint64_t)(time_base / 100);

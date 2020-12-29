@@ -38,6 +38,9 @@
 #define MAX_ARGC    10
 #define MAX_PREV    5
 
+int print_location_x;
+int print_location_y;
+
 int main()
 {
     char blank_command[] = "                                                      ";
@@ -45,8 +48,7 @@ int main()
 
     const int SHELL_COMMAND_BEGIN = strlen(prompt) + 1;
     const int SHELL_COMMAND_END   = SHELL_WIDTH;
-    int print_location_x;
-    int print_location_y;
+ 
     int input, buf_p;
     char buffer[100];
 
@@ -149,20 +151,24 @@ int main()
         }
 
         int empty_command = (argc == 0);
-        int ls_command = !strcmp(argv[0], "ls");
         int ps_command = !strcmp(argv[0], "ps");
         int reset_command = !strcmp(argv[0], "reset");
         int clear_command = !strcmp(argv[0], "clear");
         int exec_command = !strcmp(argv[0], "exec");
         int kill_command = !strcmp(argv[0], "kill");
         int taskset_command = !strcmp(argv[0], "taskset");
+        int mkfs_command = !strcmp(argv[0], "mkfs");
+        int mkdir_command = !strcmp(argv[0], "mkdir");
+        int rmdir_command = !strcmp(argv[0], "rmdir");
+        int ls_command = !strcmp(argv[0], "ls");
+        int cd_command = !strcmp(argv[0], "cd");
 
         // exec command and output
         if(empty_command){
             continue;
         }
         else if(ls_command){
-            if(argc >= 2){
+            if(argc >= 3){
                 if(print_location_y == SHELL_END){
                     print_location_y--;
                     sys_move_cursor(1, print_location_y);
@@ -173,7 +179,14 @@ int main()
                 continue;
             }
             char ls_context[(SHELL_END - SHELL_BEGIN - 1) * SHELL_WIDTH + 1];
-            sys_show_exec(ls_context);
+            memset(ls_context, 0, sizeof(ls_context));
+            
+            if(argc == 1){
+                sys_ls(ls_context);
+            }
+            else if(!strcmp(argv[1],"-k")){
+                sys_show_exec(ls_context);
+            }         
 
             char ls_buffer[SHELL_WIDTH + 1];
             for(int i = 0; ls_context[i]; i++){
@@ -403,6 +416,191 @@ int main()
                 }
                 printf("Cannot set mask of task(pid=%d): Task Does Not Exist!\n", pid);
                 print_location_y++;
+            }
+        }
+        else if(mkfs_command){
+            if(argc >= 3){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too many arguments for command mkfs!\n");
+                print_location_y++;
+                continue;
+            }
+
+            if(argc == 2 && !strcmp(argv[1], "-f")){
+                sys_mkfs(1);
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Make File System Successfully\n");
+                print_location_y++;
+                continue;
+            }
+            else if(argc == 2){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Usage: mkfs (-f)\n");
+                print_location_y++;
+                continue;
+            }
+            else{
+                if(sys_mkfs(0)){
+                    if(print_location_y == SHELL_END){
+                        print_location_y--;
+                        sys_move_cursor(1, print_location_y);
+                        sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                    }
+                    printf("Make File System Successfully\n");
+                    print_location_y++;
+                    continue;
+                }
+                else{
+                    if(print_location_y == SHELL_END){
+                        print_location_y--;
+                        sys_move_cursor(1, print_location_y);
+                        sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                    }
+                    printf("No Need to Make File System. But You Can Use \"mkfs -f\" to Cover\n");
+                    print_location_y++;
+                    continue;
+                }
+            }
+        }
+        else if(mkdir_command){
+            if(argc >= 3){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too many arguments for command mkdir!\n");
+                print_location_y++;
+                continue;
+            }
+            else if(argc <=1){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too few arguments for command mkdir!\n");
+                print_location_y++;
+                continue;
+            }
+
+            if(sys_mkdir(argv[1])){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("make dir %s successfully\n", argv[1]);
+                print_location_y++;
+                continue;
+            }
+            else{
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("make dir %s failed\n", argv[1]);
+                print_location_y++;
+                continue;
+            }
+        }
+        else if(rmdir_command){
+            if(argc >= 3){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too many arguments for command rmdir!\n");
+                print_location_y++;
+                continue;
+            }
+            else if(argc <=1){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too few arguments for command rmdir!\n");
+                print_location_y++;
+                continue;
+            }
+
+            if(sys_rmdir(argv[1])){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("remove dir %s successfully\n", argv[1]);
+                print_location_y++;
+                continue;
+            }
+            else{
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("remove dir %s failed\n", argv[1]);
+                print_location_y++;
+                continue;
+            }
+        }
+        else if(cd_command){
+            if(argc >= 3){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too many arguments for command cd!\n");
+                print_location_y++;
+                continue;
+            }
+            else if(argc <=1){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too few arguments for command cd!\n");
+                print_location_y++;
+                continue;
+            }
+
+            if(sys_cd(argv[1])){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("cd dir %s successfully\n", argv[1]);
+                print_location_y++;
+                continue;
+            }
+            else{
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("cd dir %s failed\n", argv[1]);
+                print_location_y++;
+                continue;
             }
         }
         else{

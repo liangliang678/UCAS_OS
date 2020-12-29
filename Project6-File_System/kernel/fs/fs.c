@@ -1,14 +1,19 @@
 #include <os/fs.h>
 #include <os/disk.h>
 #include <os/mm.h>
+#include <os/sched.h>
+#include <os/irq.h>
 
 volatile superblock_t* superblock = SUPERBLOCK_CACHE;
 volatile uintptr_t blockmap = BLOCKMAP_CACHE;
 volatile uintptr_t inodemap = INODEMAP_CACHE;
 volatile uintptr_t cached_inode_base = INODE_CACHE;
-volatile uintptr_t cached_data_base = BLOCK_CACHE;
+volatile uintptr_t cached_block_base = BLOCK_CACHE;
 volatile uint16_t cached_inode_id;
 volatile uint32_t cached_block_id;
+
+uint16_t current_dir_inode;
+uint32_t current_dir_block;
 
 int mkfs()
 {
@@ -18,40 +23,6 @@ int mkfs()
         return 0;
     }
 
-    // Form root dir
-    uint16_t inode_id = alloc_inode();
-    uint32_t block_id = alloc_block();
-    inode_t* cached_inode = read_inode(inode_id);
-    read_block(block_id);
-    dir_t* cached_data = cached_data_base;
-
-    cached_inode->mode = 0;
-    cached_inode->owner = 1;
-    cached_inode->size = 4096;
-    cached_inode->direct_blocks[0] = block_id;
-    write_inode(inode_id);
-
-    cached_data->entry[0].type = DIR;
-    strcpy(&cached_data->entry[0].name, "..");
-    cached_data->entry[0].inode = inode_id;
-    write_block(block_id);
-
-    // Write superblock
-    superblock->magic = MAGIC;
-    superblock->superblock_id = SUPERBLOCK_ID;
-    superblock->superblock_num = 1;
-    superblock->blockmap_id = BLOCK_MAP_BEGIN;
-    superblock->blockmap_num = 8;
-    superblock->inodemap_id = INODE_MAP_ID;
-    superblock->inodemap_num = 1;
-    superblock->inode_id = INODE_BEGIN;
-    superblock->indoe_num = 512;
-    superblock->data_id = DATA_BEGIN;
-    superblock->data_num = 2097152;
-    superblock->root_inode_id = inode_id;
-    superblock->root_block_id = block_id;
-    write_superblock();
-
     // Clear block map
     memset(blockmap, 0, 512 * 64);
     write_blockmap();
@@ -60,5 +31,175 @@ int mkfs()
     memset(inodemap, 0, 512);
     write_inodemap();
 
+    // Form root dir
+    uint16_t inode_id = alloc_inode();
+    uint32_t block_id = alloc_block();
+
+    inode_t* root_inode = read_inode(inode_id);
+    root_inode->mode = 0;
+    root_inode->owner = 0;
+    root_inode->size = 4096;
+    root_inode->direct_blocks[0] = block_id;
+    write_inode(inode_id);
+
+    read_block(block_id);
+    memset(cached_block_base, 0, 4096);
+    dir_t* root_dir = cached_block_base;
+    root_dir->entry[0].type = DIR;
+    strcpy(root_dir->entry[0].name, ".");
+    root_dir->entry[0].inode = inode_id;
+    root_dir->entry[1].type = DIR;
+    strcpy(root_dir->entry[1].name, "..");
+    root_dir->entry[1].inode = inode_id;
+    write_block(block_id);
+
+    current_dir_inode = inode_id;
+    current_dir_block = block_id;
+
+    // Write superblock
+    superblock->magic = MAGIC;
+    superblock->superblock_id = SUPERBLOCK_ID;
+    superblock->superblock_num = 1;
+    superblock->blockmap_id = BLOCKMAP_BEGIN_ID;
+    superblock->blockmap_num = 64;
+    superblock->inodemap_id = INODEMAP_ID;
+    superblock->inodemap_num = 1;
+    superblock->inode_id = INODE_BEGIN_ID;
+    superblock->inode_num = 512;
+    superblock->block_id = BLOCK_BEGIN_ID;
+    superblock->block_num = 2097152;
+    superblock->root_inode_id = inode_id;
+    superblock->root_block_id = block_id;
+    write_superblock();
+
     return 1;
+}
+
+int do_mkfs(int mode)
+{
+    if(mode == 1){
+        superblock->magic == 0x0;
+        write_superblock();
+    }
+
+    return mkfs();
+}
+
+void do_statfs(char* buffer)
+{
+    enable_sum();
+    *buffer = 0;
+    disable_sum();
+}
+
+int do_mkdir(char* dirname)
+{
+    enable_sum();
+    read_block(current_dir_block);
+    dir_t* cur_dir = cached_block_base;
+
+    for(int i = 0; i < 128; i++){
+        if(cur_dir->entry[i].type == DIR && !strcmp(cur_dir->entry[i].name, dirname)){
+            disable_sum();
+            return 0;
+        }
+    }
+
+    for(int i = 0; i < 128; i++){
+        if(cur_dir->entry[i].type == EMPTY){
+            uint16_t inode_id = alloc_inode();
+            uint32_t block_id = alloc_block();
+
+            // Modify Current Dir
+            cur_dir->entry[i].type = DIR;
+            strcpy(cur_dir->entry[i].name, dirname);
+            cur_dir->entry[i].inode = inode_id;
+            write_block(current_dir_block);
+
+            // Modify New Inode
+            inode_t* new_inode = read_inode(inode_id);
+            new_inode->mode = 0;
+            new_inode->owner = current_running[cpu_id]->pid;
+            new_inode->size = 4096;
+            new_inode->direct_blocks[0] = block_id;
+            write_inode(inode_id);
+            
+            //Modify New Dir
+            read_block(block_id);
+            memset(cached_block_base, 0, 4096);
+            dir_t* new_dir = cached_block_base;
+            new_dir->entry[0].type = DIR;
+            strcpy(new_dir->entry[0].name, ".");
+            new_dir->entry[0].inode = inode_id;
+            new_dir->entry[1].type = DIR;
+            strcpy(new_dir->entry[1].name, "..");
+            new_dir->entry[1].inode = current_dir_inode;
+            write_block(block_id);
+
+            disable_sum();
+            return 1;
+        }
+    }
+
+    disable_sum();
+    return 0;
+}
+
+int do_rmdir(char* dirname)
+{
+    enable_sum();
+    read_block(current_dir_block);
+    dir_t* cur_dir = cached_block_base;
+    for(int i = 0; i < 128; i++){
+        if(cur_dir->entry[i].type == DIR && !strcmp(cur_dir->entry[i].name, dirname)){
+            cur_dir->entry[i].type = EMPTY;
+            uint16_t inode_id = cur_dir->entry[i].inode;
+            inode_t* inode = read_inode(inode_id);
+            uint32_t block_id = inode->direct_blocks[0];
+            free_block(block_id);
+            free_inode(inode_id);
+            write_block(current_dir_block);
+            disable_sum();
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void do_ls(char* buffer)
+{
+    enable_sum();
+    *buffer = 0;
+    read_block(current_dir_block);
+    dir_t* cur_dir = cached_block_base;
+    for(int i = 0; i < 128; i++){
+        if(cur_dir->entry[i].type == DIR){
+            strcat(buffer, cur_dir->entry[i].name);
+            strcat(buffer, "(dir)    ");
+        }
+        else if(cur_dir->entry[i].type == FILE){
+            strcat(buffer, cur_dir->entry[i].name);
+            strcat(buffer, "(file)    ");
+        }
+    }
+    disable_sum();
+    return;
+}
+
+int do_cd(char* dirname)
+{
+    enable_sum();
+    read_block(current_dir_block);
+    dir_t* cur_dir = cached_block_base;
+    for(int i = 0; i < 128; i++){
+        if(cur_dir->entry[i].type == DIR && !strcmp(cur_dir->entry[i].name, dirname)){
+            inode_t* child_inode = read_inode(cur_dir->entry[i].inode);
+            current_dir_inode = cur_dir->entry[i].inode;
+            current_dir_block = child_inode->direct_blocks[0];
+            disable_sum();
+            return 1;
+        }
+    }
+    disable_sum();
+    return 0;
 }
