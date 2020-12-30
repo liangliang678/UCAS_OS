@@ -110,6 +110,9 @@ uint16_t alloc_inode()
         }
         if(ret != 0xff){
             write_inodemap();
+            read_superblock();
+            superblock->used_inode_num = superblock->used_inode_num + 1;
+            write_superblock();
             return ret;
         }
     }
@@ -165,6 +168,9 @@ uint32_t alloc_block()
         }
         if(ret != 0xffffffff){
             write_blockmap();
+            read_superblock();
+            superblock->used_block_num = superblock->used_block_num + 1;
+            write_superblock();
             return ret;
         }
     }
@@ -209,6 +215,9 @@ void free_inode(uint16_t inode_id)
         *(((uint8_t*)inodemap) + i) = byte;
     }
     write_inodemap();
+    read_superblock();
+    superblock->used_inode_num = superblock->used_inode_num - 1;
+    write_superblock();
 }
 
 void free_block(uint32_t block_id)
@@ -249,4 +258,7 @@ void free_block(uint32_t block_id)
         *(((uint8_t*)blockmap) + i) = byte;
     }
     write_blockmap();
+    read_superblock();
+    superblock->used_block_num = superblock->used_block_num - 1;
+    write_superblock();
 }

@@ -158,6 +158,7 @@ int main()
         int kill_command = !strcmp(argv[0], "kill");
         int taskset_command = !strcmp(argv[0], "taskset");
         int mkfs_command = !strcmp(argv[0], "mkfs");
+        int statfs_command = !strcmp(argv[0], "statfs");
         int mkdir_command = !strcmp(argv[0], "mkdir");
         int rmdir_command = !strcmp(argv[0], "rmdir");
         int ls_command = !strcmp(argv[0], "ls");
@@ -168,7 +169,7 @@ int main()
             continue;
         }
         else if(ls_command){
-            if(argc >= 3){
+            if(argc >= 4){
                 if(print_location_y == SHELL_END){
                     print_location_y--;
                     sys_move_cursor(1, print_location_y);
@@ -182,29 +183,39 @@ int main()
             memset(ls_context, 0, sizeof(ls_context));
             
             if(argc == 1){
-                sys_ls(ls_context);
+                sys_ls("\0", 0, &print_location_y);
             }
             else if(!strcmp(argv[1],"-k")){
-                sys_show_exec(ls_context);
-            }         
-
-            char ls_buffer[SHELL_WIDTH + 1];
-            for(int i = 0; ls_context[i]; i++){
-                int j = 0;
-                while(ls_context[i] != '\n' && ls_context[i]){
-                    ls_buffer[j++] = ls_context[i++];
+                sys_show_exec(&print_location_y);
+            }   
+            else if(!strcmp(argv[1],"-al")){
+                if(argc == 2){
+                    strcmp(argv[2], "\0");
                 }
-                ls_buffer[j++] = '\n';
-                ls_buffer[j++] = '\0';
-
-                if(print_location_y == SHELL_END){
-                    print_location_y--;
-                    sys_move_cursor(1, print_location_y);
-                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);
+                if(!sys_ls(argv[2], 1, &print_location_y)){
+                    if(print_location_y == SHELL_END){
+                        print_location_y--;
+                        sys_move_cursor(1, print_location_y);
+                        sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                    }
+                    printf("No Such dir!\n");
+                    print_location_y++;
+                    continue;
                 }
-                printf("%s", ls_buffer);
-                print_location_y++;
             }
+            else{
+                if(!sys_ls(argv[1], 0, &print_location_y)){
+                    if(print_location_y == SHELL_END){
+                        print_location_y--;
+                        sys_move_cursor(1, print_location_y);
+                        sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                    }
+                    printf("No Such dir!\n");
+                    print_location_y++;
+                    continue;
+                }
+            }     
+
         }
         else if(ps_command){
             if(argc >= 2){
@@ -431,7 +442,7 @@ int main()
             }
 
             if(argc == 2 && !strcmp(argv[1], "-f")){
-                sys_mkfs(1);
+                sys_mkfs(1, &print_location_y);
                 if(print_location_y == SHELL_END){
                     print_location_y--;
                     sys_move_cursor(1, print_location_y);
@@ -452,7 +463,7 @@ int main()
                 continue;
             }
             else{
-                if(sys_mkfs(0)){
+                if(sys_mkfs(0, &print_location_y)){
                     if(print_location_y == SHELL_END){
                         print_location_y--;
                         sys_move_cursor(1, print_location_y);
@@ -474,6 +485,19 @@ int main()
                 }
             }
         }
+        else if(statfs_command){
+            if(argc >= 2){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too many arguments for command statfs!\n");
+                print_location_y++;
+                continue;
+            }
+            sys_statfs(&print_location_y);
+         }
         else if(mkdir_command){
             if(argc >= 3){
                 if(print_location_y == SHELL_END){

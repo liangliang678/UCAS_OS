@@ -235,7 +235,7 @@ int main()
     printk("> [INIT] System Call Initialized Successfully.\n\r");
 
     // init fs
-    if(mkfs()){
+    if(mkfs(0)){
         printk("> [INIT] File System Initialized Successfully.\n\r");
     }
     else{

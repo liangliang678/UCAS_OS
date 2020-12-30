@@ -161,7 +161,7 @@ extern void do_process_show();
 extern pid_t do_getpid();
 extern int do_taskset(pid_t pid, unsigned long mask);
 extern pid_t do_exec(const char* file_name, int argc, char* argv[], spawn_mode_t mode);
-extern void do_show_exec(char* buffer);
+extern void do_show_exec(int* print_location_y);
 
 extern void do_block(list_node_t *, list_head *queue);
 extern void do_unblock(list_node_t *);

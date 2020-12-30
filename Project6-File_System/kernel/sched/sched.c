@@ -483,15 +483,16 @@ int do_taskset(pid_t pid, unsigned long mask)
     return 1;
 }
 
-void do_show_exec(char* buffer)
+void do_show_exec(int* print_location_y)
 {
-    enable_sum();
-    buffer[0] = '\0';
+    
     for(int i = 0; i < ELF_FILE_NUM; i++){
-        strcat(buffer, elf_files[i].file_name);
-        strcat(buffer, "    ");
+        prints("%s    ", elf_files[i].file_name);
     }
-    strcat(buffer, "\n");
+    prints("\n");
+    
+    enable_sum();
+    *print_location_y = *print_location_y + 1;
     disable_sum();
 }
 // block the pcb task into the block queue

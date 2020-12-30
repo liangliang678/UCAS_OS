@@ -27,7 +27,9 @@ typedef struct superblock{
     uint64_t block_num;
     uint64_t root_inode_id;
     uint64_t root_block_id;
-    uint8_t empty[408];
+    uint64_t used_inode_num;
+    uint64_t used_block_num;
+    uint8_t empty[392];
 } superblock_t;
 
 // 64 bytes
@@ -65,13 +67,13 @@ extern volatile uint32_t cached_block_id;
 extern uint16_t current_dir_inode;
 extern uint32_t current_dir_block;
 
-extern int mkfs();
+extern int mkfs(int print);
 
-extern int do_mkfs(int mode);
-extern void do_statfs(char* buffer);
+extern int do_mkfs(int mode, int* print_location_y);
+extern void do_statfs(int* print_location_y);
 extern int do_mkdir(char* dirname);
 extern int do_rmdir(char* dirname);
-extern void do_ls(char* buffer);
+extern int do_ls(char* dirname, int mode, int* print_location_y);
 extern int do_cd(char* dirname);
 
 

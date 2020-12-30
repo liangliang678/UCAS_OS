@@ -44,7 +44,7 @@ extern pid_t sys_getpid();
 extern void sys_yield();
 extern int sys_taskset(pid_t pid, unsigned long mask);
 pid_t sys_exec(const char *file_name, int argc, char* argv[], spawn_mode_t mode);
-void sys_show_exec(char* buffer);
+void sys_show_exec(int* print_location_y);
 
 extern void sys_futex_wait(volatile uint64_t *val_addr, int binsem_id);
 extern void sys_futex_wakeup(volatile uint64_t *val_addr, int num_wakeup);
@@ -76,11 +76,11 @@ extern long sys_net_recv(uintptr_t addr, size_t length, int num_packet, size_t* 
 extern void sys_net_send(uintptr_t addr, size_t length);
 extern void sys_net_irq_mode(int mode);
 
-extern int sys_mkfs(int mode);
-extern void sys_statfs(char* buffer);
+extern int sys_mkfs(int mode, int* print_location_y);
+extern void sys_statfs(int* print_location_y);
 extern int sys_mkdir(char* dirname);
 extern int sys_rmdir(char* dirname);
-extern void sys_ls(char* buffer);
+extern int sys_ls(char* dirname, int mode, int* print_location_y);
 extern int sys_cd(char* dirname);
 
 #endif

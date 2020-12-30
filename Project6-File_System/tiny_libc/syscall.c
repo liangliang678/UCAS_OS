@@ -46,9 +46,9 @@ int sys_taskset(pid_t pid, unsigned long mask)
     return invoke_syscall(SYSCALL_TASKSET, (long)pid, (long)mask, IGNORE, IGNORE);
 }
 
-void sys_show_exec(char* buffer)
+void sys_show_exec(int* print_location_y)
 {
-    invoke_syscall(SYSCALL_SHOW_EXEC, (long)buffer, IGNORE, IGNORE, IGNORE);
+    invoke_syscall(SYSCALL_SHOW_EXEC, (long)print_location_y, IGNORE, IGNORE, IGNORE);
 }
 
 void sys_futex_wait(volatile uint64_t *val_addr, int binsem_id)
@@ -160,13 +160,13 @@ void sys_net_irq_mode(int mode)
     invoke_syscall(SYSCALL_NET_IRQ_MODE, (long)mode, IGNORE, IGNORE, IGNORE);
 }
 
-int sys_mkfs(int mode)
+int sys_mkfs(int mode, int* print_location_y)
 {
-    return invoke_syscall(SYSCALL_MKFS, (long)mode, IGNORE, IGNORE, IGNORE);
+    return invoke_syscall(SYSCALL_MKFS, (long)mode, (long)print_location_y, IGNORE, IGNORE);
 }
-void sys_statfs(char* buffer)
+void sys_statfs(int* print_location_y)
 {
-    invoke_syscall(SYSCALL_STATFS, (long)buffer, IGNORE, IGNORE, IGNORE);
+    invoke_syscall(SYSCALL_STATFS, (long)print_location_y, IGNORE, IGNORE, IGNORE);
 }
 int sys_mkdir(char* dirname)
 {
@@ -176,9 +176,9 @@ int sys_rmdir(char* dirname)
 {
     return invoke_syscall(SYSCALL_RMDIR, (long)dirname, IGNORE, IGNORE, IGNORE);
 }
-void sys_ls(char* buffer)
+int sys_ls(char* dirname, int mode, int* print_location_y)
 {
-    invoke_syscall(SYSCALL_LS, (long)buffer, IGNORE, IGNORE, IGNORE);
+    return invoke_syscall(SYSCALL_LS, (long)dirname, (long)mode, (long)print_location_y, IGNORE);
 }
 int sys_cd(char* dirname)
 {
