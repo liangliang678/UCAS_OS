@@ -89,5 +89,6 @@ extern int sys_fopen(char* filename, int access);
 extern int sys_fread(int fd, char* buffer, int size);
 extern int sys_fwrite(int fd, char* buffer, int size);
 extern void sys_fclose(int fd);
+extern int sys_link(char* source, char* file, int mode);
 
 #endif

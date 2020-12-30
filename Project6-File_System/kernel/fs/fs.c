@@ -309,8 +309,11 @@ int do_rmdir(char* dirname)
             cur_dir->entry[i].type = EMPTY;
             uint16_t inode_id = cur_dir->entry[i].inode;
             inode_t* inode = read_inode(inode_id);
+            int mode = inode->mode;
             uint32_t block_id = inode->direct_blocks[0];
-            free_block(block_id);
+            if(mode == 0){
+                free_block(block_id);
+            }
             free_inode(inode_id);
             write_block(lastdir_block);
             disable_sum();
@@ -483,4 +486,132 @@ int do_cd(char* dirname)
 
     disable_sum();
     return 1;
+}
+
+int do_link(char* filename, char* newfile, int mode)
+{
+    enable_sum();  
+
+    int filename_pos = 0;
+    dir_t* cur_dir;
+    uint16_t lastdir_inode;
+    uint32_t lastdir_block;
+
+    if(filename[filename_pos] == '/'){
+        read_superblock();
+        read_block(superblock->root_block_id);
+        cur_dir = cached_block_base;
+        lastdir_block = superblock->root_block_id;
+        filename_pos++;    
+    }
+    else{
+        read_block(current_dir_block);
+        cur_dir = cached_block_base;
+        lastdir_block = current_dir_block;
+    }
+
+    char nextdirname[29];
+    while(1){
+        // Get name of next dir
+        int nextdirname_pos = 0;
+        while(filename[filename_pos] != '/' && filename[filename_pos] != 0){
+            nextdirname[nextdirname_pos++] = filename[filename_pos++];
+        }
+        nextdirname[nextdirname_pos] = 0;
+
+        // Last?
+        if(filename[filename_pos] == 0 || 
+           (filename[filename_pos + 1] == 0 && filename[filename_pos] == '/')){
+            break;
+        }
+
+        // Search
+        int i = 0;
+        uint16_t nextdir_inode_id;
+        uint32_t nextdir_block_id;
+        for(i = 0; i < 128; i++){
+            if(cur_dir->entry[i].type == DIR && !strcmp(cur_dir->entry[i].name, nextdirname)){
+                nextdir_inode_id = cur_dir->entry[i].inode;
+                inode_t* nextdir_inode = read_inode(nextdir_inode_id);
+                nextdir_block_id = nextdir_inode->direct_blocks[0];
+                lastdir_inode = nextdir_inode_id;
+                lastdir_block = nextdir_block_id;
+                break;
+            }
+        }
+        if(i == 128){
+            disable_sum();
+            return 0;
+        }
+
+        filename_pos++;
+        read_block(nextdir_block_id);
+        cur_dir = cached_block_base;
+    }
+
+    uint16_t inode_id;
+    int type;
+    read_block(lastdir_block);
+    cur_dir = cached_block_base;
+    for(int i = 0; i < 128; i++){
+        if(cur_dir->entry[i].type != EMPTY && !strcmp(cur_dir->entry[i].name, nextdirname)){
+            inode_id = cur_dir->entry[i].inode;
+            type = cur_dir->entry[i].type;
+            break;
+        }
+    }
+
+    if(mode == 0){
+        if(type == DIR){
+            return 0;
+        }
+        read_block(current_dir_block);
+        cur_dir = cached_block_base;
+        for(int i = 0; i < 128; i++){
+            if(cur_dir->entry[i].type == EMPTY){
+                cur_dir->entry[i].type = FILE;
+                strcpy(cur_dir->entry[i].name, newfile);
+                cur_dir->entry[i].inode = inode_id;
+                write_block(current_dir_block);
+                return 1;
+            }
+        }
+    }
+    else if(mode == 1){
+        read_block(current_dir_block);
+        cur_dir = cached_block_base;
+        for(int i = 0; i < 128; i++){
+            if(cur_dir->entry[i].type == EMPTY){
+                uint16_t new_inode_id = alloc_inode();
+                cur_dir->entry[i].type = type;
+                strcpy(cur_dir->entry[i].name, newfile);
+                cur_dir->entry[i].inode = inode_id;
+                write_block(current_dir_block);
+                
+                inode_t* inode = read_inode(inode_id);
+                uint32_t direct[10];
+                uint32_t indirect[2];
+                uint64_t size;
+                for(int j = 0; j < 10; j++){
+                    direct[i] = inode->direct_blocks[i];
+                }
+                indirect[0] = inode->indirect_blocks[0];
+                indirect[1] = inode->indirect_blocks[1];
+                size = inode->size;
+
+                inode = read_inode(new_inode_id);
+                inode->mode = 1;
+                inode->owner = current_running[cpu_id]->pid;
+                inode->size = size;
+                for(int j = 0; j < 10; j++){
+                    inode->direct_blocks[i] = direct[i];
+                }
+                inode->indirect_blocks[0] = indirect[0];
+                inode->indirect_blocks[1] = indirect[1];
+                read_inode(new_inode_id);
+
+                return 1;
+            }
+        }
+    }
 }

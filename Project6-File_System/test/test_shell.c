@@ -165,6 +165,7 @@ int main()
         int cd_command = !strcmp(argv[0], "cd");
         int touch_command = !strcmp(argv[0], "touch");
         int cat_command = !strcmp(argv[0], "cat");
+        int ln_command = !strcmp(argv[0], "ln");
 
         // exec command and output
         if(empty_command){
@@ -192,7 +193,7 @@ int main()
             }   
             else if(!strcmp(argv[1],"-al")){
                 if(argc == 2){
-                    strcmp(argv[2], "\0");
+                    strcpy(argv[2], "\0");
                 }
                 if(!sys_ls(argv[2], 1, &print_location_y)){
                     if(print_location_y == SHELL_END){
@@ -714,6 +715,42 @@ int main()
                 printf("%s", cat_buffer);
                 print_location_y++;
             }
+        }
+        else if(ln_command){
+            if(argc >= 5){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too many arguments for command ln!\n");
+                print_location_y++;
+                continue;
+            }
+
+            int mode = 0; 
+            if(!strcmp(argv[1], "-s")){
+                mode = 1;
+            }
+
+            if(sys_link(argv[1 + mode], argv[2 + mode], mode)){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("create link file %s successfully\n", argv[2 + mode]);
+                print_location_y++;
+            }   
+            else{
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf(" failed to create link file %s\n", argv[2 + mode]);
+                print_location_y++;  
+            } 
         }
         else{
             if(print_location_y == SHELL_END){

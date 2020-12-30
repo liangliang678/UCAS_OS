@@ -4,7 +4,7 @@
 
 #include <os.h>
 
-static char buff[100 * 1024];
+char* buff = 0x20000;
 
 int main(int argc, char *argv[])
 {
@@ -23,16 +23,18 @@ int main(int argc, char *argv[])
     {
         memcpy(buff + 100 * i, msg, 100);
     }
-
+    printf("Write Start\n");
     sys_fwrite(fd, buff, 100 * size);
     printf("Totally Write %d * 100 Byte Data\n", size);
 
     // read
+    printf("Read Start\n");
     memset(buff, 0, size * 100);
     sys_fread(fd, buff, 100 * size);
     for(i = 0; i < size; i++){
         if(strcmp(buff + 100 * i, msg)){
             printf("Error: Num %d Time Read\n", i);
+            break;
         }
     }
     if(i == size){

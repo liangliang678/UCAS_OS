@@ -75,6 +75,7 @@ extern int do_mkdir(char* dirname);
 extern int do_rmdir(char* dirname);
 extern int do_ls(char* dirname, int mode, int* print_location_y);
 extern int do_cd(char* dirname);
+extern int do_link(char* filename, char* newfile, int mode);
 
 
 #endif /* FS_H */

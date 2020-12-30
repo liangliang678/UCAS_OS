@@ -3,6 +3,7 @@
 #include <os/file.h>
 #include <os/sched.h>
 #include <os/irq.h>
+#include <assert.h>
 
 fd_t fd_list[10];
 
@@ -286,6 +287,21 @@ int do_fread(int fd, char* buffer, int size)
         if(block_num < 10){
             block_id = inode->direct_blocks[block_num];
         }
+        else if(block_num >= 10 && block_num < 10 + 1024){
+            block_id = inode->indirect_blocks[0];
+            read_block(block_id);
+            uint32_t *pointer = cached_block_base;
+            block_id = *(pointer + block_num - 10);
+        }
+        else if(block_num >= 10 + 1024 && block_num < 10 + 1024 + 1024){
+            block_id = inode->indirect_blocks[1];
+            read_block(block_id);
+            uint32_t *pointer = cached_block_base;
+            block_id = *(pointer + block_num - 10 - 1024);
+        }
+        else{
+            assert(0);
+        }
         
         read_block(block_id);
 
@@ -321,11 +337,36 @@ int do_fwrite(int fd, char* buffer, int size)
     int total_block = (inode->size == 0) ? 0 : (inode->size / 4096 + 1);
     int needed_block = total_block - cur_block;
 
+    if(total_block >= 10 && cur_block < 10){
+        inode->indirect_blocks[0] = alloc_block();
+    }
+    else if(total_block >= 10 + 1024 && cur_block < 10 + 1024){
+        inode->indirect_blocks[1] = alloc_block();
+    }
+
     for(int i = 0; i < needed_block; i++){
         if(cur_block + i < 10){
             inode->direct_blocks[cur_block + i] = alloc_block();
         }
+        else if(cur_block + i >= 10 && cur_block + i < 10 + 1024){
+            int block_id = inode->indirect_blocks[0];
+            read_block(block_id);
+            uint32_t *pointer = cached_block_base;
+            *(pointer + cur_block + i - 10) = alloc_block();
+            write_block(block_id);
+        }
+        else if(cur_block + i >= 10 + 1024 && cur_block + i < 10 + 1024 + 1024){
+            int block_id = inode->indirect_blocks[1];
+            read_block(block_id);
+            uint32_t *pointer = cached_block_base;
+            *(pointer + cur_block + i - 10 - 1024) = alloc_block();
+            write_block(block_id);
+        }
+        else{
+            assert(0);
+        }
     }
+    
     write_inode(fd_list[fd].inode);
 
     int copied_byte = 0;
@@ -334,6 +375,21 @@ int do_fwrite(int fd, char* buffer, int size)
         int block_id; 
         if(block_num < 10){
             block_id = inode->direct_blocks[block_num];
+        }
+        else if(block_num >= 10 && block_num < 10 + 1024){
+            block_id = inode->indirect_blocks[0];
+            read_block(block_id);
+            uint32_t *pointer = cached_block_base;
+            block_id = *(pointer + block_num - 10);
+        }
+        else if(block_num >= 10 + 1024 && block_num < 10 + 1024 + 1024){
+            block_id = inode->indirect_blocks[1];
+            read_block(block_id);
+            uint32_t *pointer = cached_block_base;
+            block_id = *(pointer + block_num - 10 - 1024);
+        }
+        else{
+            assert(0);
         }
 
         read_block(block_id);

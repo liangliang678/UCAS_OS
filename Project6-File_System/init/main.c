@@ -180,6 +180,7 @@ static void init_syscall(void)
     syscall[SYSCALL_FWRITE] = (long(*)())do_fwrite;
     syscall[SYSCALL_FREAD] = (long(*)())do_fread;
     syscall[SYSCALL_FCLOSE] = (long(*)())do_fclose;
+    syscall[SYSCALL_LINK] = (long(*)())do_link;
 }
 
 // jump from start.S

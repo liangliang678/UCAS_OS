@@ -86,5 +86,6 @@
 #define SYSCALL_FREAD 63
 #define SYSCALL_FWRITE 64
 #define SYSCALL_FCLOSE 65
+#define SYSCALL_LINK 66
 
 #endif

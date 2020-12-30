@@ -209,3 +209,6 @@ void sys_fclose(int fd)
 {
     invoke_syscall(SYSCALL_FCLOSE, (long)fd, IGNORE, IGNORE, IGNORE);
 }
+int sys_link(char* source, char* file, int mode){
+    return invoke_syscall(SYSCALL_LINK, (long)source, (long)file, (long)mode, IGNORE);
+}

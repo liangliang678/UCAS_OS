@@ -1,10 +1,5 @@
 # Project5: Device Driver
 
-## TODO
-1. 硬链接和软链接。
-2. 大文件的支持。
-3. 代码的优化和检查。
-
 ## 实验说明
 ### 开发环境
 本实验用到的RISC-V开发板是XILINX PYNQ Z2开发板，开发板上有ARM核和FPGA，RISC-V核烧写到FPGA中。
