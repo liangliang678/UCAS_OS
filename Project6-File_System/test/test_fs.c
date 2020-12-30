@@ -11,6 +11,8 @@ int main(void)
     int i, j;
     int fd = sys_fopen("1.txt", O_RDWR);
 
+    sys_move_cursor(1, 1);
+
     // write 'hello world!' * 10
     for (i = 0; i < 10; i++)
     {
@@ -27,5 +29,5 @@ int main(void)
         }
     }
 
-    sys_close(fd);
+    sys_fclose(fd);
 }

@@ -142,12 +142,14 @@ int do_mkdir(char* dirname)
         read_superblock();
         read_block(superblock->root_block_id);
         cur_dir = cached_block_base;
+        lastdir_inode = superblock->root_inode_id;
         lastdir_block = superblock->root_block_id;
         dirname_pos++;    
     }
     else{
         read_block(current_dir_block);
         cur_dir = cached_block_base;
+        lastdir_inode = current_dir_inode;
         lastdir_block = current_dir_block;
     }
 
@@ -159,9 +161,6 @@ int do_mkdir(char* dirname)
             nextdirname[nextdirname_pos++] = dirname[dirname_pos++];
         }
         nextdirname[nextdirname_pos] = 0;
-        if(nextdirname_pos == 0){
-            break;
-        }
 
         // Last?
         if(dirname[dirname_pos] == 0 || 
@@ -255,12 +254,14 @@ int do_rmdir(char* dirname)
         read_block(superblock->root_block_id);
         cur_dir = cached_block_base;
         lastdir_block = superblock->root_block_id;
+        lastdir_inode = superblock->root_inode_id;
         dirname_pos++;    
     }
     else{
         read_block(current_dir_block);
         cur_dir = cached_block_base;
         lastdir_block = current_dir_block;
+        lastdir_inode = current_dir_inode;
     }
 
     char nextdirname[29];
@@ -271,9 +272,6 @@ int do_rmdir(char* dirname)
             nextdirname[nextdirname_pos++] = dirname[dirname_pos++];
         }
         nextdirname[nextdirname_pos] = 0;
-        if(nextdirname_pos == 0){
-            break;
-        }
 
         // Last?
         if(dirname[dirname_pos] == 0 || 
@@ -448,9 +446,7 @@ int do_cd(char* dirname)
             nextdirname[nextdirname_pos++] = dirname[dirname_pos++];
         }
         nextdirname[nextdirname_pos] = 0;
-        if(nextdirname_pos == 0){
-            break;
-        }
+        
 
         // Search
         int i = 0;

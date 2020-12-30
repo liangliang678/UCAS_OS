@@ -83,4 +83,11 @@ extern int sys_rmdir(char* dirname);
 extern int sys_ls(char* dirname, int mode, int* print_location_y);
 extern int sys_cd(char* dirname);
 
+extern int sys_touch(char* filename);
+extern int sys_cat(char* filename, char* buffer);
+extern int sys_fopen(char* filename, int access);
+extern int sys_fread(int fd, char* buffer, int size);
+extern int sys_fwrite(int fd, char* buffer, int size);
+extern void sys_fclose(int fd);
+
 #endif

@@ -48,6 +48,7 @@
 #include <net.h>
 #include <os/disk.h>
 #include <os/fs.h>
+#include <os/file.h>
 
 #include <user_programs.h>
 
@@ -173,6 +174,12 @@ static void init_syscall(void)
     syscall[SYSCALL_RMDIR] = (long(*)())do_rmdir;
     syscall[SYSCALL_LS] = (long(*)())do_ls;
     syscall[SYSCALL_CD] = (long(*)())do_cd;
+    syscall[SYSCALL_TOUCH] = (long(*)())do_touch;
+    syscall[SYSCALL_CAT] = (long(*)())do_cat;
+    syscall[SYSCALL_FOPEN] = (long(*)())do_fopen;
+    syscall[SYSCALL_FWRITE] = (long(*)())do_fwrite;
+    syscall[SYSCALL_FREAD] = (long(*)())do_fread;
+    syscall[SYSCALL_FCLOSE] = (long(*)())do_fclose;
 }
 
 // jump from start.S

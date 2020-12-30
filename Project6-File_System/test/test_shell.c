@@ -163,6 +163,8 @@ int main()
         int rmdir_command = !strcmp(argv[0], "rmdir");
         int ls_command = !strcmp(argv[0], "ls");
         int cd_command = !strcmp(argv[0], "cd");
+        int touch_command = !strcmp(argv[0], "touch");
+        int cat_command = !strcmp(argv[0], "cat");
 
         // exec command and output
         if(empty_command){
@@ -625,6 +627,92 @@ int main()
                 printf("cd dir %s failed\n", argv[1]);
                 print_location_y++;
                 continue;
+            }
+        }
+        else if(touch_command){
+            if(argc >= 3){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too many arguments for command touch!\n");
+                print_location_y++;
+                continue;
+            }
+            else if(argc <=1){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too few arguments for command touch!\n");
+                print_location_y++;
+                continue;
+            }
+
+            if(sys_touch(argv[1])){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("create file %s successfully\n", argv[1]);
+                print_location_y++;
+                continue;
+            }
+            else{
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("create file %s failed\n", argv[1]);
+                print_location_y++;
+                continue;
+            }
+        }
+         else if(cat_command){
+            if(argc >= 3){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too many arguments for command cat!\n");
+                print_location_y++;
+                continue;
+            }
+            if(argc <= 1){
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);       
+                }
+                printf("Too few arguments for command cat!\n");
+                print_location_y++;
+                continue;
+            }
+
+            char cat_context[(SHELL_END - SHELL_BEGIN - 1) * SHELL_WIDTH + 1];
+            sys_cat(argv[1], cat_context);
+
+            char cat_buffer[SHELL_WIDTH + 1];
+            for(int i = 0; cat_context[i]; i++){
+                int j = 0;
+                while(cat_context[i] != '\n' && cat_context[i]){
+                    cat_buffer[j++] = cat_context[i++];
+                }
+                cat_buffer[j++] = '\n';
+                cat_buffer[j++] = '\0';
+
+                if(print_location_y == SHELL_END){
+                    print_location_y--;
+                    sys_move_cursor(1, print_location_y);
+                    sys_screen_scroll(SHELL_BEGIN + 1, SHELL_END - 1);
+                }
+                printf("%s", cat_buffer);
+                print_location_y++;
             }
         }
         else{

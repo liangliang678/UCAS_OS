@@ -184,3 +184,28 @@ int sys_cd(char* dirname)
 {
     return invoke_syscall(SYSCALL_CD, (long)dirname, IGNORE, IGNORE, IGNORE);
 }
+
+int sys_touch(char* filename)
+{
+    return invoke_syscall(SYSCALL_TOUCH, (long)filename, IGNORE, IGNORE, IGNORE);
+}
+int sys_cat(char* filename, char* buffer)
+{
+    return invoke_syscall(SYSCALL_CAT, (long)filename, (long)buffer, IGNORE, IGNORE);
+}
+int sys_fopen(char* filename, int access)
+{
+    return invoke_syscall(SYSCALL_FOPEN, (long)filename, (long)access, IGNORE, IGNORE);
+}
+int sys_fread(int fd, char* buffer, int size)
+{
+    return invoke_syscall(SYSCALL_FREAD, (long)fd, (long)buffer, (long)size, IGNORE);
+}
+int sys_fwrite(int fd, char* buffer, int size)
+{
+    return invoke_syscall(SYSCALL_FWRITE, (long)fd, (long)buffer, (long)size, IGNORE);
+}
+void sys_fclose(int fd)
+{
+    invoke_syscall(SYSCALL_FCLOSE, (long)fd, IGNORE, IGNORE, IGNORE);
+}

@@ -80,5 +80,11 @@
 #define SYSCALL_LS 54
 #define SYSCALL_CD 55
 
+#define SYSCALL_TOUCH 60
+#define SYSCALL_CAT 61
+#define SYSCALL_FOPEN 62
+#define SYSCALL_FREAD 63
+#define SYSCALL_FWRITE 64
+#define SYSCALL_FCLOSE 65
 
 #endif
