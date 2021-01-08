@@ -57,6 +57,9 @@ void read_block(uint32_t block_id)
 
 void write_block(uint32_t block_id)
 {
+    if(block_id == 0){
+        printk("!!!!!!!!!!!!!!!!!!\n");
+    }
     uint64_t sd_block_id = BLOCK_BEGIN_ID + block_id * 8;
     sbi_sd_write(kva2pa(BLOCK_CACHE), 8, sd_block_id);
 }
@@ -108,12 +111,12 @@ uint16_t alloc_inode()
             byte = byte | 0x80;
             *(((uint8_t*)inodemap) + i) = byte;
         }
-        if(ret != 0xff){
+        if(ret != 0xffff){
             write_inodemap();
             read_superblock();
             superblock->used_inode_num = superblock->used_inode_num + 1;
             write_superblock();
-            return ret;
+            break;
         }
     }
     return ret;
@@ -171,7 +174,7 @@ uint32_t alloc_block()
             read_superblock();
             superblock->used_block_num = superblock->used_block_num + 1;
             write_superblock();
-            return ret;
+            break;
         }
     }
     return ret;

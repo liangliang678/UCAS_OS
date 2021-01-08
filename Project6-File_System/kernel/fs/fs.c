@@ -39,7 +39,7 @@ int mkfs(int print)
     memset(inodemap, 0, 512);
     write_inodemap();
 
-    // Form root dir
+    // Set root dir
     if(print){
         prints("[FS] Setting root dir...\n");
     }
@@ -100,6 +100,7 @@ int mkfs(int print)
 
 int do_mkfs(int mode, int* print_location_y)
 {
+    read_superblock();
     if(mode == 1){
         superblock->magic = 0x0;
         write_superblock();
@@ -107,7 +108,6 @@ int do_mkfs(int mode, int* print_location_y)
 
     if(superblock->magic == MAGIC){
         return 0;
-    
     }
 
     mkfs(1);
@@ -120,17 +120,16 @@ int do_mkfs(int mode, int* print_location_y)
 void do_statfs(int* print_location_y)
 {
     read_superblock();
-    prints("magic: 0x%lx\n", MAGIC);
     prints("used inode: %d/%d\n", superblock->used_inode_num, superblock->inode_num);
     prints("used block: %d/%d\n", superblock->used_block_num, superblock->block_num);
-    prints("inode entry size: %dB    dir entry size: %dB\n", sizeof(inode_t), sizeof(dir_entry_t));
     enable_sum();
-    *print_location_y = *print_location_y + 4;
+    *print_location_y = *print_location_y + 2;
     disable_sum();
 }
 
 int do_mkdir(char* dirname)
 {
+    /* Search Parent Dir */
     enable_sum();
 
     int dirname_pos = 0;
@@ -138,6 +137,7 @@ int do_mkdir(char* dirname)
     uint16_t lastdir_inode;
     uint32_t lastdir_block;
 
+    // search from root dir / current dir?
     if(dirname[dirname_pos] == '/'){
         read_superblock();
         read_block(superblock->root_block_id);
@@ -157,14 +157,14 @@ int do_mkdir(char* dirname)
     while(1){
         // Get name of next dir
         int nextdirname_pos = 0;
-        while(dirname[dirname_pos] != '/' && dirname[dirname_pos] != 0){
+        while(dirname[dirname_pos] != '/' && dirname[dirname_pos] != '\0'){
             nextdirname[nextdirname_pos++] = dirname[dirname_pos++];
         }
-        nextdirname[nextdirname_pos] = 0;
+        nextdirname[nextdirname_pos] = '\0';
 
         // Last?
-        if(dirname[dirname_pos] == 0 || 
-           (dirname[dirname_pos + 1] == 0 && dirname[dirname_pos] == '/')){
+        if(dirname[dirname_pos] == '\0' || 
+           (dirname[dirname_pos + 1] == '\0' && dirname[dirname_pos] == '/')){
             break;
         }
 
@@ -183,6 +183,7 @@ int do_mkdir(char* dirname)
             }
         }
         if(i == 128){
+            disable_sum();
             return 0;
         }
 
@@ -191,11 +192,13 @@ int do_mkdir(char* dirname)
         cur_dir = cached_block_base;
     }
 
+    disable_sum();
+    /* Search Parent Dir End */
+
     read_block(lastdir_block);
     cur_dir = cached_block_base;
     for(int i = 0; i < 128; i++){
         if(cur_dir->entry[i].type == DIR && !strcmp(cur_dir->entry[i].name, nextdirname)){
-            disable_sum();
             return 0;
         }
     }
@@ -231,17 +234,16 @@ int do_mkdir(char* dirname)
             new_dir->entry[1].inode = lastdir_inode;
             write_block(block_id);
 
-            disable_sum();
             return 1;
         }
     }
 
-    disable_sum();
     return 0;
 }
 
 int do_rmdir(char* dirname)
 {
+    /* Search Parent Dir */
     enable_sum();
 
     int dirname_pos = 0;
@@ -249,33 +251,34 @@ int do_rmdir(char* dirname)
     uint16_t lastdir_inode;
     uint32_t lastdir_block;
 
+    // search from root dir / current dir?
     if(dirname[dirname_pos] == '/'){
         read_superblock();
         read_block(superblock->root_block_id);
         cur_dir = cached_block_base;
-        lastdir_block = superblock->root_block_id;
         lastdir_inode = superblock->root_inode_id;
+        lastdir_block = superblock->root_block_id;
         dirname_pos++;    
     }
     else{
         read_block(current_dir_block);
         cur_dir = cached_block_base;
-        lastdir_block = current_dir_block;
         lastdir_inode = current_dir_inode;
+        lastdir_block = current_dir_block;
     }
 
     char nextdirname[29];
     while(1){
         // Get name of next dir
         int nextdirname_pos = 0;
-        while(dirname[dirname_pos] != '/' && dirname[dirname_pos] != 0){
+        while(dirname[dirname_pos] != '/' && dirname[dirname_pos] != '\0'){
             nextdirname[nextdirname_pos++] = dirname[dirname_pos++];
         }
-        nextdirname[nextdirname_pos] = 0;
+        nextdirname[nextdirname_pos] = '\0';
 
         // Last?
-        if(dirname[dirname_pos] == 0 || 
-           (dirname[dirname_pos + 1] == 0 && dirname[dirname_pos] == '/')){
+        if(dirname[dirname_pos] == '\0' || 
+           (dirname[dirname_pos + 1] == '\0' && dirname[dirname_pos] == '/')){
             break;
         }
 
@@ -294,6 +297,7 @@ int do_rmdir(char* dirname)
             }
         }
         if(i == 128){
+            disable_sum();
             return 0;
         }
 
@@ -302,21 +306,22 @@ int do_rmdir(char* dirname)
         cur_dir = cached_block_base;
     }
 
+    disable_sum();
+    /* Search Parent Dir End */
+
     read_block(lastdir_block);
     cur_dir = cached_block_base;
     for(int i = 0; i < 128; i++){
         if(cur_dir->entry[i].type == DIR && !strcmp(cur_dir->entry[i].name, nextdirname)){
             cur_dir->entry[i].type = EMPTY;
+            write_block(lastdir_block);
             uint16_t inode_id = cur_dir->entry[i].inode;
             inode_t* inode = read_inode(inode_id);
-            int mode = inode->mode;
             uint32_t block_id = inode->direct_blocks[0];
-            if(mode == 0){
+            if(inode->mode == 0){
                 free_block(block_id);
             }
             free_inode(inode_id);
-            write_block(lastdir_block);
-            disable_sum();
             return 1;
         }
     }
@@ -325,100 +330,7 @@ int do_rmdir(char* dirname)
 
 int do_ls(char* dirname, int mode, int* print_location_y)
 {
-    enable_sum();
-
-    int dirname_pos = 0;
-    dir_t* cur_dir;
-    uint32_t lastdir_block;
-
-    if(dirname[dirname_pos] == '/'){
-        read_superblock();
-        read_block(superblock->root_block_id);
-        cur_dir = cached_block_base;
-        lastdir_block = superblock->root_block_id;
-        dirname_pos++;    
-    }
-    else{
-        read_block(current_dir_block);
-        cur_dir = cached_block_base;
-        lastdir_block = current_dir_block;
-    }
-
-    while(1){
-        // Get name of next dir
-        char nextdirname[29];
-        int nextdirname_pos = 0;
-        while(dirname[dirname_pos] != '/' && dirname[dirname_pos] != 0){
-            nextdirname[nextdirname_pos++] = dirname[dirname_pos++];
-        }
-        nextdirname[nextdirname_pos] = 0;
-        if(nextdirname_pos == 0){
-            break;
-        }
-
-        // Search
-        int i = 0;
-        uint16_t nextdir_inode_id;
-        uint32_t nextdir_block_id;
-        for(i = 0; i < 128; i++){
-            if(cur_dir->entry[i].type == DIR && !strcmp(cur_dir->entry[i].name, nextdirname)){
-                nextdir_inode_id = cur_dir->entry[i].inode;
-                inode_t* nextdir_inode = read_inode(nextdir_inode_id);
-                nextdir_block_id = nextdir_inode->direct_blocks[0];
-                break;
-            }
-        }
-        if(i == 128){
-            return 0;
-        }
-
-        // Last?
-        if(dirname[dirname_pos] == 0 || 
-           (dirname[dirname_pos + 1] == 0 && dirname[dirname_pos] == '/')){
-            lastdir_block = nextdir_block_id;
-            break;
-        }
-        else{
-            dirname_pos++;
-            read_block(nextdir_block_id);
-            cur_dir = cached_block_base;
-        }
-    }
-
-    read_block(lastdir_block);
-    cur_dir = cached_block_base;
-    if(mode == 0){
-        for(int i = 0; i < 128; i++){
-            if(cur_dir->entry[i].type != EMPTY){
-                prints("%s    ", cur_dir->entry[i].name);
-            }
-        }
-        prints("\n");
-        enable_sum();
-        *print_location_y = *print_location_y + 1;
-    }
-    else if(mode == 1){
-        int count = 0;
-        for(int i = 0; i < 128; i++){
-            if(cur_dir->entry[i].type != EMPTY){
-                uint16_t inode_id = cur_dir->entry[i].inode;
-                inode_t* inode = read_inode(inode_id);
-                prints("name: %s  type: %s  owner: %ld  size: %ldB\n", cur_dir->entry[i].name, 
-                       cur_dir->entry[i].type == DIR ? "dir" : "file", inode->owner, inode->size);
-                count++;
-            }
-        }
-        enable_sum();
-        *print_location_y = *print_location_y + count;
-    }
-
-    
-    disable_sum();
-    return 1;
-}
-
-int do_cd(char* dirname)
-{
+    /* Search Dir */
     enable_sum();
 
     int dirname_pos = 0;
@@ -426,6 +338,7 @@ int do_cd(char* dirname)
     uint16_t lastdir_inode;
     uint32_t lastdir_block;
 
+    // search from root dir / current dir?
     if(dirname[dirname_pos] == '/'){
         read_superblock();
         read_block(superblock->root_block_id);
@@ -441,15 +354,17 @@ int do_cd(char* dirname)
         lastdir_block = current_dir_block;
     }
 
+    char nextdirname[29];
     while(1){
         // Get name of next dir
-        char nextdirname[29];
         int nextdirname_pos = 0;
-        while(dirname[dirname_pos] != '/' && dirname[dirname_pos] != 0){
+        while(dirname[dirname_pos] != '/' && dirname[dirname_pos] != '\0'){
             nextdirname[nextdirname_pos++] = dirname[dirname_pos++];
         }
-        nextdirname[nextdirname_pos] = 0;
-        
+        nextdirname[nextdirname_pos] = '\0';
+        if(nextdirname_pos == 0){
+            break;
+        }   
 
         // Search
         int i = 0;
@@ -460,16 +375,19 @@ int do_cd(char* dirname)
                 nextdir_inode_id = cur_dir->entry[i].inode;
                 inode_t* nextdir_inode = read_inode(nextdir_inode_id);
                 nextdir_block_id = nextdir_inode->direct_blocks[0];
+                lastdir_inode = nextdir_inode_id;
+                lastdir_block = nextdir_block_id;
                 break;
             }
         }
         if(i == 128){
+            disable_sum();
             return 0;
         }
 
         // Last?
-        if(dirname[dirname_pos] == 0 || 
-           (dirname[dirname_pos + 1] == 0 && dirname[dirname_pos] == '/')){
+        if(dirname[dirname_pos] == '\0' || 
+           (dirname[dirname_pos + 1] == '\0' && dirname[dirname_pos] == '/')){
             lastdir_inode = nextdir_inode_id;
             lastdir_block = nextdir_block_id;
             break;
@@ -481,32 +399,64 @@ int do_cd(char* dirname)
         }
     }
 
-    current_dir_inode = lastdir_inode;
-    current_dir_block = lastdir_block;
-
     disable_sum();
+    /* Search Dir End */
+
+    read_block(lastdir_block);
+    cur_dir = cached_block_base;
+    if(mode == 0){
+        for(int i = 0; i < 128; i++){
+            if(cur_dir->entry[i].type != EMPTY){
+                prints("%s    ", cur_dir->entry[i].name);
+            }
+        }
+        prints("\n");
+        enable_sum();
+        *print_location_y = *print_location_y + 1;
+        disable_sum();
+    }
+    else if(mode == 1){
+        int count = 0;
+        for(int i = 0; i < 128; i++){
+            if(cur_dir->entry[i].type != EMPTY){
+                uint16_t inode_id = cur_dir->entry[i].inode;
+                inode_t* inode = read_inode(inode_id);
+                prints("name: %s  type: %s  owner: %ld  size: %ldB\n", cur_dir->entry[i].name, 
+                       cur_dir->entry[i].type == DIR ? "dir" : "file", inode->owner, inode->size);
+                count++;
+            }
+        }
+        enable_sum();
+        *print_location_y = *print_location_y + count;
+        disable_sum();
+    }
+
     return 1;
 }
 
-int do_link(char* filename, char* newfile, int mode)
+int do_cd(char* dirname)
 {
-    enable_sum();  
+    /* Search Dir */
+    enable_sum();
 
-    int filename_pos = 0;
+    int dirname_pos = 0;
     dir_t* cur_dir;
     uint16_t lastdir_inode;
     uint32_t lastdir_block;
 
-    if(filename[filename_pos] == '/'){
+    // search from root dir / current dir?
+    if(dirname[dirname_pos] == '/'){
         read_superblock();
         read_block(superblock->root_block_id);
         cur_dir = cached_block_base;
+        lastdir_inode = superblock->root_inode_id;
         lastdir_block = superblock->root_block_id;
-        filename_pos++;    
+        dirname_pos++;    
     }
     else{
         read_block(current_dir_block);
         cur_dir = cached_block_base;
+        lastdir_inode = current_dir_inode;
         lastdir_block = current_dir_block;
     }
 
@@ -514,14 +464,91 @@ int do_link(char* filename, char* newfile, int mode)
     while(1){
         // Get name of next dir
         int nextdirname_pos = 0;
-        while(filename[filename_pos] != '/' && filename[filename_pos] != 0){
-            nextdirname[nextdirname_pos++] = filename[filename_pos++];
+        while(dirname[dirname_pos] != '/' && dirname[dirname_pos] != '\0'){
+            nextdirname[nextdirname_pos++] = dirname[dirname_pos++];
         }
-        nextdirname[nextdirname_pos] = 0;
+        nextdirname[nextdirname_pos] = '\0';
+        
+
+        // Search
+        int i = 0;
+        uint16_t nextdir_inode_id;
+        uint32_t nextdir_block_id;
+        for(i = 0; i < 128; i++){
+            if(cur_dir->entry[i].type == DIR && !strcmp(cur_dir->entry[i].name, nextdirname)){
+                nextdir_inode_id = cur_dir->entry[i].inode;
+                inode_t* nextdir_inode = read_inode(nextdir_inode_id);
+                nextdir_block_id = nextdir_inode->direct_blocks[0];
+                lastdir_inode = nextdir_inode_id;
+                lastdir_block = nextdir_block_id;
+                break;
+            }
+        }
+        if(i == 128){
+            disable_sum();
+            return 0;
+        }
 
         // Last?
-        if(filename[filename_pos] == 0 || 
-           (filename[filename_pos + 1] == 0 && filename[filename_pos] == '/')){
+        if(dirname[dirname_pos] == '\0' || 
+           (dirname[dirname_pos + 1] == '\0' && dirname[dirname_pos] == '/')){
+            lastdir_inode = nextdir_inode_id;
+            lastdir_block = nextdir_block_id;
+            break;
+        }
+        else{
+            dirname_pos++;
+            read_block(nextdir_block_id);
+            cur_dir = cached_block_base;
+        }
+    }
+
+    disable_sum();
+    /* Search Dir End */
+
+    current_dir_inode = lastdir_inode;
+    current_dir_block = lastdir_block;
+
+    return 1;
+}
+
+int do_link(char* filename, char* newfile, int mode)
+{
+    /* Search Parent Dir */
+    enable_sum();
+
+    int filename_pos = 0;
+    dir_t* cur_dir;
+    uint16_t lastdir_inode;
+    uint32_t lastdir_block;
+
+    // search from root dir / current dir?
+    if(filename[filename_pos] == '/'){
+        read_superblock();
+        read_block(superblock->root_block_id);
+        cur_dir = cached_block_base;
+        lastdir_inode = superblock->root_inode_id;
+        lastdir_block = superblock->root_block_id;
+        filename_pos++;    
+    }
+    else{
+        read_block(current_dir_block);
+        cur_dir = cached_block_base;
+        lastdir_inode = current_dir_inode;
+        lastdir_block = current_dir_block;
+    }
+
+    char nextdirname[29];
+    while(1){
+        // Get name of next dir
+        int nextdirname_pos = 0;
+        while(filename[filename_pos] != '/' && filename[filename_pos] != '\0'){
+            nextdirname[nextdirname_pos++] = filename[filename_pos++];
+        }
+        nextdirname[nextdirname_pos] = '\0';
+
+        // Last?
+        if(filename[filename_pos] == '\0'){
             break;
         }
 
@@ -549,8 +576,12 @@ int do_link(char* filename, char* newfile, int mode)
         cur_dir = cached_block_base;
     }
 
+    disable_sum();
+    /* Search Parent Dir End */
+
     uint16_t inode_id;
     int type;
+
     read_block(lastdir_block);
     cur_dir = cached_block_base;
     for(int i = 0; i < 128; i++){
@@ -561,18 +592,27 @@ int do_link(char* filename, char* newfile, int mode)
         }
     }
 
+    enable_sum();
     if(mode == 0){
         if(type == DIR){
+            disable_sum();
             return 0;
         }
         read_block(current_dir_block);
         cur_dir = cached_block_base;
+        for(int i = 0; i < 128; i++){
+            if(cur_dir->entry[i].type == FILE && !strcmp(cur_dir->entry[i].name, newfile)){
+                disable_sum();
+                return 0;
+            }
+        }
         for(int i = 0; i < 128; i++){
             if(cur_dir->entry[i].type == EMPTY){
                 cur_dir->entry[i].type = FILE;
                 strcpy(cur_dir->entry[i].name, newfile);
                 cur_dir->entry[i].inode = inode_id;
                 write_block(current_dir_block);
+                disable_sum();
                 return 1;
             }
         }
@@ -580,6 +620,12 @@ int do_link(char* filename, char* newfile, int mode)
     else if(mode == 1){
         read_block(current_dir_block);
         cur_dir = cached_block_base;
+        for(int i = 0; i < 128; i++){
+            if(cur_dir->entry[i].type == FILE && !strcmp(cur_dir->entry[i].name, newfile)){
+                disable_sum();
+                return 0;
+            }
+        }
         for(int i = 0; i < 128; i++){
             if(cur_dir->entry[i].type == EMPTY){
                 uint16_t new_inode_id = alloc_inode();
@@ -608,7 +654,7 @@ int do_link(char* filename, char* newfile, int mode)
                 }
                 inode->indirect_blocks[0] = indirect[0];
                 inode->indirect_blocks[1] = indirect[1];
-                read_inode(new_inode_id);
+                write_inode(new_inode_id);
 
                 return 1;
             }

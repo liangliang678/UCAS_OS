@@ -9,6 +9,7 @@ fd_t fd_list[10];
 
 int do_touch(char* filename)
 {
+    /* Search Parent Dir */
     enable_sum();
 
     int filename_pos = 0;
@@ -16,16 +17,19 @@ int do_touch(char* filename)
     uint16_t lastdir_inode;
     uint32_t lastdir_block;
 
+    // search from root dir / current dir?
     if(filename[filename_pos] == '/'){
         read_superblock();
         read_block(superblock->root_block_id);
         cur_dir = cached_block_base;
+        lastdir_inode = superblock->root_inode_id;
         lastdir_block = superblock->root_block_id;
         filename_pos++;    
     }
     else{
         read_block(current_dir_block);
         cur_dir = cached_block_base;
+        lastdir_inode = current_dir_inode;
         lastdir_block = current_dir_block;
     }
 
@@ -33,14 +37,13 @@ int do_touch(char* filename)
     while(1){
         // Get name of next dir
         int nextdirname_pos = 0;
-        while(filename[filename_pos] != '/' && filename[filename_pos] != 0){
+        while(filename[filename_pos] != '/' && filename[filename_pos] != '\0'){
             nextdirname[nextdirname_pos++] = filename[filename_pos++];
         }
-        nextdirname[nextdirname_pos] = 0;
+        nextdirname[nextdirname_pos] = '\0';
 
         // Last?
-        if(filename[filename_pos] == 0 || 
-           (filename[filename_pos + 1] == 0 && filename[filename_pos] == '/')){
+        if(filename[filename_pos] == '\0'){
             break;
         }
 
@@ -59,6 +62,7 @@ int do_touch(char* filename)
             }
         }
         if(i == 128){
+            disable_sum();
             return 0;
         }
 
@@ -67,8 +71,17 @@ int do_touch(char* filename)
         cur_dir = cached_block_base;
     }
 
+    disable_sum();
+    /* Search Parent Dir End */
+
     read_block(lastdir_block);
     cur_dir = cached_block_base;
+    for(int i = 0; i < 128; i++){
+        if(cur_dir->entry[i].type == FILE && !strcmp(cur_dir->entry[i].name, nextdirname)){
+            return 0;
+        }
+    }
+    
     for(int i = 0; i < 128; i++){
         if(cur_dir->entry[i].type == EMPTY){
             uint16_t inode_id = alloc_inode();
@@ -86,18 +99,15 @@ int do_touch(char* filename)
             new_inode->size = 0;
             write_inode(inode_id);
 
-            disable_sum();
             return 1;
         }
     }
-
-    disable_sum();
     return 0;
 }
 
 int do_cat(char* filename, char* buffer)
 {
-    /* Search for Parent Dir */
+    /* Search Parent Dir */
     enable_sum();  
 
     int filename_pos = 0;
@@ -105,16 +115,19 @@ int do_cat(char* filename, char* buffer)
     uint16_t lastdir_inode;
     uint32_t lastdir_block;
 
+    // search from root dir / current dir?
     if(filename[filename_pos] == '/'){
         read_superblock();
         read_block(superblock->root_block_id);
         cur_dir = cached_block_base;
+        lastdir_inode = superblock->root_inode_id;
         lastdir_block = superblock->root_block_id;
         filename_pos++;    
     }
     else{
         read_block(current_dir_block);
         cur_dir = cached_block_base;
+        lastdir_inode = current_dir_inode;
         lastdir_block = current_dir_block;
     }
 
@@ -122,14 +135,13 @@ int do_cat(char* filename, char* buffer)
     while(1){
         // Get name of next dir
         int nextdirname_pos = 0;
-        while(filename[filename_pos] != '/' && filename[filename_pos] != 0){
+        while(filename[filename_pos] != '/' && filename[filename_pos] != '\0'){
             nextdirname[nextdirname_pos++] = filename[filename_pos++];
         }
-        nextdirname[nextdirname_pos] = 0;
+        nextdirname[nextdirname_pos] = '\0';
 
         // Last?
-        if(filename[filename_pos] == 0 || 
-           (filename[filename_pos + 1] == 0 && filename[filename_pos] == '/')){
+        if(filename[filename_pos] == '\0'){
             break;
         }
 
@@ -156,6 +168,9 @@ int do_cat(char* filename, char* buffer)
         read_block(nextdir_block_id);
         cur_dir = cached_block_base;
     }
+
+    disable_sum();
+    /* Search Parent Dir End */
 
     /* Modify Buffer */
     inode_t* inode;
@@ -164,47 +179,48 @@ int do_cat(char* filename, char* buffer)
     for(int i = 0; i < 128; i++){
         if(cur_dir->entry[i].type == FILE && !strcmp(cur_dir->entry[i].name, nextdirname)){
             inode = read_inode(cur_dir->entry[i].inode);
+            break;
         }
     }
 
+    enable_sum();
     memset(buffer, 0, inode->size + 1);
-    int block_num = (inode->size == 0) ? 0 : (inode->size / 4096 + 1);
-    int copied_byte = 0;
-    int i;
-    for(i = 0; i < block_num - 1; i++){
-        int block_id = inode->direct_blocks[i];
-        read_block(block_id);
-        memcpy(buffer + copied_byte, cached_block_base, 4096);
-        copied_byte += 4096;
+    if(inode->size == 0){
+        disable_sum();
+        return 1;
     }
-    int block_id = inode->direct_blocks[i];
+
+    int copied_byte = (inode->size <= 4096) ? inode->size : 4096;
+    int block_id = inode->direct_blocks[0];
     read_block(block_id);
-    memcpy(buffer + copied_byte, cached_block_base, inode->size - copied_byte);
-    copied_byte += 4096;
+    memcpy(buffer, cached_block_base, copied_byte);
     disable_sum();
     return 1;
 }
 
 int do_fopen(char* filename, int access)
 {
-    enable_sum();
+    /* Search Parent Dir */
+    enable_sum();  
 
-    /* Search for Parent Dir */
     int filename_pos = 0;
     dir_t* cur_dir;
     uint16_t lastdir_inode;
     uint32_t lastdir_block;
 
+    // search from root dir / current dir?
     if(filename[filename_pos] == '/'){
         read_superblock();
         read_block(superblock->root_block_id);
         cur_dir = cached_block_base;
+        lastdir_inode = superblock->root_inode_id;
         lastdir_block = superblock->root_block_id;
         filename_pos++;    
     }
     else{
         read_block(current_dir_block);
         cur_dir = cached_block_base;
+        lastdir_inode = current_dir_inode;
         lastdir_block = current_dir_block;
     }
 
@@ -212,14 +228,13 @@ int do_fopen(char* filename, int access)
     while(1){
         // Get name of next dir
         int nextdirname_pos = 0;
-        while(filename[filename_pos] != '/' && filename[filename_pos] != 0){
+        while(filename[filename_pos] != '/' && filename[filename_pos] != '\0'){
             nextdirname[nextdirname_pos++] = filename[filename_pos++];
         }
-        nextdirname[nextdirname_pos] = 0;
+        nextdirname[nextdirname_pos] = '\0';
 
         // Last?
-        if(filename[filename_pos] == 0 || 
-           (filename[filename_pos + 1] == 0 && filename[filename_pos] == '/')){
+        if(filename[filename_pos] == '\0'){
             break;
         }
 
@@ -238,6 +253,7 @@ int do_fopen(char* filename, int access)
             }
         }
         if(i == 128){
+            disable_sum();
             return 0;
         }
 
@@ -245,6 +261,9 @@ int do_fopen(char* filename, int access)
         read_block(nextdir_block_id);
         cur_dir = cached_block_base;
     }
+
+    disable_sum();
+    /* Search Parent Dir End */
 
     /* Modify FD */
     read_block(lastdir_block);
@@ -262,10 +281,10 @@ int do_fopen(char* filename, int access)
             fd_list[fd_id].inode = cur_dir->entry[i].inode;
             fd_list[fd_id].rd_pos = 0;
             fd_list[fd_id].wr_pos = 0;
+            break;
         }
     }
 
-    disable_sum();
     return fd_id;
 }
 
@@ -277,7 +296,7 @@ int do_fread(int fd, char* buffer, int size)
 
     inode_t* inode = read_inode(fd_list[fd].inode);
     if(fd_list[fd].rd_pos + size > inode->size){
-        size = inode->size - fd_list[fd].rd_pos;
+        return 0;
     }
      
     int copied_byte = 0;
@@ -290,19 +309,15 @@ int do_fread(int fd, char* buffer, int size)
         else if(block_num >= 10 && block_num < 10 + 1024){
             block_id = inode->indirect_blocks[0];
             read_block(block_id);
-            uint32_t *pointer = cached_block_base;
+            uint32_t* pointer = cached_block_base;
             block_id = *(pointer + block_num - 10);
         }
         else if(block_num >= 10 + 1024 && block_num < 10 + 1024 + 1024){
             block_id = inode->indirect_blocks[1];
             read_block(block_id);
-            uint32_t *pointer = cached_block_base;
+            uint32_t* pointer = cached_block_base;
             block_id = *(pointer + block_num - 10 - 1024);
         }
-        else{
-            assert(0);
-        }
-        
         read_block(block_id);
 
         int offset = fd_list[fd].rd_pos % 4096;
@@ -332,6 +347,7 @@ int do_fwrite(int fd, char* buffer, int size)
     }
 
     inode_t* inode = read_inode(fd_list[fd].inode);
+
     int cur_block = (inode->size == 0) ? 0 : (inode->size / 4096 + 1);
     inode->size = inode->size + size;
     int total_block = (inode->size == 0) ? 0 : (inode->size / 4096 + 1);
@@ -345,25 +361,23 @@ int do_fwrite(int fd, char* buffer, int size)
     }
 
     for(int i = 0; i < needed_block; i++){
-        if(cur_block + i < 10){
-            inode->direct_blocks[cur_block + i] = alloc_block();
+        int block_num = cur_block + i;
+        if(block_num < 10){
+            inode->direct_blocks[block_num] = alloc_block();
         }
-        else if(cur_block + i >= 10 && cur_block + i < 10 + 1024){
+        else if(block_num >= 10 && block_num < 10 + 1024){
             int block_id = inode->indirect_blocks[0];
             read_block(block_id);
-            uint32_t *pointer = cached_block_base;
-            *(pointer + cur_block + i - 10) = alloc_block();
+            uint32_t* pointer = cached_block_base;
+            *(pointer + block_num - 10) = alloc_block();
             write_block(block_id);
         }
-        else if(cur_block + i >= 10 + 1024 && cur_block + i < 10 + 1024 + 1024){
+        else if(block_num >= 10 + 1024 && block_num < 10 + 1024 + 1024){
             int block_id = inode->indirect_blocks[1];
             read_block(block_id);
-            uint32_t *pointer = cached_block_base;
-            *(pointer + cur_block + i - 10 - 1024) = alloc_block();
+            uint32_t* pointer = cached_block_base;
+            *(pointer + block_num - 10 - 1024) = alloc_block();
             write_block(block_id);
-        }
-        else{
-            assert(0);
         }
     }
     
@@ -387,9 +401,6 @@ int do_fwrite(int fd, char* buffer, int size)
             read_block(block_id);
             uint32_t *pointer = cached_block_base;
             block_id = *(pointer + block_num - 10 - 1024);
-        }
-        else{
-            assert(0);
         }
 
         read_block(block_id);

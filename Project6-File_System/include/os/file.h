@@ -10,7 +10,7 @@
 
 typedef struct fd{
     uint16_t inode;
-    uint8_t access;
+    uint16_t access;
     uint64_t rd_pos;
     uint64_t wr_pos;
 } fd_t;
