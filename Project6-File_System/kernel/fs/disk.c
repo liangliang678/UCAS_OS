@@ -57,9 +57,6 @@ void read_block(uint32_t block_id)
 
 void write_block(uint32_t block_id)
 {
-    if(block_id == 0){
-        printk("!!!!!!!!!!!!!!!!!!\n");
-    }
     uint64_t sd_block_id = BLOCK_BEGIN_ID + block_id * 8;
     sbi_sd_write(kva2pa(BLOCK_CACHE), 8, sd_block_id);
 }

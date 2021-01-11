@@ -51,6 +51,7 @@ int mkfs(int print)
     root_inode->owner = 0;
     root_inode->size = 4096;
     root_inode->direct_blocks[0] = block_id;
+    root_inode->link = 2;
     write_inode(inode_id);
 
     read_block(block_id);
@@ -209,6 +210,10 @@ int do_mkdir(char* dirname)
             uint32_t block_id = alloc_block();
 
             // Modify Current Dir
+            inode_t* parent_inode = read_inode(lastdir_inode);
+            parent_inode->link = parent_inode->link + 1;
+            write_inode(lastdir_inode);
+
             cur_dir->entry[i].type = DIR;
             strcpy(cur_dir->entry[i].name, nextdirname);
             cur_dir->entry[i].inode = inode_id;
@@ -220,6 +225,7 @@ int do_mkdir(char* dirname)
             new_inode->owner = current_running[cpu_id]->pid;
             new_inode->size = 4096;
             new_inode->direct_blocks[0] = block_id;
+            new_inode->link = 2;
             write_inode(inode_id);
             
             //Modify New Dir
@@ -315,6 +321,11 @@ int do_rmdir(char* dirname)
         if(cur_dir->entry[i].type == DIR && !strcmp(cur_dir->entry[i].name, nextdirname)){
             cur_dir->entry[i].type = EMPTY;
             write_block(lastdir_block);
+
+            inode_t* parent_inode = read_inode(lastdir_inode);
+            parent_inode->link = parent_inode->link - 1;
+            write_inode(lastdir_inode);
+
             uint16_t inode_id = cur_dir->entry[i].inode;
             inode_t* inode = read_inode(inode_id);
             uint32_t block_id = inode->direct_blocks[0];
@@ -421,8 +432,8 @@ int do_ls(char* dirname, int mode, int* print_location_y)
             if(cur_dir->entry[i].type != EMPTY){
                 uint16_t inode_id = cur_dir->entry[i].inode;
                 inode_t* inode = read_inode(inode_id);
-                prints("name: %s  type: %s  owner: %ld  size: %ldB\n", cur_dir->entry[i].name, 
-                       cur_dir->entry[i].type == DIR ? "dir" : "file", inode->owner, inode->size);
+                prints("name: %s  type: %s  owner: %ld  size: %ldB  link: %d\n", cur_dir->entry[i].name, 
+                       cur_dir->entry[i].type == DIR ? "dir" : "file", inode->owner, inode->size, inode->link);
                 count++;
             }
         }
@@ -598,6 +609,11 @@ int do_link(char* filename, char* newfile, int mode)
             disable_sum();
             return 0;
         }
+
+        inode_t* inode = read_inode(inode_id);
+        inode->link = inode->link + 1;
+        write_inode(inode_id);
+
         read_block(current_dir_block);
         cur_dir = cached_block_base;
         for(int i = 0; i < 128; i++){
@@ -631,24 +647,27 @@ int do_link(char* filename, char* newfile, int mode)
                 uint16_t new_inode_id = alloc_inode();
                 cur_dir->entry[i].type = type;
                 strcpy(cur_dir->entry[i].name, newfile);
-                cur_dir->entry[i].inode = inode_id;
+                cur_dir->entry[i].inode = new_inode_id;
                 write_block(current_dir_block);
                 
                 inode_t* inode = read_inode(inode_id);
                 uint32_t direct[10];
                 uint32_t indirect[2];
                 uint64_t size;
+                uint32_t link;
                 for(int j = 0; j < 10; j++){
                     direct[i] = inode->direct_blocks[i];
                 }
                 indirect[0] = inode->indirect_blocks[0];
                 indirect[1] = inode->indirect_blocks[1];
                 size = inode->size;
+                link = inode->link;
 
                 inode = read_inode(new_inode_id);
                 inode->mode = 1;
                 inode->owner = current_running[cpu_id]->pid;
                 inode->size = size;
+                inode->link = link;
                 for(int j = 0; j < 10; j++){
                     inode->direct_blocks[i] = direct[i];
                 }

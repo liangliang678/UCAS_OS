@@ -97,6 +97,7 @@ int do_touch(char* filename)
             new_inode->mode = 0;
             new_inode->owner = current_running[cpu_id]->pid;
             new_inode->size = 0;
+            new_inode->link = 1;
             write_inode(inode_id);
 
             return 1;
@@ -356,7 +357,7 @@ int do_fwrite(int fd, char* buffer, int size)
     if(total_block >= 10 && cur_block < 10){
         inode->indirect_blocks[0] = alloc_block();
     }
-    else if(total_block >= 10 + 1024 && cur_block < 10 + 1024){
+    if(total_block >= 10 + 1024 && cur_block < 10 + 1024){
         inode->indirect_blocks[1] = alloc_block();
     }
 

@@ -39,7 +39,7 @@ typedef struct inode{
     uint32_t size;
     uint32_t direct_blocks[10];
     uint32_t indirect_blocks[2];
-    uint32_t empty;
+    uint32_t link;
 } inode_t;
 
 #define EMPTY 0
